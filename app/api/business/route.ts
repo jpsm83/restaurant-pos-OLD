@@ -1,22 +1,22 @@
 import connectDB from "@/lib/db";
-import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import { hash, compare } from "bcrypt";
+import { Types } from "mongoose";
 
 // imported models
-const Business = require("../models/Business");
-const BusinessGood = require("../models/BusinessGood");
-const DailySalesReport = require("../models/DailySalesReport");
-const Inventory = require("../models/Inventory");
-const Notification = require("../models/Notification");
-const Order = require("../models/Order");
-const Printer = require("../models/Printer");
-const Promotion = require("../models/Promotion");
-const Schedule = require("../models/Schedule");
-const Supplier = require("../models/Supplier");
-const SupplierGood = require("../models/SupplierGood");
-const Table = require("../models/Table");
-const User = require("../models/User");
+import Business from "@/lib/models/business";
+// import BusinessGood from "@/lib/models/businessGood";
+// import DailySalesReport from "@/lib/models/dailySalesReport";
+// import Inventory from "@/lib/models/inventory";
+// import Notification from "@/lib/models/notification";
+// import Order from "@/lib/models/order";
+// import Printer from "@/lib/models/printer";
+// import Promotion from "@/lib/models/promotion";
+// import Schedule from "@/lib/models/schedule";
+// import Supplier from "@/lib/models/supplier";
+// import SupplierGood from "@/lib/models/supplierGood";
+// import Table from "@/lib/models/table";
+// import User from "@/lib/models/user";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -251,7 +251,9 @@ export const PATCH = async (req: Request) => {
     }
 
     // check if business exists
-    const business = await Business.findById(businessId).lean();
+    const business: BusinessData | null = await Business.findById(
+      businessId
+    ).lean();
     if (!business) {
       return new NextResponse(
         JSON.stringify({ message: "Business not found" }),
@@ -355,18 +357,18 @@ export const DELETE = async (req: Request) => {
       );
     } else {
       // delete all related data
-      await BusinessGood.deleteMany({ business: businessId });
-      await DailySalesReport.deleteMany({ business: businessId });
-      await Inventory.deleteMany({ business: businessId });
-      await Notification.deleteMany({ business: businessId });
-      await Order.deleteMany({ business: businessId });
-      await Printer.deleteMany({ business: businessId });
-      await Promotion.deleteMany({ business: businessId });
-      await Schedule.deleteMany({ business: businessId });
-      await Supplier.deleteMany({ business: businessId });
-      await SupplierGood.deleteMany({ business: businessId });
-      await Table.deleteMany({ business: businessId });
-      await User.deleteMany({ business: businessId });
+      //   await BusinessGood.deleteMany({ business: businessId });
+      //   await DailySalesReport.deleteMany({ business: businessId });
+      //   await Inventory.deleteMany({ business: businessId });
+      //   await Notification.deleteMany({ business: businessId });
+      //   await Order.deleteMany({ business: businessId });
+      //   await Printer.deleteMany({ business: businessId });
+      //   await Promotion.deleteMany({ business: businessId });
+      //   await Schedule.deleteMany({ business: businessId });
+      //   await Supplier.deleteMany({ business: businessId });
+      //   await SupplierGood.deleteMany({ business: businessId });
+      //   await Table.deleteMany({ business: businessId });
+      //   await User.deleteMany({ business: businessId });
     }
 
     return new NextResponse(
