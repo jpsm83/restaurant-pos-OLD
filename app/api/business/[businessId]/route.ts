@@ -20,7 +20,7 @@ import Business from "@/lib/models/business";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
-interface Address {
+interface AddressInterface {
   country: string;
   state: string;
   city: string;
@@ -33,7 +33,7 @@ interface Address {
   [key: string]: string | number | undefined | [number, number];
 }
 
-interface BusinessData {
+interface BusinessInterface {
   tradeName: string;
   legalName: string;
   email: string;
@@ -42,13 +42,13 @@ interface BusinessData {
   taxNumber: string;
   currencyTrade: string;
   subscription: string;
-  address: Address;
+  address: AddressInterface;
   contactPerson?: string;
   businessTables?: string[] | undefined;
 }
 
 // helper function to validate address object
-const addressValidation = (address: Address) => {
+const addressValidation = (address: AddressInterface) => {
   // check address is an object
   if (typeof address !== "object" || address === null) {
     return "Address must be a non-null object";
@@ -72,11 +72,10 @@ const addressValidation = (address: Address) => {
   return missingFields.length > 0 ? "Invalid address object fields" : true;
 };
 
-// @desc    Get business by ID
+// @desc    Get business by businessId
 // @route   GET /business/:businessId
 // @access  Private
 export const getBusinessById = async (
-  req: Request,
   context: { params: any }
 ) => {
   try {
@@ -89,12 +88,12 @@ export const getBusinessById = async (
     const businessId = context.params.businessId;
 
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid ID" }), {
+      return new NextResponse(JSON.stringify({ message: "Invalid businessId" }), {
         status: 400,
       });
     }
 
-    // connect after get a valida businessId
+    // connect before first call to DB
     await connectDB();
 
     const business = await Business.findById({
@@ -137,20 +136,20 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       address,
       contactPerson,
       businessTables,
-    } = req.body as unknown as BusinessData;
+    } = req.body as unknown as BusinessInterface;
 
     // check if id is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid ID" }), {
+      return new NextResponse(JSON.stringify({ message: "Invalid businessId" }), {
         status: 400,
       });
     }
 
-    // connect after get a valida businessId and body
+    // connect before first call to DB
     await connectDB();
 
     // check if business exists
-    const business: BusinessData | null = await Business.findById({
+    const business: BusinessInterface | null = await Business.findById({
       businessId,
     }).lean();
     if (!business) {
@@ -186,7 +185,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     }
 
     // prepare update object
-    const updatedObj = {
+    const updateBusinessObj: BusinessInterface = {
       tradeName: tradeName || business.tradeName,
       legalName: legalName || business.legalName,
       email: email || business.email,
@@ -195,6 +194,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       taxNumber: taxNumber || business.taxNumber,
       currencyTrade: currencyTrade || business.currencyTrade,
       subscription: subscription || business.subscription,
+      address: address || business.address,
       contactPerson: contactPerson || business.contactPerson,
       businessTables: businessTables || business.businessTables,
     };
@@ -208,7 +208,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     }
 
     // save the updated business
-    await Business.findByIdAndUpdate({ businessId }, updatedObj, {
+    await Business.findByIdAndUpdate({ businessId }, updateBusinessObj, {
       new: true,
       usefindAndModify: false,
     });
@@ -220,17 +220,14 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       { status: 200 }
     );
   } catch (error: any) {
-    return new NextResponse(
-      JSON.stringify({ message: `Business could not be updated` }),
-      { status: 400 }
-    );
+    return new NextResponse("Error: " + error, { status: 500 });
   }
 };
 
 // @desc    Delete business
-// @route   DELETE /business/:id
+// @route   DELETE /business/:businessId
 // @access  Private
-export const DELETE = async (req: Request, context: { params: any }) => {
+export const DELETE = async (context: { params: any }) => {
   try {
     // this is how to get query params from the URL
     // const { searchParams } = new URL(req.url);
@@ -240,12 +237,12 @@ export const DELETE = async (req: Request, context: { params: any }) => {
     // that is the main element of a dinamic URL
     const businessId = context.params.businessId;
 
-    // connect after get a valida businessId
+    // connect before first call to DB
     await connectDB();
 
     // check if id is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid ID" }), {
+      return new NextResponse(JSON.stringify({ message: "Invalid businessId" }), {
         status: 400,
       });
     }
@@ -284,7 +281,7 @@ export const DELETE = async (req: Request, context: { params: any }) => {
       }),
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     return new NextResponse(
       JSON.stringify({ message: "Business could not be deleted" }),
       { status: 500 }

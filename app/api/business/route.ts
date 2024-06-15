@@ -7,7 +7,7 @@ import Business from "@/lib/models/business";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
-interface Address {
+interface AddressInterface {
   country: string;
   state: string;
   city: string;
@@ -20,7 +20,7 @@ interface Address {
   [key: string]: string | number | undefined | [number, number];
 }
 
-interface BusinessData {
+interface BusinessInterface {
   tradeName: string;
   legalName: string;
   email: string;
@@ -29,30 +29,13 @@ interface BusinessData {
   taxNumber: string;
   currencyTrade: string;
   subscription: string;
-  address: Address;
+  address: AddressInterface;
   contactPerson?: string;
   businessTables?: string[] | undefined;
 }
 
-// @desc    Get all businesses
-// @route   GET /business
-// @access  Private
-export const GET = async () => {
-  try {
-    await connectDB();
-    const business = await Business.find().select("-password").lean();
-    return !business.length
-      ? new NextResponse(JSON.stringify({ message: "No business found" }), {
-          status: 404,
-        })
-      : new NextResponse(JSON.stringify(business), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
-  }
-};
-
 // helper function to validate address object
-const addressValidation = (address: Address) => {
+const addressValidation = (address: AddressInterface) => {
   // check address is an object
   if (typeof address !== "object" || address === null) {
     return "Address must be a non-null object";
@@ -76,6 +59,24 @@ const addressValidation = (address: Address) => {
   return missingFields.length > 0 ? "Invalid address object fields" : true;
 };
 
+// @desc    Get all businesses
+// @route   GET /business
+// @access  Private
+export const GET = async () => {
+  try {
+    // connect before first call to DB
+    await connectDB();
+    const business = await Business.find().select("-password").lean();
+    return !business.length
+      ? new NextResponse(JSON.stringify({ message: "No business found" }), {
+          status: 404,
+        })
+      : new NextResponse(JSON.stringify(business), { status: 200 });
+  } catch (error: any) {
+    return new NextResponse("Error: " + error, { status: 500 });
+  }
+};
+
 // @desc    Create new business
 // @route   POST /business
 // @access  Private
@@ -92,9 +93,9 @@ export const CREATE = async (req: Request) => {
       subscription,
       address,
       contactPerson,
-    } = req.body as unknown as BusinessData;
+    } = req.body as unknown as BusinessInterface;
 
-    // connect after get a body
+    // connect before first call to DB
     await connectDB();
 
     // check required fields
@@ -141,7 +142,7 @@ export const CREATE = async (req: Request) => {
     const hashedPassword = await hash(password, 10);
 
     // create business object with required fields
-    const businessObj = {
+    const businessObj: BusinessInterface = {
       tradeName,
       legalName,
       email,
@@ -169,13 +170,8 @@ export const CREATE = async (req: Request) => {
       JSON.stringify({ message: `Business ${legalName} created` }),
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     // Handle unexpected errors
-    return new NextResponse(
-      JSON.stringify({
-        message: `Business could not be created`,
-      }),
-      { status: 500 }
-    );
+    return new NextResponse("Error: " + error, { status: 500 });
   }
 };

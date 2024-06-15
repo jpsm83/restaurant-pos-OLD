@@ -179,7 +179,7 @@ const businessGoodSchema = new Schema(
     // optional fields
     costPrice: { type: Number }, // sun of all ingredients.costOfRequiredQuantity
     description: { type: String }, // description of the business good
-    allergens: { type: [String], enum: allergen }, // allergens of the business good - have to follow the allergens from the supplier goods and add more if needed
+    allergens: { type: [String], enum: allergen, default: undefined }, // allergens of the business good - have to follow the allergens from the supplier goods and add more if needed
     image: { type: String, default: "../public/images/default_img.png" }, // photo of the business good
     deliveryTime: { type: Number }, // maximun time to deliver the business good to client
   },
