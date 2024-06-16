@@ -1,185 +1,11 @@
 import connectDB from "@/lib/db";
 import { NextResponse } from "next/server";
-import { Types } from "mongoose";
-import convert from "convert-units";
 
 // import models
 import BusinessGood from "@/lib/models/businessGood";
-import SupplierGood from "@/lib/models/supplierGood";
-
-interface IngredientsInterface {
-  ingredient: Types.ObjectId;
-  measurementUnit: convert.Unit;
-  requiredQuantity: number;
-  costOfRequiredQuantity?: number;
-  [key: string]: string | number | undefined | Types.ObjectId;
-}
-
-interface BusinessGoodInterface {
-  name: string;
-  keyword: string;
-  category: string;
-  subCategory: string;
-  onMenu: boolean;
-  available: boolean;
-  sellingPrice: number;
-  business: Types.ObjectId;
-  ingredients?: IngredientsInterface[];
-  setMenu?: Types.ObjectId[];
-  costPrice?: number;
-  description?: string;
-  allergens?: string[];
-  image?: string;
-  deliveryTime?: number;
-}
-
-const ingredientsArrayValidation = (
-  ingredientsArray: IngredientsInterface[]
-) => {
-  // ingredients: [
-  //    {
-  //      ingredient: "6612cd163684524f0bb078da",
-  //      measurementUnit: "kg",
-  //      requiredQuantity: 10,
-  //      costOfRequiredQuantity: 100,
-  //    },
-  //    {
-  //      ingredient: "6612cd163684524f0bb078da",
-  //      measurementUnit: "kg",
-  //      requiredQuantity: 10,
-  //      costOfRequiredQuantity: 100,
-  //    },
-  // ];
-
-  // check if the ingredientsArray is an array
-  if (!Array.isArray(ingredientsArray) || !ingredientsArray.length) {
-    return "Invalid ingredients array";
-  }
-
-  const requiredFields = ["ingredient", "measurementUnit", "requiredQuantity"];
-  for (const ingredient of ingredientsArray) {
-    for (const field of requiredFields) {
-      if (!ingredient[field]) {
-        return `Missing ${field} in ingredients array`;
-      }
-    }
-  }
-
-  return true;
-};
-
-const calculateCostOfRequiredQuantity = (
-  businessGoodIngredient: IngredientsInterface,
-  supplierGoodDoc: any
-) => {
-  if (
-    supplierGoodDoc.measurementUnit === businessGoodIngredient.measurementUnit
-  ) {
-    return (
-      supplierGoodDoc.pricePerUnit * businessGoodIngredient.requiredQuantity
-    );
-  } else {
-    const convertedQuantity = convert(businessGoodIngredient.requiredQuantity)
-      .from(businessGoodIngredient.measurementUnit)
-      .to(supplierGoodDoc.measurementUnit);
-    return supplierGoodDoc.pricePerUnit * convertedQuantity;
-  }
-};
-
-// helper function to set ingredients
-const ingredientsHelper = async (
-  ingredients: IngredientsInterface[],
-  allergensArray: string[] | undefined,
-  obj: BusinessGoodInterface
-) => {
-  const ingredientsArrayValidationResult =
-    ingredientsArrayValidation(ingredients);
-  if (ingredientsArrayValidationResult === true) {
-    let ingredientsArray = [];
-
-    for (let ingredient of ingredients) {
-      const supplierGoodDoc = await SupplierGood.findOne({
-        _id: ingredient.ingredient,
-      })
-        .select("measurementUnit pricePerUnit allergens")
-        .lean();
-
-      let ingredientObj = {
-        ingredient: ingredient.ingredient,
-        measurementUnit: ingredient.measurementUnit || "",
-        requiredQuantity: ingredient.requiredQuantity || undefined,
-        costOfRequiredQuantity: ingredient.costOfRequiredQuantity || undefined,
-      };
-
-      if (ingredient.measurementUnit && ingredient.requiredQuantity) {
-        ingredientObj.costOfRequiredQuantity = calculateCostOfRequiredQuantity(
-          ingredient,
-          supplierGoodDoc
-        );
-      }
-      ingredientsArray.push(ingredientObj);
-
-      // add allergens from supplier goods to allergensArray if they are not already there
-      //@ts-ignore
-      (supplierGoodDoc?.allergens as string[] | undefined)?.forEach(
-        (allergen) => {
-          if (!allergensArray?.includes(allergen)) {
-            allergensArray?.push(allergen);
-          }
-        }
-      );
-    }
-
-    obj.costPrice = ingredientsArray.reduce((acc, ingredient) => {
-      if (ingredient.costOfRequiredQuantity) {
-        acc += ingredient.costOfRequiredQuantity;
-      }
-      return acc;
-    }, 0);
-
-    // @ts-ignore
-    obj.ingredients = ingredientsArray.length ? ingredientsArray : undefined;
-    obj.setMenu = undefined;
-    return true;
-  } else {
-    return ingredientsArrayValidationResult;
-  }
-};
-
-// helper function to set setMenu
-const setMenuHelper = async (
-  setMenu: Types.ObjectId[],
-  allergensArray: string[] | undefined,
-  obj: BusinessGoodInterface
-) => {
-  if (Array.isArray(setMenu) && setMenu.length) {
-    const businessGoods = await BusinessGood.find({
-      _id: { $in: setMenu },
-    })
-      .select("costPrice allergens")
-      .lean();
-
-    obj.costPrice = businessGoods.reduce(
-      (acc, businessGood) => acc + businessGood.costPrice,
-      0
-    );
-
-    // add allergens from supplier goods to allergensArray if they are not already there
-    businessGoods.forEach((businessGood) => {
-      businessGood.allergens.forEach((allergen: string) => {
-        if (!allergensArray?.includes(allergen)) {
-          allergensArray?.push(allergen);
-        }
-      });
-    });
-
-    obj.setMenu = setMenu;
-    obj.ingredients = undefined;
-    return true;
-  } else {
-    return "Invalid setMenu array";
-  }
-};
+import { IBusinessGood } from "@/app/interface/IBusinessGood";
+import { ingredientsHelper } from "./utils/ingredientsHelper";
+import { setMenuHelper } from "./utils/setMenuHelper";
 
 // @desc    Get all business goods
 // @route   GET /businessGoods
@@ -222,7 +48,7 @@ export const POST = async (req: Request) => {
       allergens,
       image,
       deliveryTime,
-    } = req.body as unknown as BusinessGoodInterface;
+    } = req.body as unknown as IBusinessGood;
 
     // check required fields
     if (
@@ -278,7 +104,7 @@ export const POST = async (req: Request) => {
     }
 
     // create a business good object
-    let businessGoodObj: BusinessGoodInterface = {
+    let businessGoodObj: IBusinessGood = {
       name,
       keyword,
       category,

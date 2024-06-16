@@ -51,7 +51,7 @@ const userDailySalesReportArraySchema = new Schema({
   userCashSales: { type: Number }, // sum of sales in cash
   userCardsSales: {
     cardDetails: [cardSalesArraySchema],
-    sunCardsSales: { type: Number },
+    sumCardsSales: { type: Number },
   }, // array with all card sales by branch and sum of all cards sales
   userCryptosSales: {
     cryptoDetails: [criptoSalesArraySchema],
@@ -80,8 +80,8 @@ const userDailySalesReportArraySchema = new Schema({
   userGoodsSoldArray: [userGoodsSchema], // array of goods sold by the user
   userGoodsVoidArray: [userGoodsSchema], // array of goods void by the user
   userGoodsInvitedArray: [userGoodsSchema], // array of goods invited by the user
-  userTotalVoid: { type: Number }, // sun of the price of the voided items
-  userTotalInvited: { type: Number }, // sun of the price of the invited items
+  userTotalVoid: { type: Number }, // sum of the price of the voided items
+  userTotalInvited: { type: Number }, // sum of the price of the invited items
 }); // individual sales report of the user
 
 const dailySalesReportSchema = new Schema(
@@ -89,7 +89,7 @@ const dailySalesReportSchema = new Schema(
     // required fields
     dayReferenceNumber: { type: Number, required: true, unique: true }, // This is the reference number of the work day, we cant use dates to refer to work day because one work day can be closed in the next day, therefore we need a reference number to refer to the work day report.
     dailyReportOpen: { type: Boolean, required: true, default: true }, // This is the status of the daily report, if it is open or closed, if it is open the user can still add sales to the report, if it is closed the user can only see the report. Once close all the calculations will be done and the report will be closed for editing.
-    countdownTimeToClose: { type: Date, required: true }, // This date is the limit date to close the daily report, it usualy will be the next 24 hours after the current dayReferenceNumber is created.
+    countdownTimeToClose: { type: Number, required: true }, // This date is the limit date to close the daily report, it usualy will be the next 24 hours after the current dayReferenceNumber is created.
     usersDailySalesReport: {
       type: [userDailySalesReportArraySchema],
       required: true,
@@ -101,7 +101,7 @@ const dailySalesReportSchema = new Schema(
     },
 
     // optional fields for creation, required for update
-    totalCashSales: { type: Number }, // sun of all users cash sales
+    totalCashSales: { type: Number }, // sum of all users cash sales
     totalCardsSales: {
       cardDetails: [cardSalesArraySchema],
       sunCardsSales: { type: Number },
@@ -119,13 +119,13 @@ const dailySalesReportSchema = new Schema(
     totaltips: { type: Number }, // sum of all users tips
     totalCost: { type: Number }, // sum of all goods costPrice incluiding voids and invitaions
     profit: { type: Number }, // difference between totalNetPaid and totalCost (totalNetPaid - totalCost)
-    businessTotalCustomersServed: { type: Number }, // sun of all users customersServed
+    businessTotalCustomersServed: { type: Number }, // sum of all users customersServed
     businessAverageCustomersExpended: { type: Number }, // average of all users customersExpended (totalNetPaid / businessTotalCustomersServed)
     businessGoodsSoldArray: [userGoodsSchema], // array of goods sold on the day
     businessGoodsVoidArray: [userGoodsSchema], // array of goods void on the day
     businessGoodsInvitedArray: [userGoodsSchema], // array of goods invited on the day
-    businessTotalVoidPrice: { type: Number }, // sun of the price of the void items
-    businessTotalInvitedPrice: { type: Number }, // sun of the price of the invited items
+    businessTotalVoidPrice: { type: Number }, // sum of the price of the void items
+    businessTotalInvitedPrice: { type: Number }, // sum of the price of the invited items
     posSystemAppComission: { type: Number }, // comission of the POS system app
   },
   { timestamps: true, minimize: false }

@@ -4,60 +4,10 @@ import { hash } from "bcrypt";
 
 // imported models
 import Business from "@/lib/models/business";
+import { IBusiness } from "@/app/interface/IBusiness";
+import { addressValidation } from "./utils/addressValidation";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
-
-interface AddressInterface {
-  country: string;
-  state: string;
-  city: string;
-  street: string;
-  buildingNumber: string;
-  postCode: string;
-  region?: string;
-  additionalDetails?: string;
-  coordinates?: [number, number];
-  [key: string]: string | number | undefined | [number, number];
-}
-
-interface BusinessInterface {
-  tradeName: string;
-  legalName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  taxNumber: string;
-  currencyTrade: string;
-  subscription: string;
-  address: AddressInterface;
-  contactPerson?: string;
-  businessTables?: string[] | undefined;
-}
-
-// helper function to validate address object
-const addressValidation = (address: AddressInterface) => {
-  // check address is an object
-  if (typeof address !== "object" || address === null) {
-    return "Address must be a non-null object";
-  }
-
-  // required fields
-  const requiredFields = [
-    "country",
-    "state",
-    "city",
-    "street",
-    "buildingNumber",
-    "postCode",
-  ];
-
-  // check required fields
-  const missingFields = requiredFields.filter(
-    (field) => !(field in address) || address[field] === undefined
-  );
-
-  return missingFields.length > 0 ? "Invalid address object fields" : true;
-};
 
 // @desc    Get all businesses
 // @route   GET /business
@@ -93,7 +43,7 @@ export const CREATE = async (req: Request) => {
       subscription,
       address,
       contactPerson,
-    } = req.body as unknown as BusinessInterface;
+    } = req.body as unknown as IBusiness;
 
     // connect before first call to DB
     await connectDB();
@@ -142,7 +92,7 @@ export const CREATE = async (req: Request) => {
     const hashedPassword = await hash(password, 10);
 
     // create business object with required fields
-    const businessObj: BusinessInterface = {
+    const businessObj: IBusiness = {
       tradeName,
       legalName,
       email,

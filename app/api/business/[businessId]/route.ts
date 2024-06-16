@@ -5,8 +5,10 @@ import { Types } from "mongoose";
 
 // imported models
 import Business from "@/lib/models/business";
-// import BusinessGood from "@/lib/models/businessGood";
-// import DailySalesReport from "@/lib/models/dailySalesReport";
+import BusinessGood from "@/lib/models/businessGood";
+import DailySalesReport from "@/lib/models/dailySalesReport";
+import { IBusiness } from "@/app/interface/IBusiness";
+import { addressValidation } from "../utils/addressValidation";
 // import Inventory from "@/lib/models/inventory";
 // import Notification from "@/lib/models/notification";
 // import Order from "@/lib/models/order";
@@ -19,58 +21,6 @@ import Business from "@/lib/models/business";
 // import User from "@/lib/models/user";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
-
-interface AddressInterface {
-  country: string;
-  state: string;
-  city: string;
-  street: string;
-  buildingNumber: string;
-  postCode: string;
-  region?: string;
-  additionalDetails?: string;
-  coordinates?: [number, number];
-  [key: string]: string | number | undefined | [number, number];
-}
-
-interface BusinessInterface {
-  tradeName: string;
-  legalName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  taxNumber: string;
-  currencyTrade: string;
-  subscription: string;
-  address: AddressInterface;
-  contactPerson?: string;
-  businessTables?: string[] | undefined;
-}
-
-// helper function to validate address object
-const addressValidation = (address: AddressInterface) => {
-  // check address is an object
-  if (typeof address !== "object" || address === null) {
-    return "Address must be a non-null object";
-  }
-
-  // required fields
-  const requiredFields = [
-    "country",
-    "state",
-    "city",
-    "street",
-    "buildingNumber",
-    "postCode",
-  ];
-
-  // check required fields
-  const missingFields = requiredFields.filter(
-    (field) => !(field in address) || address[field] === undefined
-  );
-
-  return missingFields.length > 0 ? "Invalid address object fields" : true;
-};
 
 // @desc    Get business by businessId
 // @route   GET /business/:businessId
@@ -136,7 +86,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       address,
       contactPerson,
       businessTables,
-    } = req.body as unknown as BusinessInterface;
+    } = req.body as unknown as IBusiness;
 
     // check if id is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
@@ -149,7 +99,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     await connectDB();
 
     // check if business exists
-    const business: BusinessInterface | null = await Business.findById({
+    const business: IBusiness | null = await Business.findById({
       businessId,
     }).lean();
     if (!business) {
@@ -185,7 +135,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     }
 
     // prepare update object
-    const updateBusinessObj: BusinessInterface = {
+    const updateBusinessObj: IBusiness = {
       tradeName: tradeName || business.tradeName,
       legalName: legalName || business.legalName,
       email: email || business.email,
@@ -261,8 +211,8 @@ export const DELETE = async (context: { params: any }) => {
       );
     } else {
       // delete all related data
-      //   await BusinessGood.deleteMany({ business: businessId });
-      //   await DailySalesReport.deleteMany({ business: businessId });
+        await BusinessGood.deleteMany({ business: businessId });
+        await DailySalesReport.deleteMany({ business: businessId });
       //   await Inventory.deleteMany({ business: businessId });
       //   await Notification.deleteMany({ business: businessId });
       //   await Order.deleteMany({ business: businessId });
