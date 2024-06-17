@@ -23,14 +23,13 @@ const promotionSchema = new Schema(
   {
     // required fields
     promotionName: { type: String, required: true }, // name of the promotion
-    dateRange: {
-      startDate: { type: Date, required: true }, // start date of the promotion without time
-      endDate: { type: Date, required: true }, // end date of the promotion without time
-    }, // date range of the promotion
-    timeRange: {
-      startTime: { type: String, required: true }, // start time of the promotion
-      endTime: { type: String, required: true }, // end time of the promotion
-    }, // time range of the promotion
+    promotionPeriod: {
+      type: {
+        start: { type: Date, required: true }, // Combined start date and time
+        end: { type: Date, required: true }, // Combined end date and time
+      },
+      required: true,
+    }, // object with the range of the promotion
     weekDays: {
       type: [String],
       enum: weekDays,
