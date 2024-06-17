@@ -7,6 +7,7 @@ import { updateDynamicCountFromLastInventory } from "../../supplierGoods/utils/u
 // import models
 import Inventory from "@/lib/models/inventory";
 import SupplierGood from "@/lib/models/supplierGood";
+import { Types } from "mongoose";
 
 // @desc    Get inventory by ID
 // @route   GET /inventories/:inventoryId
@@ -17,6 +18,14 @@ export const GET = async (context: { params: any }) => {
     await connectDB();
 
     const inventoryId = context.params.inventoryId;
+    // check if the inventoryId is valid
+    if (!Types.ObjectId.isValid(inventoryId)) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID" }),
+        { status: 400 }
+      );
+    }
+
     const inventory = await Inventory.findById(inventoryId)
       .populate(
         "inventoryGoods.supplierGood",
@@ -37,12 +46,9 @@ export const GET = async (context: { params: any }) => {
 };
 
 // @desc    Update inventory by ID
-// @route   PUT /inventories/:inventoryId
+// @route   PATCH /inventories/:inventoryId
 // @access  Private
-export const PATCH = async (
-  req: Request,
-  context: { params: any }
-) => {
+export const PATCH = async (req: Request, context: { params: any }) => {
   try {
     // connect before first call to DB
     await connectDB();
@@ -52,6 +58,14 @@ export const PATCH = async (
     // UPDATE final inventory, once the inventory is marked as setFinalCount. The supplierGood.dynamicCountFromLastInventory will be updated to the currentCountQuantity
 
     const inventoryId = context.params.inventoryId;
+    // check if the inventoryId is valid
+    if (!Types.ObjectId.isValid(inventoryId)) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID" }),
+        { status: 400 }
+      );
+    }
+
     const { inventoryGoods, doneBy, setFinalCount } =
       req.body as unknown as IInventory;
 
@@ -204,6 +218,13 @@ export const DELETE = async (context: { params: any }) => {
     await connectDB();
 
     const inventoryId = context.params.inventoryId;
+    // check if the inventoryId is valid
+    if (!Types.ObjectId.isValid(inventoryId)) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID" }),
+        { status: 400 }
+      );
+    }
 
     // delete inventory and check if it existed
     const result = await Inventory.deleteOne({ _id: inventoryId });

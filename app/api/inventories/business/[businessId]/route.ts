@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 
 // import models
 import Inventory from "@/lib/models/inventory";
+import { Types } from "mongoose";
 
 // @desc    Get inventories by business ID
 // @route   GET /inventories/business/:businessId
@@ -13,6 +14,14 @@ export const GET = async (context: { params: any }) => {
     await connectDB();
 
     const businessId = context.params.id;
+    // check if the businessId is valid
+    if (!Types.ObjectId.isValid(businessId)) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID" }),
+        { status: 400 }
+      );
+    }
+
     // just get basic information user visualisation, not the whole inventory
     // user will be able to click on the inventory to see the details
     const inventories = await Inventory.find({ business: businessId })
