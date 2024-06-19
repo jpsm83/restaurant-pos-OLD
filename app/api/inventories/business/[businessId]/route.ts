@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 
 // import models
-import Inventory from "@/lib/models/inventory";
+import Inventory from "@/app/lib/models/inventory";
 import { Types } from "mongoose";
 
 // @desc    Get inventories by business ID and range of dates

@@ -1,9 +1,9 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import models
-import DailySalesReport from "@/lib/models/dailySalesReport";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // @desc    Get daily reports by business ID, startDate and endDate
 // @route   GET /dailySalesReports/business/:businessId?startDate=<date>&endDate=<date>

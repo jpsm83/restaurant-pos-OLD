@@ -1,4 +1,4 @@
-import { IEmployee } from "@/app/interface/ISchedule";
+import { IEmployee } from "@/app/lib/interface/ISchedule";
 
 export const employeesValidation = (employees: IEmployee[]) => {
     //    employees: [

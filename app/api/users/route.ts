@@ -1,11 +1,11 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 
 // imported models
-import User from "@/lib/models/user";
+import User from "@/app/lib/models/user";
 import { addressValidation } from "./utils/addressValidation";
-import { IUser } from "@/app/interface/IUser";
+import { IUser } from "@/app/lib/interface/IUser";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
 
 // @desc    Get all users

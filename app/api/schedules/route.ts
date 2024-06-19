@@ -1,9 +1,9 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // imported models
-import Schedule from "@/lib/models/schedule";
-import { ISchedule } from "@/app/interface/ISchedule";
+import Schedule from "@/app/lib/models/schedule";
+import { ISchedule } from "@/app/lib/interface/ISchedule";
 import { employeesValidation } from "./utils/employeesValidation";
 
 // @desc    Get all schedules

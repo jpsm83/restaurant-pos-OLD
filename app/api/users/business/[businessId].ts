@@ -1,8 +1,8 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // imported models
-import User from "@/lib/models/user";
+import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
 
 // @desc   Get user by bussiness ID

@@ -1,5 +1,5 @@
-import { IPaymentMethod } from "@/app/interface/IOrder";
-import connectDB from "@/lib/db";
+import { IPaymentMethod } from "@/app/lib/interface/IOrder";
+import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import { validatePaymentMethodArray } from "./validatePaymentMethodArray";

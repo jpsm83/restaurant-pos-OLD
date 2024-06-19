@@ -1,14 +1,10 @@
-import { IAddress } from "@/app/interface/IAddress";
-import { NextResponse } from "next/server";
+import { IAddress } from "@/app/lib/interface/IAddress";
 
 // helper function to validate address object
 export const addressValidation = (address: IAddress) => {
   // check address is an object
   if (typeof address !== "object" || address === null)
-    return new NextResponse(
-      JSON.stringify({ message: "Address must be an object" }),
-      { status: 400 }
-    );
+    return "Address must be an object!";
 
   // required fields
   const requiredFields = [
@@ -21,9 +17,11 @@ export const addressValidation = (address: IAddress) => {
   ];
 
   // check required fields
-  requiredFields.every((field) => {
-    return address.hasOwnProperty(field) && address[field] !== undefined;
-  });
+  const missingField = requiredFields.find(
+    (field) => !address.hasOwnProperty(field) || address[field] === undefined
+  );
+  
+  if (missingField) return `${missingField} on address is required!`;
 
   return true;
 };

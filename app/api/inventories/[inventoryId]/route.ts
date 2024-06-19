@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { IInventory, IInventoryGood } from "@/app/interface/IInventory";
-import { ISupplierGood } from "@/app/interface/ISupplierGood";
-import connectDB from "@/lib/db";
+import { IInventory, IInventoryGood } from "@/app/lib/interface/IInventory";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import connectDB from "@/app/lib/db";
 import { updateDynamicCountFromLastInventory } from "../../supplierGoods/utils/updateDynamicCountFromLastInventory";
 
 // import models
-import Inventory from "@/lib/models/inventory";
-import SupplierGood from "@/lib/models/supplierGood";
+import Inventory from "@/app/lib/models/inventory";
+import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
 
 // @desc    Get inventory by ID

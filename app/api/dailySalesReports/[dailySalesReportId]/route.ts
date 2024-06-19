@@ -1,10 +1,10 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import models
-import DailySalesReport from "@/lib/models/dailySalesReport";
-import { ICardSales, ICryptoSales, IDailySalesReport, IOtherSales, IUserDailySalesReport } from "@/app/interface/IDailySalesReport";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import { ICardSales, ICryptoSales, IDailySalesReport, IOtherSales, IUserDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import { updateUserDailySalesReportGeneric } from "../utils/updateUserDailySalesReportGeneric";
 
 // @desc    Get daily report by ID

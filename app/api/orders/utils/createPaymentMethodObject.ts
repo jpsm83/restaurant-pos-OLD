@@ -1,4 +1,4 @@
-import { IPaymentMethod } from "@/app/interface/IOrder";
+import { IPaymentMethod } from "@/app/lib/interface/IOrder";
 
 export const createPaymentMethodObject = (
     paymentMethod: IPaymentMethod,

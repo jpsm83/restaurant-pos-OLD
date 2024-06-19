@@ -1,6 +1,6 @@
-import connectDB from "@/lib/db";
-import Notification from "@/lib/models/notification";
-import User from "@/lib/models/user";
+import connectDB from "@/app/lib/db";
+import Notification from "@/app/lib/models/notification";
+import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 

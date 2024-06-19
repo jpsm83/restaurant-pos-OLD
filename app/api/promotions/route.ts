@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 
 // imported models
-import Promotion from "@/lib/models/promotion";
-import { IPromotion } from "@/app/interface/IPromotion";
+import Promotion from "@/app/lib/models/promotion";
+import { IPromotion } from "@/app/lib/interface/IPromotion";
 import { validateDateAndTime } from "./utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "./utils/validateDaysOfTheWeek";
 

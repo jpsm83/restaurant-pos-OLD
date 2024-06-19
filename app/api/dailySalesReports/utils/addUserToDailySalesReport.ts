@@ -1,5 +1,5 @@
-import { IDailySalesReport } from "@/app/interface/IDailySalesReport";
-import DailySalesReport from "@/lib/models/dailySalesReport";
+import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 

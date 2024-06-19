@@ -1,15 +1,15 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import models
-import BusinessGood from "@/lib/models/businessGood";
+import BusinessGood from "@/app/lib/models/businessGood";
 
 // @desc    Get business goods by business ID
 // @route   GET /businessGoods/business/:businessId
 // @access  Private
 export const GET = async (context: {
-  params: any;
+  params: { businessId: Types.ObjectId };
 }) => {
   try {
     const businessId = context.params.businessId; // Corrected to use route parameter

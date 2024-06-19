@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 
 // import models
-import SupplierGood from "@/lib/models/supplierGood";
-import { ISupplierGood } from "@/app/interface/ISupplierGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods

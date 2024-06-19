@@ -1,4 +1,4 @@
-import { IIngredients } from "@/app/interface/IBusinessGood";
+import { IIngredients } from "@/app/lib/interface/IBusinessGood";
 
 export const ingredientsArrayValidation = (
     ingredientsArray: IIngredients[]

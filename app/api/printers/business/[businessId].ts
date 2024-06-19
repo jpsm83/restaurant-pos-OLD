@@ -1,9 +1,9 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // imported models
-import Printer from "@/lib/models/printer";
+import Printer from "@/app/lib/models/printer";
 
 // @desc    Get printers by business ID
 // @route   GET /printers/business/:businessId

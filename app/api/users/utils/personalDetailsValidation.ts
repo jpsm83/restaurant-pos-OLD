@@ -1,4 +1,4 @@
-import { IPersonalDetails } from "@/app/interface/IUser";
+import { IPersonalDetails } from "@/app/lib/interface/IUser";
 import { NextResponse } from "next/server";
 
 export const personalDetailsValidation = (

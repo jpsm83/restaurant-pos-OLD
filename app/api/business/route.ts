@@ -1,11 +1,12 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 
 // imported models
-import Business from "@/lib/models/business";
-import { IBusiness } from "@/app/interface/IBusiness";
-import { addressValidation } from "./utils/addressValidation";
+import Business from "@/app/lib/models/business";
+import { IBusiness } from "@/app/lib/interface/IBusiness";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { addressValidation } from "@/app/utils/addressValidation";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -18,12 +19,17 @@ export const GET = async () => {
     await connectDB();
     const business = await Business.find().select("-password").lean();
     return !business.length
-      ? new NextResponse(JSON.stringify({ message: "No business found" }), {
-          status: 404,
+      ? new NextResponse("No business found", {
+          status: 200,
         })
-      : new NextResponse(JSON.stringify(business), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(business), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  } catch (error) {
+    return handleApiError("Get all business failed!", error);
   }
 };
 
@@ -43,10 +49,8 @@ export const POST = async (req: Request) => {
       subscription,
       address,
       contactPerson,
-    } = req.body as unknown as IBusiness;
-
-    // connect before first call to DB
-    await connectDB();
+      businessTables,
+    } = (await req.json()) as IBusiness;
 
     // check required fields
     if (
@@ -60,19 +64,24 @@ export const POST = async (req: Request) => {
       !subscription ||
       !address
     ) {
-      return new NextResponse(
-        JSON.stringify({ message: "Missing required fields" }),
-        { status: 400 }
-      );
+      return new NextResponse("Missing required fields!", { status: 400 });
     }
 
     // check email format
     if (!emailRegex.test(email)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid email format" }),
-        { status: 400 }
-      );
+      return new NextResponse("Invalid email format!", { status: 400 });
     }
+
+    // add address fields
+    const validAddress = addressValidation(address);
+    if (validAddress !== true) {
+      return new NextResponse(validAddress, {
+        status: 400,
+      });
+    }
+
+    // connect before first call to DB
+    await connectDB();
 
     // check for duplicate legalName, email or taxNumber
     const duplicateBusiness = await Business.findOne({
@@ -81,9 +90,7 @@ export const POST = async (req: Request) => {
 
     if (duplicateBusiness) {
       return new NextResponse(
-        JSON.stringify({
-          message: `Business ${legalName}, ${email} or ${taxNumber} already exists!`,
-        }),
+        `Business ${legalName}, ${email} or ${taxNumber} already exists!`,
         { status: 409 }
       );
     }
@@ -92,7 +99,7 @@ export const POST = async (req: Request) => {
     const hashedPassword = await hash(password, 10);
 
     // create business object with required fields
-    const businessObj: IBusiness = {
+    const newBusiness = {
       tradeName,
       legalName,
       email,
@@ -102,26 +109,15 @@ export const POST = async (req: Request) => {
       currencyTrade,
       subscription,
       address,
-      // add non-required fields if they exist
-      ...(contactPerson && { contactPerson }),
+      contactPerson: contactPerson || undefined,
+      businessTables: businessTables || undefined,
     };
 
-    // add address fields
-    const validAddress = addressValidation(address);
-    if (validAddress !== true) {
-      return new NextResponse(JSON.stringify({ message: validAddress }), {
-        status: 400,
-      });
-    }
-
     // Create new business
-    await Business.create(businessObj);
-    return new NextResponse(
-      JSON.stringify({ message: `Business ${legalName} created` }),
-      { status: 201 }
-    );
-  } catch (error: any) {
-    // Handle unexpected errors
-    return new NextResponse("Error: " + error, { status: 500 });
+    await Business.create(newBusiness);
+
+    return new NextResponse(`Business ${legalName} created`, { status: 201 });
+  } catch (error) {
+    return handleApiError("Create business failed!", error);
   }
 };

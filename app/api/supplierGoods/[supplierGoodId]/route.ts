@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 
 // import models
-import SupplierGood from "@/lib/models/supplierGood";
-import BusinessGood from "@/lib/models/businessGood";
-import Inventory from "@/lib/models/inventory";
+import SupplierGood from "@/app/lib/models/supplierGood";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Inventory from "@/app/lib/models/inventory";
 import { Types } from "mongoose";
-import { ISupplierGood } from "@/app/interface/ISupplierGood";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 
 // @desc    Get supplier good by ID
 // @route   GET /supplierGoods/:supplierGoodId

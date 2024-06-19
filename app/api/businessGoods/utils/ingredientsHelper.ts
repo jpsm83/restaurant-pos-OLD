@@ -1,6 +1,6 @@
-import { IBusinessGood, IIngredients } from "@/app/interface/IBusinessGood";
+import { IBusinessGood, IIngredients } from "@/app/lib/interface/IBusinessGood";
 import { ingredientsArrayValidation } from "./ingredientsArrayValidation";
-import SupplierGood from "@/lib/models/supplierGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
 import { calculateCostOfRequiredQuantity } from "./calculateCostOfRequiredQuantity";
 
 // helper function to set ingredients

@@ -1,5 +1,5 @@
-import { IBusinessGood } from "@/app/interface/IBusinessGood";
-import BusinessGood from "@/lib/models/businessGood";
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+import BusinessGood from "@/app/lib/models/businessGood";
 import { Types } from "mongoose";
 
 // helper function to set setMenu

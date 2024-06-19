@@ -1,11 +1,11 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import models
-import DailySalesReport from "@/lib/models/dailySalesReport";
-import Order from "@/lib/models/order";
-import Table from "@/lib/models/table";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import Order from "@/app/lib/models/order";
+import Table from "@/app/lib/models/table";
 
 interface IUserGoods {
   good: Types.ObjectId;

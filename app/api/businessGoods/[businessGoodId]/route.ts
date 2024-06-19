@@ -1,19 +1,19 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import models
-import BusinessGood from "@/lib/models/businessGood";
-import Promotion from "@/lib/models/promotion";
-import Order from "@/lib/models/order";
-import { IBusinessGood } from "@/app/interface/IBusinessGood";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Promotion from "@/app/lib/models/promotion";
+import Order from "@/app/lib/models/order";
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
 import { ingredientsHelper } from "../utils/ingredientsHelper";
 import { setMenuHelper } from "../utils/setMenuHelper";
 
 // @desc    Get business good by ID
 // @route   GET /businessGoods/:businessGoodId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (context: { params: { businessGoodId: Types.ObjectId } }) => {
   try {
     const businessGoodId = context.params.businessGoodId;
 
@@ -49,7 +49,7 @@ export const GET = async (context: { params: any }) => {
 // @access  Private
 export const PATCH = async (
   req: Request,
-  context: { params: any }
+  context: { params: { businessGoodId: Types.ObjectId } }
 ) => {
   try {
     const businessGoodId = context.params.businessGoodId;
@@ -220,7 +220,7 @@ export const PATCH = async (
 // @desc    Delete business good by ID
 // @route   DELETE /businessGoods/:businessGoodId
 // @access  Private
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (context: { params: { businessGoodId: Types.ObjectId } }) => {
   try {
     const businessGoodId = context.params.businessGoodId;
 

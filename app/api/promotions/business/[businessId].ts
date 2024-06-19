@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 
 // imported models
-import Promotion from "@/lib/models/promotion";
+import Promotion from "@/app/lib/models/promotion";
 import { Types } from "mongoose";
 
 // when bill is printed, check if orders have a promotion base on their order time

@@ -1,9 +1,9 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // imported models
-import Notification from "@/lib/models/notification";
-import User from "@/lib/models/user";
+import Notification from "@/app/lib/models/notification";
+import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
 
 // @desc    Get all notifications by user ID

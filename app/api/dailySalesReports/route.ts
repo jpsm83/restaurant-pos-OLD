@@ -1,8 +1,8 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // import models
-import DailySalesReport from "@/lib/models/dailySalesReport";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // @desc    Get all daily reports
 // @route   GET /dailySalesReports

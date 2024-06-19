@@ -1,9 +1,9 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import models
-import Order from "@/lib/models/order";
+import Order from "@/app/lib/models/order";
 
 // @desc    Get orders user ID
 // @route   GET /orders/user/:userId

@@ -1,16 +1,16 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
-import { ITable } from "@/app/interface/ITable";
+import { ITable } from "@/app/lib/interface/ITable";
 
 // import functions
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 
 // import models
-import Business from "@/lib/models/business";
-import Table from "@/lib/models/table";
-import Order from "@/lib/models/order";
-import DailySalesReport from "@/lib/models/dailySalesReport";
+import Business from "@/app/lib/models/business";
+import Table from "@/app/lib/models/table";
+import Order from "@/app/lib/models/order";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // @desc    Get tables by ID
 // @route   GET /tables/:tableId

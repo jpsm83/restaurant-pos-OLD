@@ -1,4 +1,4 @@
-import SupplierGood from "@/lib/models/supplierGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
 
 // update dynamicCountFromLastInventory base on inventory.currentCountQuantity

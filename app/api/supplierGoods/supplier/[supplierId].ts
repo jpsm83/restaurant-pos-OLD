@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 
 // import models
-import SupplierGood from "@/lib/models/supplierGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
 
 // @desc    Get supplier goods by supplier ID

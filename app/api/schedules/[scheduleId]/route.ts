@@ -1,10 +1,10 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // imported models
-import Schedule from "@/lib/models/schedule";
+import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";
-import { ISchedule } from "@/app/interface/ISchedule";
+import { ISchedule } from "@/app/lib/interface/ISchedule";
 import { employeesValidation } from "../utils/employeesValidation";
 
 // @desc    Get schedule by ID

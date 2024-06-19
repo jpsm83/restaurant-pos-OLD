@@ -1,6 +1,63 @@
 import { Schema, model, models } from "mongoose";
 
-const category = ["Food", "Set Menu", "Beverage", "Merchandise"];
+const mainCategories = ["Food", "Set Menu", "Beverage", "Merchandise"];
+
+const foodCategories = [
+  "Set menu",
+  "Pastries",
+  "Sandwiches",
+  "Snacks",
+  "Burgers",
+  "Gluten-free",
+  "Add-ons", // for example, extra cheese, extra bacon, etc.
+  "Main",
+  "Appetizer",
+  "Starter",
+  "Entrée",
+  "Pasta",
+  "Pizza",
+  "Salad",
+  "Dessert",
+  "Snack",
+  "Other",
+];
+
+const beverageCategories = [
+  "Red Wine",
+  "White Wine",
+  "Rose Wine",
+  "Sparkling Wine",
+  "Champagne",
+  "Beer",
+  "Vodka",
+  "Whiskey",
+  "Rum",
+  "Gin",
+  "Tequila",
+  "Brandy",
+  "Cognac",
+  "Liqueur",
+  "Juices",
+  "Water",
+  "Milk",
+  "Cocktail",
+  "Non-Alcoholic Wine",
+  "Non-Alcoholic Beer",
+  "Energy Drinks",
+  "Coffee",
+  "Tea",
+  "Soft Drinks",
+  "Others",
+];
+
+const merchandiseCategories = [
+  "Clothing",
+  "Accessories",
+  "Toys & Games",
+  "Health & Beauty",
+  "Souvenirs",
+  "Others",
+];
 
 const measurementUnit = [
   "mg",
@@ -56,69 +113,44 @@ const allergen = [
   "Molluscs",
 ];
 
-// use arrow function to preserve the lexical scope and access the 'this' context
-const subcategory = () => {
-  // @ts-ignore
-  if (this.category === "Food" || this.category === "Set Menu") {
-    return [
-      "Set menu",
-      "Pastries",
-      "Sandwiches",
-      "Snacks",
-      "Burgers",
-      "Gluten-free",
-      "Add-ons", // for example, extra cheese, extra bacon, etc.
-      "Main",
-      "Appetizer",
-      "Starter",
-      "Entrée",
-      "Pasta",
-      "Pizza",
-      "Salad",
-      "Dessert",
-      "Snack",
-      "Other",
-    ];
-    // @ts-ignore
-  } else if (this.category === "Beverage") {
-    return [
-      "Red Wine",
-      "White Wine",
-      "Rose Wine",
-      "Sparkling Wine",
-      "Champagne",
-      "Beer",
-      "Vodka",
-      "Whiskey",
-      "Rum",
-      "Gin",
-      "Tequila",
-      "Brandy",
-      "Cognac",
-      "Liqueur",
-      "Juices",
-      "Water",
-      "Milk",
-      "Cocktail",
-      "Non-Alcoholic Wine",
-      "Non-Alcoholic Beer",
-      "Energy Drinks",
-      "Coffee",
-      "Tea",
-      "Soft Drinks",
-      "Others",
-    ];
-  } else {
-    return [
-      "Clothing",
-      "Accessories",
-      "Toys & Games",
-      "Health & Beauty",
-      "Souvenirs",
-      "Others",
-    ];
-  }
-};
+const categorySchema = new Schema({
+  mainCategory: {
+    type: String,
+    enum: mainCategories,
+    required: true,
+  }, // main category of the business good
+  setMenuSubCategory: {
+    type: String,
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Set Menu";
+    },
+  }, // subcategories for the "Set Menu" category
+  foodSubCategory: {
+    type: String,
+    enum: [foodCategories],
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Food";
+    },
+  }, // subcategories for the "Food" category
+  beverageSubCategory: {
+    type: String,
+    enum: [beverageCategories],
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Beverage";
+    },
+  }, // subcategories for the "Beverage" category
+  merchandiseSubCategory: {
+    type: String,
+    enum: [merchandiseCategories],
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Merchandise";
+    },
+  }, // subcategories for the "Merchandise" category
+});
 
 const businessGoodSchema = new Schema(
   {
@@ -126,15 +158,9 @@ const businessGoodSchema = new Schema(
     name: { type: String, required: true }, // name of the business good
     keyword: { type: String, required: true }, // keyword for search "burger", "sides", "beer"
     category: {
-      type: String,
-      enum: category,
+      type: categorySchema,
       required: true,
     }, // category of the business good "Food"
-    subCategory: {
-      type: String,
-      enum: subcategory(),
-      required: true,
-    }, // subcategory of the business good "Main"
     onMenu: { type: Boolean, required: true, default: true }, // if the business good is on the menu right now
     available: { type: Boolean, required: true, default: true }, // if the business good is available for sale
     sellingPrice: { type: Number, required: true }, // price for customers

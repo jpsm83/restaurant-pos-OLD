@@ -1,4 +1,4 @@
-import { IIngredients } from "@/app/interface/IBusinessGood";
+import { IIngredients } from "@/app/lib/interface/IBusinessGood";
 import convert from "convert-units";
 
 export const calculateCostOfRequiredQuantity = (

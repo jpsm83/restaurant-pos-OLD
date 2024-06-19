@@ -1,9 +1,9 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // import models
-import BusinessGood from "@/lib/models/businessGood";
-import { IBusinessGood } from "@/app/interface/IBusinessGood";
+import BusinessGood from "@/app/lib/models/businessGood";
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
 import { ingredientsHelper } from "./utils/ingredientsHelper";
 import { setMenuHelper } from "./utils/setMenuHelper";
 

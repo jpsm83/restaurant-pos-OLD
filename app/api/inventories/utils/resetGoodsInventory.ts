@@ -1,9 +1,9 @@
-import Inventory from "@/lib/models/inventory";
+import Inventory from "@/app/lib/models/inventory";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import { updateDynamicCountFromLastInventory } from "../../supplierGoods/utils/updateDynamicCountFromLastInventory";
-import { IInventoryGood } from "@/app/interface/IInventory";
-import connectDB from "@/lib/db";
+import { IInventoryGood } from "@/app/lib/interface/IInventory";
+import connectDB from "@/app/lib/db";
 
 export const resetGoodsInventory = async (
   inventoryId: Types.ObjectId,

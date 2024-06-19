@@ -1,16 +1,16 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
-import { ITable } from "@/app/interface/ITable";
-import { IDailySalesReport } from "@/app/interface/IDailySalesReport";
+import { ITable } from "@/app/lib/interface/ITable";
+import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // import functions
 import { createDailySalesReport } from "../dailySalesReports/utils/createDailySalesReport";
 import { addUserToDailySalesReport } from "../dailySalesReports/utils/addUserToDailySalesReport";
 
 // import models
-import Business from "@/lib/models/business";
-import Table from "@/lib/models/table";
-import DailySalesReport from "@/lib/models/dailySalesReport";
+import Business from "@/app/lib/models/business";
+import Table from "@/app/lib/models/table";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // @desc    Get all tables
 // @route   GET /tables

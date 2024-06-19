@@ -1,8 +1,8 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
 // imported models
-import Schedule from "@/lib/models/schedule";
+import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";
 
 // @desc    Get all schedules by business ID

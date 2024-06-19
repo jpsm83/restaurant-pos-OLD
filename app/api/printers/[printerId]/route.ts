@@ -1,10 +1,10 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // imported models
-import Printer from "@/lib/models/printer";
-import { IPrinter } from "@/app/interface/IPrinter";
+import Printer from "@/app/lib/models/printer";
+import { IPrinter } from "@/app/lib/interface/IPrinter";
 import { checkPrinterConnection } from "../utils/checkPrinterConnection";
 import { validPrintFor } from "../utils/validPrintFor";
 

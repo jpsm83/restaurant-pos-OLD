@@ -1,6 +1,6 @@
-import { IUserDailySalesReport } from "@/app/interface/IDailySalesReport";
-import Order from "@/lib/models/order";
-import Table from "@/lib/models/table";
+import { IUserDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
+import Order from "@/app/lib/models/order";
+import Table from "@/app/lib/models/table";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 

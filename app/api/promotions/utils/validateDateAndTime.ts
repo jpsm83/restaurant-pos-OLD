@@ -1,4 +1,4 @@
-import { IPromotionPeriod } from "@/app/interface/IPromotion";
+import { IPromotionPeriod } from "@/app/lib/interface/IPromotion";
 
 export const validateDateAndTime = (promotionPeriod: IPromotionPeriod, obj: any) => {
     if (

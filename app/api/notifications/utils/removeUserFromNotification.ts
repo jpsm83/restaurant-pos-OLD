@@ -1,4 +1,4 @@
-import Notification from "@/lib/models/notification";
+import Notification from "@/app/lib/models/notification";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 

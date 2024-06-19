@@ -1,16 +1,16 @@
-import connectDB from "@/lib/db";
+import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 
 // imported models
-import User from "@/lib/models/user";
-import Table from "@/lib/models/table";
-import Order from "@/lib/models/order";
-import Schedule from "@/lib/models/schedule";
+import User from "@/app/lib/models/user";
+import Table from "@/app/lib/models/table";
+import Order from "@/app/lib/models/order";
+import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";
-import { IUser } from "@/app/interface/IUser";
-import Notification from "@/lib/models/notification";
-import DailySalesReport from "@/lib/models/dailySalesReport";
+import { IUser } from "@/app/lib/interface/IUser";
+import Notification from "@/app/lib/models/notification";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { addressValidation } from "../utils/addressValidation";
 import { personalDetailsValidation } from "../utils/personalDetailsValidation";
 

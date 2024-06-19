@@ -1,4 +1,4 @@
-import { IPrintFor, IPrinter } from "@/app/interface/IPrinter";
+import { IPrintFor, IPrinter } from "@/app/lib/interface/IPrinter";
 
 // validate printFor object
 export const validPrintFor = (printFor: IPrintFor, obj: IPrinter) => {

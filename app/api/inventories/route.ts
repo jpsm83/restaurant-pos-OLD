@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { IInventory } from "@/app/interface/IInventory";
-import { ISupplierGood } from "@/app/interface/ISupplierGood";
-import connectDB from "@/lib/db";
+import { IInventory } from "@/app/lib/interface/IInventory";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import connectDB from "@/app/lib/db";
 
 // import models
-import Inventory from "@/lib/models/inventory";
-import SupplierGood from "@/lib/models/supplierGood";
+import Inventory from "@/app/lib/models/inventory";
+import SupplierGood from "@/app/lib/models/supplierGood";
 
 // @desc    Get all inventories
 // @route   GET /inventories
