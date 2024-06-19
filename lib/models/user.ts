@@ -31,7 +31,6 @@ const personalDetailsSchema = new Schema({
   // required fields
   firstName: { type: String, required: true }, // first name
   lastName: { type: String, required: true }, // last name
-  email: { type: String, required: true, unique: true }, // email
   nationality: { type: String, required: true }, // country of birth
   gender: { type: String, enum: ["Man", "Woman", "Other"], required: true }, // gender
   birthDate: { type: Date, required: true }, // date of birth
@@ -57,6 +56,7 @@ const userSchema = new Schema(
   {
     // required fields
     username: { type: String, required: true, unique: true }, // username for the user
+    email: { type: String, required: true, unique: true }, // email
     password: { type: String, required: true }, // password for the user
     idType: {
       type: String,
