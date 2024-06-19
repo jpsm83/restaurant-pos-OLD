@@ -1,10 +1,18 @@
 import { IAddress } from "@/app/interface/IAddress";
 import { NextResponse } from "next/server";
 
-// helper function to validate address object
-export const addressValidation = (address: IAddress) => {
+export const addressValidation = (address: IAddress | undefined) => {
+  // const address = {
+  //   country: "Spain",
+  //   state: "Barcelona",
+  //   city: "Barcelona",
+  //   street: "Carrer Mallorca",
+  //   buildingNumber: 587,
+  //   postCode: "08026"
+  // }
+
   // check address is an object
-  if (typeof address !== "object" || address === null)
+  if (typeof address !== "object" || address === undefined)
     return new NextResponse(
       JSON.stringify({ message: "Address must be an object" }),
       { status: 400 }

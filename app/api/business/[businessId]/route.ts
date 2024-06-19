@@ -25,7 +25,7 @@ const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 // @desc    Get business by businessId
 // @route   GET /business/:businessId
 // @access  Private
-export const getBusinessById = async (
+export const GET = async (
   context: { params: any }
 ) => {
   try {

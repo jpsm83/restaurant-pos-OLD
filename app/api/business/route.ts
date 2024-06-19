@@ -30,7 +30,7 @@ export const GET = async () => {
 // @desc    Create new business
 // @route   POST /business
 // @access  Private
-export const CREATE = async (req: Request) => {
+export const POST = async (req: Request) => {
   try {
     const {
       tradeName,
