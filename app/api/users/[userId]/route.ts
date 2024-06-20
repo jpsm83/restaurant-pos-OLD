@@ -11,18 +11,22 @@ import { Types } from "mongoose";
 import { IUser } from "@/app/lib/interface/IUser";
 import Notification from "@/app/lib/models/notification";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { addressValidation } from "../utils/addressValidation";
 import { personalDetailsValidation } from "../utils/personalDetailsValidation";
+import { addressValidation } from "@/app/utils/addressValidation";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get user by ID
 // @route   GET /users/:userId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { userId: Types.ObjectId } }
+) => {
   try {
     const userId = context.params.userId;
-    // validate userId
+
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID" }), {
+      return new NextResponse("Invalid user ID!", {
         status: 400,
       });
     }
@@ -33,12 +37,17 @@ export const GET = async (context: { params: any }) => {
     const user = await User.findById(userId).select("-password").lean();
 
     return !user
-      ? new NextResponse(JSON.stringify({ message: "User not found" }), {
+      ? new NextResponse("User not found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(user), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(user), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  } catch (error) {
+    return handleApiError("Get user by its id failed!", error);
   }
 };
 
@@ -46,12 +55,15 @@ export const GET = async (context: { params: any }) => {
 // @desc    Update user
 // @route   PATCH /users/:userId
 // @access  Private
-export const PATCH = async (req: Request, context: { params: any }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { userId: Types.ObjectId } }
+) => {
   try {
     const userId = context.params.userId;
-    // validate userId
+
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID" }), {
+      return new NextResponse("Invalid user ID!", {
         status: 400,
       });
     }
@@ -77,7 +89,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       netMonthlySalary,
       terminatedDate,
       comments,
-    } = req.body as unknown as IUser;
+    } = (await req.json()) as IUser;
 
     // connect before first call to DB
     await connectDB();
@@ -85,7 +97,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     // check if user exists
     const user = await User.findById(userId);
     if (!user) {
-      return new NextResponse(JSON.stringify({ message: "User not found" }), {
+      return new NextResponse("User not found!", {
         status: 404,
       });
     }
@@ -99,58 +111,82 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     if (duplicateUser) {
       if (duplicateUser.active === true) {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an active user!",
-          }),
+          "Username, email, taxNumber or idNumber already exists in an active user!",
           { status: 409 }
         );
       } else {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          }),
+          "Username, email, taxNumber or idNumber already exists in an unactive user!",
           { status: 409 }
         );
       }
     }
 
-    // check address validation
+    // Ensure user.address is an object if it's undefined or null
+    // that is because address is not required on user creation
+    // if it does not exist, it will be created as an empty object to avoid errors
+    user.address = user.address ?? {};
+
+    // prepare update address object
+    const updatedAddress = {
+      country: address?.country ?? user.address.country ?? undefined,
+      state: address?.state ?? user.address.state ?? undefined,
+      city: address?.city ?? user.address.city ?? undefined,
+      street: address?.street ?? user.address.street ?? undefined,
+      buildingNumber:
+        address?.buildingNumber ?? user.address.buildingNumber ?? undefined,
+      postCode: address?.postCode ?? user.address.postCode ?? undefined,
+      region: address?.region ?? user.address.region ?? undefined,
+      additionalDetails:
+        address?.additionalDetails ?? user.address.additionalDetails ?? undefined,
+      coordinates: address?.coordinates ?? user.address.coordinates ?? undefined,
+    };
+
+    // add address fields
     if (address) {
-      const checkAddressValidation = addressValidation(address);
-      if (checkAddressValidation !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: checkAddressValidation }),
-          { status: 400 }
-        );
+      const validAddress = addressValidation(updatedAddress);
+      if (validAddress !== true) {
+        return new NextResponse(validAddress, {
+          status: 400,
+        });
       }
     }
 
+    // prepare update personalDetails object
+    const updatedPersonalDetails = {
+      firstName: personalDetails?.firstName || user.personalDetails.firstName,
+      lastName: personalDetails?.lastName || user.personalDetails.lastName,
+      nationality: personalDetails?.nationality || user.personalDetails.nationality,
+      gender: personalDetails?.gender || user.personalDetails.gender,
+      birthDate: personalDetails?.birthDate || user.personalDetails.birthDate,
+      phoneNumber: personalDetails?.phoneNumber || user.personalDetails.phoneNumber
+    };
+
     // check personalDetails validation
     const checkPersonalDetailsValidation =
-      personalDetailsValidation(personalDetails);
+      personalDetailsValidation(updatedPersonalDetails);
     if (checkPersonalDetailsValidation !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: checkPersonalDetailsValidation }),
-        { status: 400 }
-      );
+      return new NextResponse(checkPersonalDetailsValidation, {
+        status: 400,
+      });
     }
 
     // prepare update object
-    const updateObj = {
+    const updatedUser = {
       username: username || user.username,
       email: email || user.email,
       password: password ? await hash(password, 10) : user.password,
       idType: idType || user.idType,
       idNumber: idNumber || user.idNumber,
       allUserRoles: allUserRoles || user.allUserRoles,
+      personalDetails: updatedPersonalDetails,
       taxNumber: taxNumber || user.taxNumber,
       joinDate: joinDate || user.joinDate,
       active: active !== undefined ? active : user.active,
       onDuty: onDuty !== undefined ? onDuty : user.onDuty,
       vacationDaysPerYear: vacationDaysPerYear || user.vacationDaysPerYear,
       currentShiftRole: currentShiftRole || user.currentShiftRole,
+      address: updatedAddress,
       photo: photo || user.photo,
       contractHoursWeek: contractHoursWeek || user.contractHoursWeek,
       grossMonthlySalary: grossMonthlySalary || user.grossMonthlySalary,
@@ -160,21 +196,17 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     };
 
     // update the user
-    await user.findByIdAndUpdate({ _id: userId }, updateObj, {
+    await User.findByIdAndUpdate(userId, updatedUser, {
       new: true,
       usefindAndModify: false,
     });
 
     return new NextResponse(
-      JSON.stringify({
-        message: `User ${updateObj.username} updated successfully!`,
-      }),
+      `User ${updatedUser.username} updated successfully!`,
       { status: 200 }
     );
-  } catch (error: any) {
-    return new NextResponse("Failed to update User - Error: " + error, {
-      status: 500,
-    });
+  } catch (error) {
+    return handleApiError("Update user failed!", error);
   }
 };
 
@@ -183,12 +215,15 @@ export const PATCH = async (req: Request, context: { params: any }) => {
 // @desc    Delete user
 // @route   DELETE /users/:userId
 // @access  Private
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (
+  req: Request,
+  context: { params: { userId: Types.ObjectId } }
+) => {
   try {
     const userId = context.params.userId;
-    // validate userId
+
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID" }), {
+      return new NextResponse("Invalid user ID!", {
         status: 400,
       });
     }
@@ -241,13 +276,10 @@ export const DELETE = async (context: { params: any }) => {
       User.deleteOne({ _id: userId }),
     ]);
 
-    return new NextResponse(
-      JSON.stringify({ message: `User id ${userId} deleted successfully!` }),
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return new NextResponse("Delete user failed - Error: " + error, {
-      status: 500,
+    return new NextResponse(`User id ${userId} deleted successfully`, {
+      status: 200,
     });
+  } catch (error) {
+    return handleApiError("Delete user failed!", error);
   }
 };

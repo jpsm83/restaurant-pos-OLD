@@ -4,9 +4,10 @@ import { hash } from "bcrypt";
 
 // imported models
 import User from "@/app/lib/models/user";
-import { addressValidation } from "./utils/addressValidation";
 import { IUser } from "@/app/lib/interface/IUser";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
+import { addressValidation } from "@/app/utils/addressValidation";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get all users
 // @route   GET /users
@@ -19,12 +20,17 @@ export const GET = async () => {
     const users = await User.find().select("-password").lean();
 
     return !users?.length
-      ? new NextResponse(JSON.stringify({ message: "No users found" }), {
+      ? new NextResponse("No users found", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(users), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(users), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  } catch (error) {
+    return handleApiError("Get all users failed!", error);
   }
 };
 
@@ -53,7 +59,7 @@ export const POST = async (req: Request) => {
       grossMonthlySalary,
       netMonthlySalary,
       comments,
-    } = req.body as unknown as IUser;
+    } = (await req.json()) as IUser;
 
     // check required fields
     if (
@@ -71,10 +77,26 @@ export const POST = async (req: Request) => {
       !vacationDaysPerYear ||
       !business
     ) {
-      return new NextResponse(
-        JSON.stringify({ message: "Missing required fields" }),
-        { status: 400 }
-      );
+      return new NextResponse("Missing required fields!", { status: 400 });
+    }
+
+    // check address validation
+    if (address) {
+      const validAddress = addressValidation(address);
+      if (validAddress !== true) {
+        return new NextResponse(validAddress, {
+          status: 400,
+        });
+      }
+    }
+
+    // check personalDetails validation
+    const checkPersonalDetailsValidation =
+      personalDetailsValidation(personalDetails);
+    if (checkPersonalDetailsValidation !== true) {
+      return new NextResponse(checkPersonalDetailsValidation, {
+        status: 400,
+      });
     }
 
     // connect before first call to DB
@@ -89,46 +111,19 @@ export const POST = async (req: Request) => {
     if (duplicateUser) {
       if (duplicateUser.active === true) {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an active user!",
-          }),
+          "Username, email, taxNumber or idNumber already exists in an active user!",
           { status: 409 }
         );
       } else {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          }),
+          "Username, email, taxNumber or idNumber already exists in an unactive user!",
           { status: 409 }
         );
       }
     }
 
-    // check address validation
-    if (address) {
-      const checkAddressValidation = addressValidation(address);
-      if (checkAddressValidation !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: checkAddressValidation }),
-          { status: 400 }
-        );
-      }
-    }
-
-    // check personalDetails validation
-    const checkPersonalDetailsValidation =
-      personalDetailsValidation(personalDetails);
-    if (checkPersonalDetailsValidation !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: checkPersonalDetailsValidation }),
-        { status: 400 }
-      );
-    }
-
     // create user object with required fields
-    const userObj = {
+    const newUser = {
       username,
       email,
       password: await hash(password, 10),
@@ -151,15 +146,12 @@ export const POST = async (req: Request) => {
     };
 
     // create user
-    await User.create(userObj);
+    await User.create(newUser);
 
-    return new NextResponse(
-      JSON.stringify({ message: `New user ${username} created successfully!` }),
-      { status: 201 }
-    );
-  } catch (error: any) {
-    return new NextResponse("Failed to create User - Error: " + error, {
-      status: 500,
+    return new NextResponse(`New user ${username} created successfully!`, {
+      status: 201,
     });
+  } catch (error) {
+    return handleApiError("Create user failed!", error);
   }
 };

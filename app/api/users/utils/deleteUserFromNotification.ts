@@ -4,6 +4,7 @@ import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
 import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // remove notification from user
 export const deleteUserFromNotification = async (
@@ -17,7 +18,7 @@ export const deleteUserFromNotification = async (
     // check if user exists
     const user = await User.findById(userId).lean();
     if (!user) {
-      return new NextResponse(JSON.stringify({ message: "User not found" }), {
+      return new NextResponse("User not found", {
         status: 404,
       });
     }
@@ -25,10 +26,7 @@ export const deleteUserFromNotification = async (
     // check if notification exists
     const notification = await Notification.findById(notificationId).lean();
     if (!notification) {
-      return new NextResponse(
-        JSON.stringify({ message: "Notification not found!" }),
-        { status: 404 }
-      );
+      return new NextResponse("Notification not found!", { status: 404 });
     }
 
     // remove the notification from the user
@@ -41,22 +39,16 @@ export const deleteUserFromNotification = async (
     );
 
     if (removeUserFromNotificationResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: removeUserFromNotificationResult }),
-        { status: 400 }
-      );
+      return new NextResponse(removeUserFromNotificationResult as string, {
+        status: 400,
+      });
     } else {
       return new NextResponse(
-        JSON.stringify({
-          message: `User id ${userId} removed from notification successfully!`,
-        }),
+        `User id ${userId} removed from notification successfully!`,
         { status: 200 }
       );
     }
-  } catch (error: any) {
-    return new NextResponse(
-      "Remove notification from user failed - Error: " + error,
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError("Get user from notifications failed!", error);
   }
 };

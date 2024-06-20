@@ -76,7 +76,6 @@ export const PATCH = async (
   try {
     const businessId = context.params.businessId;
 
-    // validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
       return new NextResponse("Invalid businessId!", {
         status: 400,

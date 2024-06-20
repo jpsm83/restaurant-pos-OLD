@@ -1,6 +1,7 @@
 import connectDB from "@/app/lib/db";
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
+import { handleApiError } from "@/app/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
@@ -16,7 +17,7 @@ export const updateReadFlag = async (
     // check if user exists
     const user = await User.findById(userId);
     if (!user) {
-      return new NextResponse(JSON.stringify({ message: "User not found" }), {
+      return new NextResponse("User not found!", {
         status: 404,
       });
     }
@@ -24,31 +25,26 @@ export const updateReadFlag = async (
     // check if notification exists
     const notification = await Notification.findById(notificationId);
     if (!notification) {
-      return new NextResponse(
-        JSON.stringify({ message: "Notification not found" }),
-        { status: 404 }
-      );
+      return new NextResponse("Notification not found!", { status: 404 });
     }
 
     // update the readFlag for the user notification
-    const updatedUserNotification = await User.findByIdAndUpdate(
+    await User.updateOne(
       {
         _id: userId,
         "notifications.notification": notificationId,
       },
-      { $set: { "notifications.$.readFlag": true } },
-      { new: true, usefindAndModify: false }
-    ).lean();
+      { $set: { "notifications.$.readFlag": true } }
+    );
 
     return new NextResponse(
-      JSON.stringify({
-        message: `Notification ${notificationId} updated successfully!`,
-      }),
+      `Notification ${notificationId} updated successfully!`,
       { status: 200 }
     );
-  } catch (error: any) {
-    return new NextResponse("Failed to update Notification - Error: " + error, {
-      status: 500,
-    });
+  } catch (error) {
+    return handleApiError(
+      "Update notification read flag from user failed!",
+      error
+    );
   }
 };

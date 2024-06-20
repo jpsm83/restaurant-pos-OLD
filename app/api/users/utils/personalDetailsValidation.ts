@@ -1,21 +1,16 @@
 import { IPersonalDetails } from "@/app/lib/interface/IUser";
-import { NextResponse } from "next/server";
 
 export const personalDetailsValidation = (
   personalDetails: IPersonalDetails
 ) => {
   // check personalDetails is an object
   if (typeof personalDetails !== "object" || personalDetails === null)
-    return new NextResponse(
-      JSON.stringify({ message: "Personal details must be an object" }),
-      { status: 400 }
-    );
+    return "Personal details must be an object";
 
   // required fields
   const requiredFields = [
     "firstName",
     "lastName",
-    "email",
     "nationality",
     "gender",
     "birthDate",
@@ -23,12 +18,15 @@ export const personalDetailsValidation = (
   ];
 
   // check required fields
-  requiredFields.every((field) => {
-    return (
-      personalDetails.hasOwnProperty(field) &&
-      personalDetails[field] !== undefined
-    );
-  });
+  const missingField = requiredFields.find(
+    (field) =>
+      !personalDetails.hasOwnProperty(field) ||
+      personalDetails[field] === undefined ||
+      personalDetails[field] === "" ||
+      personalDetails[field] === null
+  );
+
+  if (missingField) return `${missingField} on user personal detail is required!`;
 
   return true;
 };
