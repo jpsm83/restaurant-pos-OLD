@@ -19,7 +19,7 @@ export const GET = async () => {
     await connectDB();
     const business = await Business.find().select("-password").lean();
     return !business.length
-      ? new NextResponse("No business found", {
+      ? new NextResponse("No business found!", {
           status: 200,
         })
       : new NextResponse(JSON.stringify(business), {

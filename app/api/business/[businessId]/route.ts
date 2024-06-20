@@ -38,7 +38,7 @@ export const GET = async (
     const businessId = context.params.businessId;
 
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId", {
+      return new NextResponse("Invalid businessId!", {
         status: 400,
       });
     }
@@ -50,7 +50,7 @@ export const GET = async (
       .select("-password")
       .lean();
     return !business
-      ? new NextResponse("No business found", {
+      ? new NextResponse("No business found!", {
           status: 404,
         })
       : new NextResponse(JSON.stringify(business), {
@@ -99,24 +99,16 @@ export const PATCH = async (
 
     // check email format
     if (email && !emailRegex.test(email)) {
-      return new NextResponse("Invalid email format", { status: 400 });
-    }
-
-    // add address fields
-    const validAddress = addressValidation(address);
-    if (validAddress !== true) {
-      return new NextResponse(validAddress, {
-        status: 400,
-      });
+      return new NextResponse("Invalid email format!", { status: 400 });
     }
 
     // connect before first call to DB
     await connectDB();
 
     // check if business exists
-    const business: IBusiness | null = await Business.findById({
-      businessId,
-    }).lean();
+    const business: IBusiness | null = await Business.findById(
+      businessId
+    ).lean();
 
     if (!business) {
       return new NextResponse("Business not found!", {
@@ -132,12 +124,37 @@ export const PATCH = async (
 
     if (duplicateBusiness) {
       return new NextResponse(
-        `Business ${legalName}, ${email} or ${taxNumber} already exists!`,
+        `Business legalname, email or taxNumber already exists!`,
         { status: 409 }
       );
     }
 
-    // prepare update object
+    // prepare update address object
+    const updatedAddress = {
+      country: address?.country || business.address.country,
+      state: address?.state || business.address.state,
+      city: address?.city || business.address.city,
+      street: address?.street || business.address.street,
+      buildingNumber:
+        address?.buildingNumber || business.address.buildingNumber,
+      postCode: address?.postCode || business.address.postCode,
+      region: address?.region || business.address.region,
+      additionalDetails:
+        address?.additionalDetails || business.address.additionalDetails,
+      coordinates: address?.coordinates || business.address.coordinates,
+    };
+
+    // add address fields
+    if (address) {
+      const validAddress = addressValidation(updatedAddress);
+      if (validAddress !== true) {
+        return new NextResponse(validAddress, {
+          status: 400,
+        });
+      }
+    }
+
+    // prepare update business object
     const updatedBusiness = {
       tradeName: tradeName || business.tradeName,
       legalName: legalName || business.legalName,
@@ -147,18 +164,20 @@ export const PATCH = async (
       taxNumber: taxNumber || business.taxNumber,
       currencyTrade: currencyTrade || business.currencyTrade,
       subscription: subscription || business.subscription,
-      address: address || business.address,
+      address: updatedAddress,
       contactPerson: contactPerson || business.contactPerson,
       businessTables: businessTables || business.businessTables,
     };
 
     // save the updated business
-    await Business.findByIdAndUpdate({ businessId }, updatedBusiness, {
+    await Business.findByIdAndUpdate(businessId, updatedBusiness, {
       new: true,
       usefindAndModify: false,
     });
 
-    return new NextResponse(`Business ${legalName} updated`, { status: 200 });
+    return new NextResponse(`Business ${updatedBusiness.legalName} updated`, {
+      status: 200,
+    });
   } catch (error) {
     return handleApiError("Update business failed!", error);
   }
@@ -187,9 +206,7 @@ export const DELETE = async (
     await connectDB();
 
     // delete business and check if it exists
-    const deleteResult = await Business.deleteOne({
-      businessId,
-    });
+    const deleteResult = await Business.deleteOne({ _id: businessId });
 
     if (deleteResult.deletedCount === 0) {
       return new NextResponse("Business not found!", {
