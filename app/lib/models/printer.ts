@@ -44,17 +44,15 @@ const printerSchema = new Schema(
 
     // non-required fields
     printFor: {
-      user: {
-        type: [Schema.Types.ObjectId],
-        ref: "User",
-        default: undefined,
+      users: {
+        type: [{ type: Schema.Types.ObjectId, ref: 'User', default: undefined}],
       },
-      category: {
+      categories: {
         type: [String],
         enum: category,
         default: undefined,
       },
-      subCategory: {
+      subCategories: {
         type: [String],
         enum: subCategory,
         default: undefined,

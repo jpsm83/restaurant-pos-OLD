@@ -4,12 +4,13 @@ import connectDB from "@/app/lib/db";
 // import models
 import Supplier from "@/app/lib/models/supplier";
 import { ISupplier } from "@/app/lib/interface/ISupplier";
-import { addressValidation } from "./utils/addressValidation";
+import { addressValidation } from "@/app/utils/addressValidation";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get all suppliers
 // @route   GET /supplier
 // @access  Private
-export const getSuppliers = async () => {
+export const GET = async () => {
   try {
     // connect before first call to DB
     await connectDB();
@@ -19,12 +20,15 @@ export const getSuppliers = async () => {
       .lean();
 
     return !suppliers.length
-      ? new NextResponse(JSON.stringify({ message: "No suppliers found!" }), {
+      ? new NextResponse("No suppliers found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(suppliers), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(suppliers), { status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        }, });
+  } catch (error) {
+    return handleApiError("Get all suppliers failed!", error);
   }
 };
 
@@ -33,7 +37,7 @@ export const getSuppliers = async () => {
 // @access  Private
 // create a new supplier without supplier goods
 // supplier goods can be added later on update
-export const createNewSupplier = async (req: Request) => {
+export const POST = async (req: Request) => {
   try {
     const {
       tradeName,
@@ -45,7 +49,7 @@ export const createNewSupplier = async (req: Request) => {
       business,
       address,
       contactPerson,
-    } = req.body as unknown as ISupplier;
+    } = await req.json() as ISupplier;
 
     // check required fields
     if (
@@ -57,15 +61,22 @@ export const createNewSupplier = async (req: Request) => {
       currentlyInUse === undefined ||
       !business
     ) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "TradeName, legalName, email, phoneNumber, taxNumber, currentlyInUse and business are required!",
-        }),
+      return new NextResponse("TradeName, legalName, email, phoneNumber, taxNumber, currentlyInUse and business are required!",
         { status: 400 }
       );
     }
-
+    
+    // validate address fields
+    // check address validation
+    if (address) {
+      const validAddress = addressValidation(address);
+      if (validAddress !== true) {
+        return new NextResponse(validAddress, {
+          status: 400,
+        });
+      }
+    }
+    
     // connect before first call to DB
     await connectDB();
 
@@ -76,16 +87,13 @@ export const createNewSupplier = async (req: Request) => {
     });
 
     if (duplicateSupplier) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `Supplier ${legalName}, ${email} or ${taxNumber} already exists!`,
-        }),
+      return new NextResponse(`Supplier ${legalName}, ${email} or ${taxNumber} already exists!`,
         { status: 409 }
       );
     }
 
     // create supplier object with required fields
-    const supplierObj = {
+    const newSupplier = {
       tradeName,
       legalName,
       email,
@@ -94,31 +102,17 @@ export const createNewSupplier = async (req: Request) => {
       currentlyInUse,
       business,
       address,
-      // add non required fields if they exist
-      ...(contactPerson && { contactPerson }),
+      contactPerson: contactPerson || undefined,
     };
 
-    // validate address fields
-    const validAddress = addressValidation(address);
-    if (validAddress !== true) {
-      return new NextResponse(JSON.stringify({ message: validAddress }), {
-        status: 400,
-      });
-    }
-
     // create new supplier
-    await Supplier.create(supplierObj);
+    await Supplier.create(newSupplier);
 
     // confirm supplier was created
-    return new NextResponse(
-      JSON.stringify({
-        message: `Supplier ${legalName} created successfully!`,
-      }),
+    return new NextResponse(`Supplier ${legalName} created successfully!`,
       { status: 201 }
     );
-  } catch (error: any) {
-    return new NextResponse("Supplier creation failed - Error: " + error, {
-      status: 500,
-    });
+  } catch (error) {
+    return handleApiError("Create supplier failed!", error);
   }
 };

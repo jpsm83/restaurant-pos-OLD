@@ -1,0 +1,3 @@
+- business DELETE, supplierGood and businessGood causing error
+- supplier DELETE, supplierGood causing error
+- printer all GETs, they are not populating the user from printFor.user

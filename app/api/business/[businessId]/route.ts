@@ -94,7 +94,7 @@ export const PATCH = async (
       address,
       contactPerson,
       businessTables,
-    } = (await req.json()) as IBusiness;
+    } = await req.json() as IBusiness;
 
     // check email format
     if (email && !emailRegex.test(email)) {
@@ -205,9 +205,9 @@ export const DELETE = async (
     await connectDB();
 
     // delete business and check if it exists
-    const deleteResult = await Business.deleteOne({ _id: businessId });
+    const result = await Business.deleteOne({ _id: businessId });
 
-    if (deleteResult.deletedCount === 0) {
+    if (result.deletedCount === 0) {
       return new NextResponse("Business not found!", {
         status: 404,
       });

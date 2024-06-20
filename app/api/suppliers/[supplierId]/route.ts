@@ -6,20 +6,22 @@ import { Types } from "mongoose";
 import Supplier from "@/app/lib/models/supplier";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { ISupplier } from "@/app/lib/interface/ISupplier";
-import { addressValidation } from "../utils/addressValidation";
+import { addressValidation } from "@/app/utils/addressValidation";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { IAddress } from "@/app/lib/interface/IAddress";
 
 // @desc    Get supplier by ID
 // @route   GET /supplier/:supplierId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { supplierId: Types.ObjectId } }
+) => {
   try {
     const supplierId = context.params.supplierId;
-    // validate supplierId
+
     if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierId" }),
-        { status: 400 }
-      );
+      return new NextResponse("Invalid supplierId!", { status: 400 });
     }
 
     // connect before first call to DB
@@ -30,12 +32,17 @@ export const GET = async (context: { params: any }) => {
       .lean();
 
     return !supplier
-      ? new NextResponse(JSON.stringify({ message: "No suppliers found!" }), {
+      ? new NextResponse("No suppliers found!!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(supplier), { status: 200 });
+      : new NextResponse(JSON.stringify(supplier), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
   } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return handleApiError("Get supplier by its id failed!", error);
   }
 };
 
@@ -44,11 +51,11 @@ export const GET = async (context: { params: any }) => {
 // @access  Private
 export const PATCH = async (
   req: Request,
-  context: { params: any }
+  context: { params: { supplierId: Types.ObjectId } }
 ) => {
   try {
     const supplierId = context.params.supplierId;
-    // validate supplierId
+
     if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid supplierId" }),
@@ -66,7 +73,7 @@ export const PATCH = async (
       address,
       contactPerson,
       supplierGoods,
-    } = req.body as unknown as ISupplier;
+    } = (await req.json()) as ISupplier;
 
     // connect before first call to DB
     await connectDB();
@@ -76,10 +83,7 @@ export const PATCH = async (
       supplierId
     ).lean();
     if (!supplier) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier not found!" }),
-        { status: 404 }
-      );
+      return new NextResponse("Supplier not found!", { status: 404 });
     }
 
     // check for duplicate legalName, email or taxNumber
@@ -91,15 +95,48 @@ export const PATCH = async (
 
     if (duplicateSupplier) {
       return new NextResponse(
-        JSON.stringify({
-          message: `Supplier ${legalName}, ${email} or ${taxNumber} already exists in the business!`,
-        }),
+        `Supplier legalName, email or taxNumber already exists in the business!`,
         { status: 409 }
       );
     }
 
+    // Ensure supplier.address is an object if it's undefined or null
+    // that is because address is not required on supplier creation
+    // if it does not exist, it will be created as an empty object to avoid errors
+    // supplier.address = supplier.address ?? {};
+
+    // prepare update address object
+    const updatedAddress = {
+      country: address?.country ?? supplier.address?.country ?? undefined,
+      state: address?.state ?? supplier.address?.state ?? undefined,
+      city: address?.city ?? supplier.address?.city ?? undefined,
+      street: address?.street ?? supplier.address?.street ?? undefined,
+      buildingNumber:
+        address?.buildingNumber ??
+        supplier.address?.buildingNumber ??
+        undefined,
+      postCode: address?.postCode ?? supplier.address?.postCode ?? undefined,
+      region: address?.region ?? supplier.address?.region ?? undefined,
+      additionalDetails:
+        address?.additionalDetails ??
+        supplier.address?.additionalDetails ??
+        undefined,
+      coordinates:
+        address?.coordinates ?? supplier.address?.coordinates ?? undefined,
+    };
+
+    // add address fields
+    if (address) {
+      const validAddress = addressValidation(updatedAddress as IAddress);
+      if (validAddress !== true) {
+        return new NextResponse(validAddress, {
+          status: 400,
+        });
+      }
+    }
+
     // prepare update object
-    const updateObj = {
+    const updatedSupplier = {
       tradeName: tradeName || supplier.tradeName,
       legalName: legalName || supplier.legalName,
       email: email || supplier.email,
@@ -112,30 +149,20 @@ export const PATCH = async (
       supplierGoods: supplierGoods || supplier.supplierGoods,
     };
 
-    // validate address fields
-    const validAddress = addressValidation(address);
-    if (validAddress !== true) {
-      return new NextResponse(JSON.stringify({ message: validAddress }), {
-        status: 400,
-      });
-    }
-
     // Save the updated supplier
-    await Supplier.findByIdAndUpdate({ _id: supplierId }, updateObj, {
+    await Supplier.findByIdAndUpdate(supplierId, updatedSupplier, {
       new: true,
       usefindAndModify: false,
-    }).lean();
+    });
 
     return new NextResponse(
-      JSON.stringify({
-        message: `Supplier ${legalName} updated successfully!`,
-      }),
-      { status: 200 }
+      `Supplier ${updatedSupplier.legalName} updated successfully!`,
+      {
+        status: 200,
+      }
     );
   } catch (error: any) {
-    return new NextResponse("Failed to update supplier - Error: " + error, {
-      status: 500,
-    });
+    return handleApiError("Update supplier failed!", error);
   }
 };
 
@@ -146,43 +173,39 @@ export const PATCH = async (
 // @desc    Delete supplier
 // @route   DELETE /supplier/:supplierId
 // @access  Private
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (
+  req: Request,
+  context: { params: { supplierId: Types.ObjectId } }
+) => {
   try {
     const supplierId = context.params.supplierId;
     // validate supplierId
     if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierId" }),
-        { status: 400 }
-      );
+      return new NextResponse("Invalid supplierId!", { status: 400 });
     }
 
-    const supplier: ISupplier | null = await Supplier.findById(
-      supplierId
-    ).lean();
-    if (!supplier) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier not found!" }),
+    // connect before first call to DB
+    await connectDB();
+
+    // // remove the supplier reference from all supplier goods
+    // await SupplierGood.updateMany(
+    //   { supplier: supplierId },
+    //   { $unset: { supplier: "" } }
+    // );
+
+    // delete the supplier
+    const result = await Supplier.deleteOne({ _id: supplierId });
+
+    if (result.deletedCount === 0) {
+      return new NextResponse("Supplier not found!",
         { status: 404 }
       );
     }
-
-    // remove the supplier reference from all supplier goods
-    await SupplierGood.updateMany(
-      { supplier: supplierId },
-      { $unset: { supplier: "" } }
-    );
-
-    // delete the supplier
-    await Supplier.deleteOne({ _id: supplierId });
-
-    return new NextResponse(
-      JSON.stringify({
-        message: `Supplier with tax number ${supplier.taxNumber} deleted successfully!`,
-      }),
-      { status: 200 }
-    );
+    
+    return new NextResponse(`Supplier id ${supplierId} deleted successfully!`, {
+      status: 200,
+    });
   } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return handleApiError("Delete supplier failed!", error);
   }
 };

@@ -1,0 +1,31 @@
+[
+    {
+        "_id": "6674501ebe48364ae423dcc4",
+        "printerName": "printer1printerName",
+        "connected": false,
+        "ipAddress": "127.0.0.2",
+        "port": 2000,
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-06-20T15:51:58.551Z",
+        "updatedAt": "2024-06-20T16:46:17.706Z",
+        "__v": 0,
+        "description": "printer1description",
+        "location": "printer1location",
+        "printFor": {
+            "users": [],
+            "categories": [],
+            "subCategories": []
+        }
+    },
+    {
+        "_id": "66745659be48364ae423dcee",
+        "printerName": "printer2printerName",
+        "connected": false,
+        "ipAddress": "127.0.0.22",
+        "port": 2000,
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-06-20T16:18:33.818Z",
+        "updatedAt": "2024-06-20T16:18:33.818Z",
+        "__v": 0
+    }
+]

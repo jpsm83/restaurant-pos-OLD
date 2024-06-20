@@ -1,7 +1,8 @@
 import { Types } from "mongoose";
 
 export interface IPrintFor {
-    user?: string[];
+    [key: string]: string[] | Types.ObjectId[] | undefined;
+    user?: Types.ObjectId[];
     category?: string[];
     subCategory?: string[];
 }

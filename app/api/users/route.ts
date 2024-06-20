@@ -59,7 +59,7 @@ export const POST = async (req: Request) => {
       grossMonthlySalary,
       netMonthlySalary,
       comments,
-    } = (await req.json()) as IUser;
+    } = await req.json() as IUser;
 
     // check required fields
     if (

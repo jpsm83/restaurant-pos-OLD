@@ -52,7 +52,7 @@ export const POST = async (req: Request) => {
       address,
       contactPerson,
       businessTables,
-    } = (await req.json()) as IBusiness;
+    } = await req.json() as IBusiness;
 
     // check required fields
     if (

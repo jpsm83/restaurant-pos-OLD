@@ -108,6 +108,7 @@ export const PATCH = async (
       business: user.business,
       $or: [{ username }, { email }, { taxNumber }, { idNumber }],
     }).lean();
+
     if (duplicateUser) {
       if (duplicateUser.active === true) {
         return new NextResponse(
@@ -138,8 +139,11 @@ export const PATCH = async (
       postCode: address?.postCode ?? user.address.postCode ?? undefined,
       region: address?.region ?? user.address.region ?? undefined,
       additionalDetails:
-        address?.additionalDetails ?? user.address.additionalDetails ?? undefined,
-      coordinates: address?.coordinates ?? user.address.coordinates ?? undefined,
+        address?.additionalDetails ??
+        user.address.additionalDetails ??
+        undefined,
+      coordinates:
+        address?.coordinates ?? user.address.coordinates ?? undefined,
     };
 
     // add address fields
@@ -156,15 +160,18 @@ export const PATCH = async (
     const updatedPersonalDetails = {
       firstName: personalDetails?.firstName || user.personalDetails.firstName,
       lastName: personalDetails?.lastName || user.personalDetails.lastName,
-      nationality: personalDetails?.nationality || user.personalDetails.nationality,
+      nationality:
+        personalDetails?.nationality || user.personalDetails.nationality,
       gender: personalDetails?.gender || user.personalDetails.gender,
       birthDate: personalDetails?.birthDate || user.personalDetails.birthDate,
-      phoneNumber: personalDetails?.phoneNumber || user.personalDetails.phoneNumber
+      phoneNumber:
+        personalDetails?.phoneNumber || user.personalDetails.phoneNumber,
     };
 
     // check personalDetails validation
-    const checkPersonalDetailsValidation =
-      personalDetailsValidation(updatedPersonalDetails);
+    const checkPersonalDetailsValidation = personalDetailsValidation(
+      updatedPersonalDetails
+    );
     if (checkPersonalDetailsValidation !== true) {
       return new NextResponse(checkPersonalDetailsValidation, {
         status: 400,
@@ -231,50 +238,56 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDB();
 
-    // Start all operations in parallel
-    await Promise.all([
-      // remove the user from all orders
-      Order.updateMany(
-        { user: userId },
-        { $pull: { user: userId } },
-        { new: true }
-      ),
+    // Delete the user
+    const result = await User.deleteOne({ _id: userId });
 
-      // remove the user from all tables
-      Table.updateMany(
-        { openedBy: userId },
-        { $pull: { openedBy: userId } },
-        { new: true }
-      ),
-      Table.updateMany(
-        { $or: [{ responsableBy: userId }, { closedBy: userId }] },
-        { $pull: { responsableBy: userId, closedBy: userId } },
-        { multi: true }
-      ),
+    if (result.deletedCount === 0) {
+      return new NextResponse("User not found!", {
+        status: 404,
+      });
+    } else {
+      // Delete all related data in parallel
+      await Promise.all([
+        // remove the user from all orders
+        Order.updateMany(
+          { user: userId },
+          { $pull: { user: userId } },
+          { new: true }
+        ),
 
-      // remove the user from all schedules
-      Schedule.updateMany(
-        { "employees.employee": userId },
-        { $pull: { employees: { employee: userId } } },
-        { multi: true }
-      ),
+        // remove the user from all tables
+        Table.updateMany(
+          { openedBy: userId },
+          { $pull: { openedBy: userId } },
+          { new: true }
+        ),
+        Table.updateMany(
+          { $or: [{ responsableBy: userId }, { closedBy: userId }] },
+          { $pull: { responsableBy: userId, closedBy: userId } },
+          { multi: true }
+        ),
 
-      // remove the user from all daily reports
-      DailySalesReport.updateMany(
-        { "usersDailySalesReport.user": userId },
-        { $pull: { usersDailySalesReport: { user: userId } } },
-        { multi: true }
-      ),
+        // remove the user from all schedules
+        Schedule.updateMany(
+          { "employees.employee": userId },
+          { $pull: { employees: { employee: userId } } },
+          { multi: true }
+        ),
 
-      // Remove the user from all notifications
-      Notification.updateMany(
-        { recipient: userId },
-        { $pull: { recipient: userId } }
-      ),
+        // remove the user from all daily reports
+        DailySalesReport.updateMany(
+          { "usersDailySalesReport.user": userId },
+          { $pull: { usersDailySalesReport: { user: userId } } },
+          { multi: true }
+        ),
 
-      // Delete the user
-      User.deleteOne({ _id: userId }),
-    ]);
+        // Remove the user from all notifications
+        Notification.updateMany(
+          { recipient: userId },
+          { $pull: { recipient: userId } }
+        ),
+      ]);
+    }
 
     return new NextResponse(`User id ${userId} deleted successfully`, {
       status: 200,
