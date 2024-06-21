@@ -14,6 +14,7 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { personalDetailsValidation } from "../utils/personalDetailsValidation";
 import { addressValidation } from "@/app/utils/addressValidation";
 import { handleApiError } from "@/app/utils/handleApiError";
+import { calculateVacationProportional } from "../utils/calculateVacationProportional";
 
 // @desc    Get user by ID
 // @route   GET /users/:userId
@@ -178,6 +179,16 @@ export const PATCH = async (
       });
     }
 
+    let grossHourlySalaryCalculation: number | undefined;
+    if (
+     typeof grossMonthlySalary === "number" &&
+     typeof contractHoursWeek === "number" 
+    ) {
+      grossHourlySalaryCalculation = grossMonthlySalary / (contractHoursWeek * 4);
+    } else {
+      grossHourlySalaryCalculation = undefined;
+    }
+    
     // prepare update object
     const updatedUser = {
       username: username || user.username,
@@ -192,11 +203,16 @@ export const PATCH = async (
       active: active !== undefined ? active : user.active,
       onDuty: onDuty !== undefined ? onDuty : user.onDuty,
       vacationDaysPerYear: vacationDaysPerYear || user.vacationDaysPerYear,
+      vacationDaysLeft: calculateVacationProportional(
+        new Date(joinDate),
+        vacationDaysPerYear
+      ),
       currentShiftRole: currentShiftRole || user.currentShiftRole,
       address: updatedAddress,
       photo: photo || user.photo,
       contractHoursWeek: contractHoursWeek || user.contractHoursWeek,
       grossMonthlySalary: grossMonthlySalary || user.grossMonthlySalary,
+      grossHourlySalary: grossHourlySalaryCalculation || user.grossHourlySalary,
       netMonthlySalary: netMonthlySalary || user.netMonthlySalary,
       terminatedDate: terminatedDate || user.terminatedDate,
       comments: comments || user.comments,

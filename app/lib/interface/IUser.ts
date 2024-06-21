@@ -24,12 +24,14 @@ export interface IUser {
   active: boolean;
   onDuty: boolean;
   vacationDaysPerYear: number;
+  vacationDaysLeft: number;
   business: Types.ObjectId;
   currentShiftRole?: string;
   address?: IAddress;
   photo?: string;
   contractHoursWeek?: number;
   grossMonthlySalary?: number;
+  grossHourlySalary?: number;
   netMonthlySalary?: number;
   terminatedDate?: Date;
   //   notifications?: { notification: Types.ObjectId; readFlag: boolean }[];

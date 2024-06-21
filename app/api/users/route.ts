@@ -8,6 +8,7 @@ import { IUser } from "@/app/lib/interface/IUser";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
 import { addressValidation } from "@/app/utils/addressValidation";
 import { handleApiError } from "@/app/utils/handleApiError";
+import { calculateVacationProportional } from "./utils/calculateVacationProportional";
 
 // @desc    Get all users
 // @route   GET /users
@@ -59,7 +60,7 @@ export const POST = async (req: Request) => {
       grossMonthlySalary,
       netMonthlySalary,
       comments,
-    } = await req.json() as IUser;
+    } = (await req.json()) as IUser;
 
     // check required fields
     if (
@@ -122,6 +123,16 @@ export const POST = async (req: Request) => {
       }
     }
 
+    let grossHourlySalaryCalculation: number | undefined;
+    if (
+     typeof grossMonthlySalary === "number" &&
+     typeof contractHoursWeek === "number" 
+    ) {
+      grossHourlySalaryCalculation = grossMonthlySalary / (contractHoursWeek * 4);
+    } else {
+      grossHourlySalaryCalculation = undefined;
+    }
+
     // create user object with required fields
     const newUser = {
       username,
@@ -136,11 +147,16 @@ export const POST = async (req: Request) => {
       active,
       onDuty,
       vacationDaysPerYear,
+      vacationDaysLeft: calculateVacationProportional(
+        new Date(joinDate),
+        vacationDaysPerYear
+      ),
       business,
       address: address || undefined,
       photo: photo || "../public/images/avatar.png",
       contractHoursWeek: contractHoursWeek || undefined,
       grossMonthlySalary: grossMonthlySalary || undefined,
+      grossHourlySalary: grossHourlySalaryCalculation,
       netMonthlySalary: netMonthlySalary || undefined,
       comments: comments || undefined,
     };

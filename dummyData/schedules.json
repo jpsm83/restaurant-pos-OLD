@@ -1,0 +1,17 @@
+{
+    "date": "2024-06-20T10:00:00.000Z",
+    "employees": [
+      {
+        "employee": "667412df373ad7f1a285534e",
+        "role": "Manager",
+        "timeRange": {
+          "startTime": "2024-06-20T10:00:00.000Z",
+          "endTime": "2024-06-20T12:00:00.000Z"
+        },
+        "vacation": false
+      }
+    ],
+    "business": "6673fed98c45d0a0ca5f34c1"
+  }
+
+

@@ -8,23 +8,22 @@ const employeesScheduled = new Schema({
   }, // employee scheduled
   role: { type: String, required: true }, // role of the employee in the shift
   timeRange: {
-    startTime: { type: String, required: true }, // start time of the shift
-    endTime: { type: String, required: true }, // end time of the shift
+    startTime: { type: Date, required: true }, // start time of the shift
+    endTime: { type: Date, required: true }, // end time of the shift
   }, // time range of the shift
+  vacation: { type: Boolean, default: false, required: true }, // if the employee is on vacation
+
+  // not required from the front end
+  // calculated in the back end
   shiftHours: {
-    type: Number,
-    required: true,
+    type: Number, required: true
   }, // quantity of shift hours worked , startTime - endTime
   weekHoursLeft: {
-    type: Number,
-    required: true,
+    type: Number, required: true
   }, // hours left to work in the week, user.contractHoursWeek - ( sun of shiftHours of the week) - calculated in the front end
   employeeCost: {
-    type: Number,
-    required: true,
+    type: Number, required: true
   }, // cost of the employee for the shift, user.grossMonthlySalary / user.contractHoursMonth * shiftHours - calculated in the front end
-  vacation: { type: Boolean, default: false, required: true }, // if the employee is on vacation
-  vacationDaysLeft: { type: Number, default: 0, required: true }, // days left for the employee to take vacation - ( user.vacationDaysPerYear - sun of vacation days taken in the year) - calculated in the front end
 });
 
 const scheduleSchema = new Schema(
@@ -34,6 +33,7 @@ const scheduleSchema = new Schema(
       type: Date,
       required: true,
     }, // date of the schedule without time
+    weekNumber: { type: Number, required: true }, // week number of the year
     employees: {
       type: [employeesScheduled],
       required: true,

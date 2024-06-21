@@ -4,11 +4,11 @@ export interface IEmployee {
     employee: Types.ObjectId;
     role: string;
     timeRange: {
-        startTime: string;
-        endTime: string;
+        startTime: Date;
+        endTime: Date;
     };
-    shiftHours: number;
-    weekHoursLeft: number;
+    shiftHours: Number;
+    weekHoursLeft: Number;
     employeeCost: number;
     vacation: boolean;
     vacationDaysLeft: number;

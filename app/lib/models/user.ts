@@ -63,6 +63,7 @@ const userSchema = new Schema(
     active: { type: Boolean, required: true, default: true }, // if the user is active, could be a sesonality worker
     onDuty: { type: Boolean, required: true, default: false }, // if the user is on duty, shift working right now
     vacationDaysPerYear: { type: Number, required: true }, // days of holidays per year
+    vacationDaysLeft: { type: Number, required: true }, // days of holidays left
     business: {
       type: Schema.Types.ObjectId,
       ref: "Business",
@@ -75,6 +76,7 @@ const userSchema = new Schema(
     photo: { type: String, default: "../public/images/avatar.png" }, // photo of the user
     contractHoursWeek: { type: Number }, // contract hours per week
     grossMonthlySalary: { type: Number }, // monthly user salary before taxes
+    grossHourlySalary: { type: Number }, // hourly user salary before taxes
     netMonthlySalary: { type: Number }, // net user monthly salary after taxes
     terminatedDate: { type: Date }, // date when the user left the business
     notifications: {
