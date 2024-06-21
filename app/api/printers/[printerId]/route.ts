@@ -49,7 +49,7 @@ export const GET = async (
 // @desc    Update printer by ID
 // @route   PATCH /printers/:printerId
 // @access  Private
-export const PATCH = async (req: Request, context: { params: any }) => {
+export const PATCH = async (req: Request, context: { params: { printerId: Types.ObjectId } }) => {
   try {
     const printerId = context.params.printerId;
     // check if printerId is valid

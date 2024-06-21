@@ -1,7 +1,6 @@
 import Notification from "@/app/lib/models/notification";
 import { handleApiError } from "@/app/utils/handleApiError";
 import { Types } from "mongoose";
-import { NextResponse } from "next/server";
 
 // helper function used on user controller
 // keep each controller with its own helper functions
@@ -14,13 +13,11 @@ export const removeUserFromNotification = async (
   try {
     // check if the userId is valid
     if (!Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid user ID!", {
-        status: 400,
-      });
+      return "Invalid user ID!";
     }
     // check if the notificationId is valid
     if (!Types.ObjectId.isValid(notificationId)) {
-      return new NextResponse("Invalid notification ID!", { status: 400 });
+      return "Invalid notification ID!";
     }
 
     const updatedNotification = await Notification.updateOne(
@@ -29,7 +26,7 @@ export const removeUserFromNotification = async (
     );
 
     if (updatedNotification.modifiedCount === 0) {
-      return "Notification could not be updated";
+      return "Notification could not be updated!";
     }
 
     return true;

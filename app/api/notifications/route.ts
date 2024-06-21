@@ -6,6 +6,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 // imported models
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get all notifications
 // @route   GET /notifications
@@ -16,17 +17,19 @@ export const GET = async () => {
     await connectDB();
 
     const notifications = await Notification.find()
-      .populate("recipient", "username")
+      .populate("recipients", "username")
       .lean();
 
     return !notifications.length
-      ? new NextResponse(
-          JSON.stringify({ message: "No notifications found" }),
-          { status: 404 }
-        )
-      : new NextResponse(JSON.stringify(notifications), { status: 200 });
+      ? new NextResponse("No notifications found", { status: 404 })
+      : new NextResponse(JSON.stringify(notifications), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
   } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return handleApiError("Get all notifications failed!", error);
   }
 };
 
@@ -35,34 +38,35 @@ export const GET = async () => {
 // @access  Private
 export const POST = async (req: Request) => {
   try {
-    // connect before first call to DB
-    await connectDB();
-
-    // recipient have to be an array of user IDs coming from the front end
+    // recipients have to be an array of user IDs coming from the front end
     const {
       dayReferenceNumber,
       notificationType,
       message,
-      recipient,
+      recipients,
       business,
       sender,
-    } = req.body as unknown as INotification;
+    } = (await req.json()) as INotification;
 
     // check required fields
     if (
       !dayReferenceNumber ||
       !notificationType ||
       !message ||
-      !recipient ||
+      !recipients ||
       !business
     ) {
       return new NextResponse(
-        JSON.stringify({
-          message:
-            "DayReferenceNumber, notificationType, message, recipient and business are required",
-        }),
+        "DayReferenceNumber, notificationType, message, recipients and business are required!",
         { status: 400 }
       );
+    }
+
+    // validate recipients
+    if (!Array.isArray(recipients)) {
+      return new NextResponse("Recipients must be an array of user IDs or empty!", {
+        status: 400,
+      });
     }
 
     // create new notification object
@@ -70,21 +74,21 @@ export const POST = async (req: Request) => {
       dayReferenceNumber,
       notificationType,
       message,
-      recipient:
-        Array.isArray(recipient) && recipient.length > 0
-          ? recipient
-          : undefined,
+      recipients: recipients,
       business,
       sender: sender || undefined,
     };
+
+    // connect before first call to DB
+    await connectDB();
 
     // save new notification
     const newNotification = await Notification.create(notificationObj);
 
     if (newNotification) {
-      // add the notification to the recipient users
+      // add the notification to the recipients users
       const sendNotifications = await User.updateMany(
-        { _id: { $in: recipient } },
+        { _id: { $in: recipients } },
         {
           $push: {
             notifications: {
@@ -98,24 +102,19 @@ export const POST = async (req: Request) => {
       // check if the notification was added to the users
       if (!sendNotifications) {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Notification could not be add on user but has been created",
-          }),
+          "Notification could not be add on user but has been created!",
           { status: 400 }
         );
       }
-      return new NextResponse(
-        JSON.stringify({ message: `Notification message created` }),
-        { status: 201 }
-      );
+      return new NextResponse(`Notification message created and sent to users`, {
+        status: 201,
+      });
     } else {
-      return new NextResponse(
-        JSON.stringify({ message: "Notification could not be created" }),
-        { status: 400 }
-      );
+      return new NextResponse("Notification could not be created!", {
+        status: 400,
+      });
     }
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+  } catch (error) {
+    return handleApiError("Create notification failed!", error);
   }
 };

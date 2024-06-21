@@ -5,7 +5,7 @@ export interface INotification {
   dayReferenceNumber: number;
   notificationType: string;
   message: string;
-  recipient: Types.ObjectId[];
+  recipients: Types.ObjectId[];
   business: Types.ObjectId;
   sender?: Types.ObjectId;
 }

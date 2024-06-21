@@ -1,24 +1,22 @@
-import { IPromotionPeriod } from "@/app/lib/interface/IPromotion";
+export const validateDateAndTime = (promotionPeriod: {
+  start: Date;
+  end: Date;
+}) => {
+  if (typeof promotionPeriod !== "object" || !promotionPeriod)
+    return "The promotion period is required and must be an object!";
 
-export const validateDateAndTime = (promotionPeriod: IPromotionPeriod, obj: any) => {
-    if (
-      promotionPeriod.hasOwnProperty("start") &&
-      promotionPeriod.hasOwnProperty("end")
-    ) {
-      const startDate = new Date(promotionPeriod.start);
-      const endDate = new Date(promotionPeriod.end);
-  
-      if (startDate >= endDate) {
-        return "The start date must be before the end date.";
-      }
-  
-      // Additional validation checks can be added here
-  
-      obj.promotionPeriod.start = promotionPeriod.start;
-      obj.promotionPeriod.end = promotionPeriod.end;
-      return true;
-    } else {
-      return "Invalid dateRange!";
+  if (
+    promotionPeriod.hasOwnProperty("start") &&
+    promotionPeriod.hasOwnProperty("end")
+  ) {
+    const startDate = new Date(promotionPeriod.start);
+    const endDate = new Date(promotionPeriod.end);
+
+    if (startDate >= endDate) {
+      return "The start date must be before the end date.";
     }
-  };
-  
+
+    return true;
+  }
+  return "The promotion period must have a start and end valid date!";
+};

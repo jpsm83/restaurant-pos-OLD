@@ -7,107 +7,110 @@ import { Types } from "mongoose";
 import { IPromotion } from "@/app/lib/interface/IPromotion";
 import { validateDateAndTime } from "../utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "../utils/validateDaysOfTheWeek";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { validatePromotionType } from "../utils/validatePromotionType";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
 
 // @desc    Get promotion by ID
-// @route   GET /promotion/:promotionId
+// @route   GET /promotions/:promotionId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { promotionId: Types.ObjectId } }
+) => {
   try {
     const promotionId = context.params.promotionId;
     // check if the promotionId is valid
     if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid promotionId" }),
-        {
-          status: 400,
-        }
-      );
+      return new NextResponse("Invalid promotionId!", {
+        status: 400,
+      });
     }
 
     // connect before first call to DB
     await connectDB();
 
     const promotion = await Promotion.findById(promotionId)
-      .populate("businessGoodsToApply", "name sellingPrice")
+      // .populate("businessGoodsToApply", "name sellingPrice")
       .lean();
 
     return !promotion
-      ? new NextResponse(JSON.stringify({ message: "Promotion  not found!" }), {
+      ? new NextResponse("Promotion  not found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(promotion), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(promotion), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get promotion by its id failed!", error);
   }
 };
 
 // @desc    Update promotion by ID
-// @route   PATCH /promotion/:promotionId
+// @route   PATCH /promotions/:promotionId
 // @access  Private
 export const PATCH = async (
   req: Request,
-  context: { params: any }
+  context: { params: { promotionId: Types.ObjectId } }
 ) => {
   try {
     const promotionId = context.params.promotionId;
     // check if the promotionId is valid
     if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid promotionId" }),
-        {
-          status: 400,
-        }
-      );
+      return new NextResponse("Invalid promotionId!", {
+        status: 400,
+      });
     }
-
-    // connect before first call to DB
-    await connectDB();
 
     const {
       promotionName,
       promotionPeriod,
       weekDays,
-      promotionType,
       activePromotion,
-      fixedPrice,
-      discountPercent,
-      twoForOne,
-      threeForTwo,
-      secondHalfPrice,
-      fullComplimentary,
+      promotionType,
       businessGoodsToApply,
       description,
-    } = req.body as unknown as IPromotion;
+    } = (await req.json()) as IPromotion;
 
-    // check required fields
-    if (
-      !promotionName ||
-      !promotionPeriod ||
-      !weekDays ||
-      !promotionType ||
-      activePromotion === undefined
-    ) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "PromotionName, promotionPeriod, weekDays, promotionType and activePromotion are required fields!",
-        }),
-        { status: 400 }
-      );
+    // validate dateRange and timeRange
+    if (promotionPeriod) {
+      const validateDateAndTimeResult = validateDateAndTime(promotionPeriod);
+
+      if (validateDateAndTimeResult !== true) {
+        return new NextResponse(validateDateAndTimeResult, { status: 400 });
+      }
     }
+
+    // validate weekDays
+    if (weekDays) {
+      const validateDaysOfTheWeekResult = validateDaysOfTheWeek(weekDays);
+
+      if (validateDaysOfTheWeekResult !== true) {
+        return new NextResponse(validateDaysOfTheWeekResult, { status: 400 });
+      }
+    }
+
+    // validate promotionType
+    if (promotionType) {
+      const validatePromotionTypeResult = validatePromotionType(promotionType);
+      if (validatePromotionTypeResult !== true) {
+        return new NextResponse(validatePromotionTypeResult, { status: 400 });
+      }
+    }
+
+    // connect before first call to DB
+    await connectDB();
 
     // check if the promotion exists
     const promotion: IPromotion | null = await Promotion.findById(
       promotionId
     ).lean();
+
     if (!promotion) {
-      return new NextResponse(
-        JSON.stringify({ message: "Promotion not found!" }),
-        { status: 404 }
-      );
+      return new NextResponse("Promotion not found!", { status: 404 });
     }
 
     // check duplicate promotion
@@ -116,95 +119,52 @@ export const PATCH = async (
       business: promotion.business,
       promotionName,
     }).lean();
+
     if (duplicatePromotion) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `Promotion ${promotionName} already exists!`,
-        }),
-        { status: 400 }
-      );
+      return new NextResponse(`Promotion ${promotionName} already exists!`, {
+        status: 400,
+      });
     }
 
     // prepare update object
-    const updateObj = {
+    const updatedPromotion = {
       promotionName: promotionName || promotion.promotionName,
       promotionType: promotionType || promotion.promotionType,
       activePromotion: activePromotion || promotion.activePromotion,
-      fixedPrice: fixedPrice || promotion.fixedPrice,
-      discountPercent: discountPercent || promotion.discountPercent,
-      twoForOne: twoForOne || promotion.twoForOne,
-      threeForTwo: threeForTwo || promotion.threeForTwo,
-      secondHalfPrice: secondHalfPrice || promotion.secondHalfPrice,
-      fullComplimentary: fullComplimentary || promotion.fullComplimentary,
       businessGoodsToApply:
         businessGoodsToApply || promotion.businessGoodsToApply,
       description: description || promotion.description,
     };
 
-    // validate dateRange and timeRange
-    const validateDateAndTimeResult = validateDateAndTime(
-      promotionPeriod,
-      updateObj
-    );
-    if (validateDateAndTimeResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: validateDateAndTimeResult }),
-        { status: 400 }
-      );
-    }
-
-    // validate weekDays
-    const validateDaysOfTheWeekResult = validateDaysOfTheWeek(
-      weekDays,
-      updateObj
-    );
-    if (validateDaysOfTheWeekResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: validateDaysOfTheWeekResult }),
-        { status: 400 }
-      );
-    }
-
     // save the updated promotion
-    const updatedPromotion = await Promotion.findByIdAndUpdate(
-      { _id: promotionId },
-      updateObj,
-      {
-        new: true,
-        usefindAndModify: false,
-      }
-    ).lean();
+    await Promotion.findByIdAndUpdate(promotionId, updatedPromotion, {
+      new: true,
+      usefindAndModify: false,
+    });
 
-    return updatedPromotion
-      ? new NextResponse(
-          JSON.stringify({
-            message: `Promotion ${promotionName} updated successfully!`,
-          }),
-          { status: 200 }
-        )
-      : new NextResponse(
-          JSON.stringify({ message: "Failed to update promotion!" }),
-          { status: 400 }
-        );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return new NextResponse(
+      `Promotion ${updatedPromotion.promotionName} updated successfully!`,
+      { status: 200 }
+    );
+  } catch (error) {
+    return handleApiError("Update promotion failed!", error);
   }
 };
 
 // @desc    Delete promotion by ID
-// @route   DELETE /promotion/:promotionId
+// @route   DELETE /promotions/:promotionId
 // @access  Private
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (
+  req: Request,
+  context: { params: { promotionId: Types.ObjectId } }
+) => {
   try {
     const promotionId = context.params.promotionId;
     // check if the promotionId is valid
     if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid promotionId" }),
-        {
-          status: 400,
-        }
-      );
+      return new NextResponse("Invalid promotionId!", {
+        status: 400,
+      });
     }
 
     // connect before first call to DB
@@ -214,17 +174,13 @@ export const DELETE = async (context: { params: any }) => {
     const result = await Promotion.deleteOne({ _id: promotionId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse(
-        JSON.stringify({ message: "Promotion not found" }),
-        { status: 404 }
-      );
+      return new NextResponse("Promotion not found!", { status: 404 });
     }
 
-    return new NextResponse(
-      JSON.stringify({ message: `Promotion ${promotionId} deleted!` }),
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return new NextResponse(`Promotion ${promotionId} deleted!`, {
+      status: 200,
+    });
+  } catch (error) {
+    return handleApiError("Delete promotion failed!", error);
   }
 };

@@ -4,6 +4,7 @@ import connectDB from "@/app/lib/db";
 // imported models
 import Promotion from "@/app/lib/models/promotion";
 import { Types } from "mongoose";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
@@ -13,18 +14,17 @@ import { Types } from "mongoose";
 // @access  Private
 export const GET = async (
   req: Request,
-  context: { params: any }
+  context: {
+    params: { businessId: Types.ObjectId };
+  }
 ) => {
   try {
     const businessId = context.params.businessId;
     // Validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid businessId" }),
-        {
-          status: 400,
-        }
-      );
+      return new NextResponse("Invalid businessId!", {
+        status: 400,
+      });
     }
 
     // date and time will como from the front as ex: "2023-04-01T15:00:00", you can create a Date object from it with new Date(startDate). This will create a Date object representing midnight on the given date in the LOCAL TIME ZONE OF THE SERVER.
@@ -35,9 +35,6 @@ export const GET = async (
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Connect to DB before first call
-    await connectDB();
-
     // Build query based on the presence of startDate and endDate
     let query: {
       business: Types.ObjectId;
@@ -46,20 +43,33 @@ export const GET = async (
     } = { business: businessId };
 
     if (startDate && endDate) {
+      if(startDate > endDate){
+        return new NextResponse("Invalid date range, start date must be before end date!", {
+          status: 400,
+        });
+      }
       query["promotionPeriod.start"] = { $gte: new Date(startDate) };
       query["promotionPeriod.end"] = { $lte: new Date(endDate) };
     }
+
+    // Connect to DB before first call
+    await connectDB();
 
     const promotion = await Promotion.find(query)
       .populate("businessGoodsToApply", "name sellingPrice")
       .lean();
 
     return !promotion.length
-      ? new NextResponse(JSON.stringify({ message: "No promotion found!" }), {
+      ? new NextResponse("No promotion found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(promotion), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(promotion), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  } catch (error) {
+    return handleApiError("Get promotion by business id failed!", error);
   }
 };

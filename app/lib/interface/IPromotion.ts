@@ -9,15 +9,9 @@ export interface IPromotion {
   promotionName: string;
   promotionPeriod: IPromotionPeriod;
   weekDays: string[];
-  promotionType: string;
   activePromotion: boolean;
+  promotionType: object;
   business: Types.ObjectId;
-  fixedPrice?: number;
-  discountPercent?: number;
-  twoForOne?: boolean;
-  threeForTwo?: boolean;
-  secondHalfPrice?: boolean;
-  fullComplimentary?: boolean;
   businessGoodsToApply?: Types.ObjectId[];
   description?: string;
 }

@@ -45,7 +45,7 @@ export const getScheduleById = async (context: { params: any }) => {
 // @access  Private
 export const updateSchedule = async (
   req: Request,
-  context: { params: any }
+  context: { params: { scheduleId: Types.ObjectId } }
 ) => {
   try {
     const scheduleId = context.params.scheduleId;

@@ -20,7 +20,7 @@ const notificationSchema = new Schema(
     dayReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
     notificationType: { type: notificationTypes, required: true }, // Type of notification "warning", "emergency", "info"
     message: { type: String, required: true }, // notification message
-    recipient: {
+    recipients: {
       type: [Schema.Types.ObjectId],
       ref: "User",
       required: true,

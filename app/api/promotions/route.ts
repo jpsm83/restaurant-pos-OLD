@@ -6,12 +6,14 @@ import Promotion from "@/app/lib/models/promotion";
 import { IPromotion } from "@/app/lib/interface/IPromotion";
 import { validateDateAndTime } from "./utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "./utils/validateDaysOfTheWeek";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { validatePromotionType } from "./utils/validatePromotionType";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
 
 // @desc    Get all promotion
-// @route   GET /promotion
+// @route   GET /promotions
 // @access  Private
 export const GET = async () => {
   try {
@@ -19,21 +21,26 @@ export const GET = async () => {
     await connectDB();
 
     const promotion = await Promotion.find()
-      .populate("businessGoodsToApply", "name sellingPrice")
+      // .populate("businessGoodsToApply", "name sellingPrice")
       .lean();
 
     return !promotion.length
-      ? new NextResponse(JSON.stringify({ message: "No promotion  found!" }), {
+      ? new NextResponse("No promotion  found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(promotion), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(promotion), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  } catch (error) {
+    return handleApiError("Get all users failed!", error);
   }
 };
 
 // @desc    Create new promotion
-// @route   POST /promotion
+// @route   POST /promotions
 // @access  Private
 export const POST = async (req: Request) => {
   try {
@@ -41,35 +48,46 @@ export const POST = async (req: Request) => {
       promotionName,
       promotionPeriod,
       weekDays,
-      promotionType,
       activePromotion,
+      promotionType,
       business,
-      fixedPrice,
-      discountPercent,
-      twoForOne,
-      threeForTwo,
-      secondHalfPrice,
-      fullComplimentary,
       businessGoodsToApply,
       description,
-    } = req.body as unknown as IPromotion;
+    } = (await req.json()) as IPromotion;
 
     // check required fields
     if (
       !promotionName ||
       !promotionPeriod ||
       !weekDays ||
-      !promotionType ||
       activePromotion === undefined ||
+      !promotionType ||
       !business
     ) {
       return new NextResponse(
-        JSON.stringify({
-          message:
-            "PromotionName, promotionPeriod, weekDays, promotionType, activePromotion and business are required fields!",
-        }),
+        "PromotionName, promotionPeriod, weekDays, activePromotion promotionType and business are required fields!",
         { status: 400 }
       );
+    }
+
+    // validate dateRange and timeRange
+    const validateDateAndTimeResult = validateDateAndTime(promotionPeriod);
+
+    if (validateDateAndTimeResult !== true) {
+      return new NextResponse(validateDateAndTimeResult, { status: 400 });
+    }
+
+    // validate weekDays
+    const validateDaysOfTheWeekResult = validateDaysOfTheWeek(weekDays);
+
+    if (validateDaysOfTheWeekResult !== true) {
+      return new NextResponse(validateDaysOfTheWeekResult, { status: 400 });
+    }
+
+    // validate promotionType
+    const validatePromotionTypeResult = validatePromotionType(promotionType);
+    if (validatePromotionTypeResult !== true) {
+      return new NextResponse(validatePromotionTypeResult, { status: 400 });
     }
 
     // connect before first call to DB
@@ -80,71 +98,33 @@ export const POST = async (req: Request) => {
       business,
       promotionName,
     }).lean();
+
     if (duplicatePromotion) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `Promotion ${promotionName} already exists!`,
-        }),
-        { status: 400 }
-      );
+      return new NextResponse(`Promotion ${promotionName} already exists!`, {
+        status: 400,
+      });
     }
 
     // create promotion object
-    const promotionObj = {
+    const newPromotion = {
       promotionName,
-      promotionType,
+      promotionPeriod,
+      weekDays,
       activePromotion,
+      promotionType,
       business,
-      fixedPrice: fixedPrice || undefined,
-      discountPercent: discountPercent || undefined,
-      twoForOne: twoForOne || undefined,
-      threeForTwo: threeForTwo || undefined,
-      secondHalfPrice: secondHalfPrice || undefined,
-      fullComplimentary: fullComplimentary || undefined,
       businessGoodsToApply: businessGoodsToApply || undefined,
       description: description || undefined,
     };
 
-    // validate dateRange and timeRange
-    const validateDateAndTimeResult = validateDateAndTime(
-      promotionPeriod,
-      promotionObj
-    );
-    if (validateDateAndTimeResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: validateDateAndTimeResult }),
-        { status: 400 }
-      );
-    }
-
-    // validate weekDays
-    const validateDaysOfTheWeekResult = validateDaysOfTheWeek(
-      weekDays,
-      promotionObj
-    );
-    if (validateDaysOfTheWeekResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: validateDaysOfTheWeekResult }),
-        { status: 400 }
-      );
-    }
-
     // create a new promotion
-    const promotion = await Promotion.create(promotionObj);
+    await Promotion.create(newPromotion);
 
-    // confirm promotion was created
-    return promotion
-      ? new NextResponse(
-          JSON.stringify({
-            message: `Promotion ${promotionName} created successfully!`,
-          }),
-          { status: 201 }
-        )
-      : new NextResponse(
-          JSON.stringify({ message: "Failed to create promotion!" }),
-          { status: 400 }
-        );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return new NextResponse(
+      `Promotion ${promotionName} created successfully!`,
+      { status: 201 }
+    );
+  } catch (error) {
+    return handleApiError("Create promotion failed!", error);
   }
 };

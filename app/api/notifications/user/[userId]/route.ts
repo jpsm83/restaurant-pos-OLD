@@ -5,33 +5,42 @@ import { NextResponse } from "next/server";
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get all notifications by user ID
 // @route   GET /notifications/user/:userId
 // @access  Public
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: {
+    params: { userId: Types.ObjectId };
+  }
+) => {
   try {
-    // connect before first call to DB
-    await connectDB();
-
     const userId = context.params.userId;
-    // check if the userId is valid
-    if (!Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID" }), {
+
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      return new NextResponse("Invalid business ID!", {
         status: 400,
       });
     }
 
+    // connect before first call to DB
+    await connectDB();
+
     const notifications = await Notification.find({
-      recipient: { $in: userId },
+      recipients: { $in: userId },
     });
+    
     return !notifications.length
-      ? new NextResponse(
-          JSON.stringify({ message: "No notifications found" }),
-          { status: 404 }
-        )
-      : new NextResponse(JSON.stringify(notifications), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      ? new NextResponse("No notifications found!", { status: 404 })
+      : new NextResponse(JSON.stringify(notifications), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+  } catch (error) {
+    return handleApiError("Get users by business id failed!", error);
   }
 };
