@@ -139,7 +139,6 @@ export const PATCH = async (
     // save the updated promotion
     await Promotion.findByIdAndUpdate(promotionId, updatedPromotion, {
       new: true,
-      usefindAndModify: false,
     });
 
     return new NextResponse(

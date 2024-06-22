@@ -179,6 +179,14 @@ export const PATCH = async (
       });
     }
 
+    // calculate vacation days if joinDate or vacationDaysPerYear are updated
+    let calculateVacationDaysPerYear: number | undefined;
+    if ((joinDate !== user.joinDate) || (vacationDaysPerYear !== user.vacationDaysPerYear)) {
+      calculateVacationDaysPerYear = calculateVacationProportional(
+        new Date(joinDate),
+        vacationDaysPerYear);
+    }
+
     let grossHourlySalaryCalculation: number | undefined;
     if (
      typeof grossMonthlySalary === "number" &&
@@ -203,10 +211,7 @@ export const PATCH = async (
       active: active !== undefined ? active : user.active,
       onDuty: onDuty !== undefined ? onDuty : user.onDuty,
       vacationDaysPerYear: vacationDaysPerYear || user.vacationDaysPerYear,
-      vacationDaysLeft: calculateVacationProportional(
-        new Date(joinDate),
-        vacationDaysPerYear
-      ),
+      vacationDaysLeft: calculateVacationDaysPerYear ? calculateVacationDaysPerYear : user.vacationDaysLeft,
       currentShiftRole: currentShiftRole || user.currentShiftRole,
       address: updatedAddress,
       photo: photo || user.photo,
@@ -221,7 +226,6 @@ export const PATCH = async (
     // update the user
     await User.findByIdAndUpdate(userId, updatedUser, {
       new: true,
-      usefindAndModify: false,
     });
 
     return new NextResponse(

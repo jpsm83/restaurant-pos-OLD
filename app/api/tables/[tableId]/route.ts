@@ -194,7 +194,6 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       // save the updated table
       await Table.findOneAndUpdate({ _id: tableId }, updateObj, {
         new: true,
-        useFindAndModify: false,
       });
 
       return new NextResponse(

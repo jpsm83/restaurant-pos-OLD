@@ -228,7 +228,6 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       updateObj,
       {
         new: true,
-        useFindAndModify: false,
       }
     );
 

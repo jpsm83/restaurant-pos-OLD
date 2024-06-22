@@ -149,7 +149,6 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     // updated supplier good
     await SupplierGood.findByIdAndUpdate({ _id: supplierGoodId }, updateObj, {
       new: true,
-      usefindAndModify: false,
     }).lean();
 
     return new NextResponse(

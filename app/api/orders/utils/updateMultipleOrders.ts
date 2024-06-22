@@ -19,7 +19,6 @@ export const updateMultipleOrders = async (
   
       return await Order.findOneAndUpdate({ _id: orderId }, update, {
         new: true,
-        useFindAndModify: false,
       });
     } catch (error: any) {
       return new NextResponse("Error: " + error, { status: 500 });

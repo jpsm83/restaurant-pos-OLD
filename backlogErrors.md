@@ -3,3 +3,4 @@
 - printer all GETs, they are not populating the user from printFor.user
 - promotion all GETs, they are not populating the businessGood from businessGoodsToApply array
 - notification UTILS, removeUserFromNotification.ts has to be tested somehow
+- schedule all GETs, they are not populating the employees - that is because employees doesnt exists yet or is an empty array

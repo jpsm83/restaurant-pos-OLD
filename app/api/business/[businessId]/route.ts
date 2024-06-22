@@ -171,7 +171,6 @@ export const PATCH = async (
     // save the updated business
     await Business.findByIdAndUpdate(businessId, updatedBusiness, {
       new: true,
-      usefindAndModify: false,
     });
 
     return new NextResponse(`Business ${updatedBusiness.legalName} updated`, {

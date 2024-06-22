@@ -1,7 +1,7 @@
 import { Schema, model, models } from "mongoose";
 
 const employeesScheduled = new Schema({
-  employee: {
+  userId: {
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -37,14 +37,17 @@ const scheduleSchema = new Schema(
     employees: {
       type: [employeesScheduled],
       required: true,
+      default: [],
     },
     totalEmployeesScheduled: {
       type: Number,
       required: true,
+      default: 0,
     }, // total users scheduled
     totalDayEmployeesCost: {
       type: Number,
       required: true,
+      default: 0,
     }, // total daily employees, sun of all employeeCost - REQUIERED FOR ANALYTICS
     business: {
       type: Schema.Types.ObjectId,

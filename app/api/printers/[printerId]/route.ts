@@ -114,7 +114,6 @@ export const PATCH = async (req: Request, context: { params: { printerId: Types.
     // update the printer
     await Printer.findByIdAndUpdate(printerId, updatedPrinter, {
       new: true,
-      usefindAndModify: false,
     });
 
     return new NextResponse(

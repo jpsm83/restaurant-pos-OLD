@@ -87,7 +87,6 @@ export const PATCH = async (
     const updatedNotification: INotification | null =
       await Notification.findByIdAndUpdate(notificationId, updateObj, {
         new: true,
-        usefindAndModify: false,
       }).lean();
 
     if (updatedNotification) {

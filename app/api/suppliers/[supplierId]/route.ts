@@ -152,7 +152,6 @@ export const PATCH = async (
     // Save the updated supplier
     await Supplier.findByIdAndUpdate(supplierId, updatedSupplier, {
       new: true,
-      usefindAndModify: false,
     });
 
     return new NextResponse(

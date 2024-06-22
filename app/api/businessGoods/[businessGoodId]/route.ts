@@ -199,7 +199,6 @@ export const PATCH = async (
       updateBusinessGoodObj,
       {
         new: true,
-        usefindAndModify: false,
       }
     );
 
