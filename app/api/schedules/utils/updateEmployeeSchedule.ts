@@ -1,11 +1,9 @@
 import { Types } from "mongoose";
-import { NextResponse } from "next/server";
 import connectDB from "@/app/lib/db";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
 import User from "@/app/lib/models/user";
-import { handleApiError } from "@/app/utils/handleApiError";
 import { employeesValidation } from "./employeesValidation";
 
 export const updateEmployeeSchedule = async (
@@ -15,9 +13,7 @@ export const updateEmployeeSchedule = async (
   try {
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return new NextResponse("Invalid schedule Id!", {
-        status: 400,
-      });
+      return "Invalid schedule Id!";
     }
 
     // check if the user ID is valid
@@ -25,17 +21,13 @@ export const updateEmployeeSchedule = async (
       !employeeSchedule.userId ||
       !Types.ObjectId.isValid(employeeSchedule.userId)
     ) {
-      return new NextResponse("Invalid user Id!", {
-        status: 400,
-      });
+      return "Invalid user Id!";
     }
 
     // validate employee object
     const validEmployees = employeesValidation(employeeSchedule);
     if (validEmployees !== true) {
-      return new NextResponse(validEmployees, {
-        status: 400,
-      });
+      return validEmployees;
     }
 
     // connect before first call to DB
@@ -44,42 +36,40 @@ export const updateEmployeeSchedule = async (
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost weekNumber"
+        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost employees.timeRange weekNumber totalDayEmployeesCost"
       )
       .lean();
 
     if (!schedule) {
-      return new NextResponse("Schedule not found!", {
-        status: 404,
-      });
+      return "Schedule not found!";
     }
 
     const employeeScheduleToUpdate: IEmployee | null =
       schedule.employees.find(
         (emp: { userId: Types.ObjectId }) =>
-          emp.userId === employeeSchedule.userId
+          emp.userId == employeeSchedule.userId
       ) || null;
 
-    const userId = employeeScheduleToUpdate?.userId;
-    const role = employeeScheduleToUpdate?.role;
-    const startTime = employeeScheduleToUpdate?.timeRange.startTime
-      ? new Date(employeeScheduleToUpdate.timeRange.startTime)
+    const userId = employeeSchedule?.userId;
+    const role = employeeSchedule?.role;
+    const startTime = employeeSchedule?.timeRange.startTime
+      ? new Date(employeeSchedule.timeRange.startTime)
       : new Date();
-    const endTime = employeeScheduleToUpdate?.timeRange.endTime
-      ? new Date(employeeScheduleToUpdate.timeRange.endTime)
+    const endTime = employeeSchedule?.timeRange.endTime
+      ? new Date(employeeSchedule.timeRange.endTime)
       : new Date();
-    const vacation = employeeScheduleToUpdate?.vacation;
-    const employeeCost = employeeScheduleToUpdate?.employeeCost;
+    const vacation = employeeSchedule?.vacation;
 
     // Calculate difference in milliseconds, then convert to hours
     const differenceInHours =
       (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
-    const userEmployee: IUser | null = await User.findById(userId)
+      const userEmployee: IUser | null = await User.findById(userId)
       .select("contractHoursWeek grossHourlySalary vacationDaysLeft")
       .lean();
 
     const employeeScheduleOnTheWeek: ISchedule[] | any[] = await Schedule.find({
+      _id: { $ne: scheduleId },
       weekNumber: schedule.weekNumber,
       "employees.userId": { $in: [userId] },
     })
@@ -137,6 +127,7 @@ export const updateEmployeeSchedule = async (
 
     const hourlySalary = userEmployee?.grossHourlySalary ?? 0;
     const newEmployeeCost = hourlySalary * differenceInHours;
+    const newTotalDayEmployeesCost = schedule.employees.reduce((acc, emp) => acc + emp.employeeCost, 0) - (employeeScheduleToUpdate?.employeeCost ?? 0) + newEmployeeCost;
 
     const employeeToUpdate = {
       userId: userId,
@@ -155,21 +146,16 @@ export const updateEmployeeSchedule = async (
       scheduleId,
       {
         $set: {
-          "employees.$[elem]": employeeToUpdate, // This replaces the entire matching employee object
-        },
-        $inc: {
-          totalDayEmployeesCost:
-            schedule.totalDayEmployeesCost -
-            (employeeCost ?? 0) +
-            newEmployeeCost, // Adjust the total cost accordingly
-        },
-      },
-      {
+          "employees.$[elem]": employeeToUpdate, // Correctly replaces the entire matching employee object
+          totalDayEmployeesCost: newTotalDayEmployeesCost // Moved inside the $set object
+        }
+      },      {
         new: true,
         arrayFilters: [{ "elem.userId": userId }], // Ensure this correctly identifies the employee
       }
     );
+    return "Employee schedule updated!";
   } catch (error) {
-    return handleApiError("Adding employee to schedule failed!", error);
+    return "Updating employee to schedule failed!" + error;
   }
 };

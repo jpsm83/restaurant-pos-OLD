@@ -6,6 +6,10 @@ import Schedule from "@/app/lib/models/schedule";
 import { ISchedule } from "@/app/lib/interface/ISchedule";
 import { handleApiError } from "@/app/utils/handleApiError";
 import { getWeekNumber } from "./utils/getWeekNumber";
+import { addEmployeeToSchedule } from "./utils/addEmployeeToSchedule";
+import { Types } from "mongoose";
+import { deleteEmployeeFromSchedule } from "./utils/deleteEmployeeFromSchedule";
+import { updateEmployeeSchedule } from "./utils/updateEmployeeSchedule";
 
 // @desc    Get all schedules
 // @route   GET /schedules
@@ -85,3 +89,31 @@ export const POST = async (req: Request) => {
     return handleApiError("Create schedule failed!", error);
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     const scheduleId = "66771473b2b36aea9e001747";
+//     const userId = "66758b8904c4e6f5bbaa6b81";
+
+//     const employeeSchedule = {
+//       userId: "66758b8904c4e6f5bbaa6b81",
+//       role: "Manager",
+//       timeRange: {
+//         startTime: "2024-06-15T10:00:00.000Z",
+//         endTime: "2024-06-15T17:00:00.000Z",
+//       },
+//       vacation: false,
+//     };
+
+//     //@ts-ignore
+//     // const addEmploy = await addEmployeeToSchedule(scheduleId, employeeSchedule);
+//     const deleteEmploy = await deleteEmployeeFromSchedule(scheduleId, userId);
+//     // const updateEmploy = await updateEmployeeSchedule(scheduleId, employeeSchedule);
+
+//     return new NextResponse(JSON.stringify(deleteEmploy), {
+//       status: 201, headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Create schedule failed!", error);
+//   }
+// };

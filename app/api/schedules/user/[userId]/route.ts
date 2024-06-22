@@ -27,7 +27,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDB();
 
-    const schedules = await Schedule.find({ "employees.employee": userId })
+    const schedules = await Schedule.find({ "employees.userId": userId })
       // .populate("employees.employee", "username allUserRoles")
       .lean();
 

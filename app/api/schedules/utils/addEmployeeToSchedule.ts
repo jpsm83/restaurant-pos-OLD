@@ -1,11 +1,9 @@
 import { Types } from "mongoose";
-import { NextResponse } from "next/server";
 import connectDB from "@/app/lib/db";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
 import User from "@/app/lib/models/user";
-import { handleApiError } from "@/app/utils/handleApiError";
 import { employeesValidation } from "./employeesValidation";
 
 export const addEmployeeToSchedule = async (
@@ -15,17 +13,13 @@ export const addEmployeeToSchedule = async (
   try {
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return new NextResponse("Invalid schedule Id!", {
-        status: 400,
-      });
+      return "Invalid schedule Id!";
     }
 
     // validate employee object
     const validEmployees = employeesValidation(employeeSchedule);
     if (validEmployees !== true) {
-      return new NextResponse(validEmployees, {
-        status: 400,
-      });
+      return validEmployees;
     }
 
     // connect before first call to DB
@@ -39,11 +33,18 @@ export const addEmployeeToSchedule = async (
       .lean();
 
     if (!schedule) {
-      return new NextResponse("Schedule not found!", {
-        status: 404,
-      });
+      return "Schedule not found!";
     }
 
+      // check if the employee is already scheduled
+      const employeeExists = schedule.employees.find(
+        (employee) => employee.userId == employeeSchedule.userId
+      );
+
+      if (employeeExists) {
+        return "Employee already scheduled!";
+      }
+    
     const userId = employeeSchedule.userId;
     const role = employeeSchedule.role;
     const startTime = new Date(employeeSchedule.timeRange.startTime);
@@ -141,7 +142,8 @@ export const addEmployeeToSchedule = async (
       },
       { new: true, useFindAndModify: false }
     );
+    return "Employee added to schedule!";
   } catch (error) {
-    return handleApiError("Adding employee to schedule failed!", error);
+    return "Adding employee to schedule failed! " + error;
   }
 };

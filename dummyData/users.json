@@ -26,7 +26,7 @@
         "business": "6673fed98c45d0a0ca5f34c1",
         "photo": "../public/images/avatar.png",
         "createdAt": "2024-06-20T11:30:39.302Z",
-        "updatedAt": "2024-06-20T12:14:31.105Z",
+        "updatedAt": "2024-06-21T09:33:07.961Z",
         "__v": 0,
         "address": {
             "country": "business1country",
@@ -43,7 +43,24 @@
         "currentShiftRole": "user1currentShiftRole",
         "grossMonthlySalary": 11,
         "netMonthlySalary": 11,
-        "terminatedDate": "2024-06-20T10:05:13.920Z"
+        "terminatedDate": "2024-06-20T10:05:13.920Z",
+        "notifications": [
+            {
+                "notification": "6675475e3bfefbb6373c7158",
+                "readFlag": false,
+                "_id": "6675475e3bfefbb6373c715a"
+            },
+            {
+                "notification": "6675476e3bfefbb6373c715c",
+                "readFlag": false,
+                "_id": "6675476e3bfefbb6373c715e"
+            },
+            {
+                "notification": "667548d33bfefbb6373c716e",
+                "readFlag": false,
+                "_id": "667548d33bfefbb6373c7170"
+            }
+        ]
     },
     {
         "_id": "66741dbbdf254a9fd7e3af59",
@@ -72,7 +89,48 @@
         "business": "6673fef88c45d0a0ca5f34c5",
         "photo": "../public/images/avatar.png",
         "createdAt": "2024-06-20T12:16:59.465Z",
-        "updatedAt": "2024-06-20T12:16:59.465Z",
+        "updatedAt": "2024-06-21T09:26:54.705Z",
+        "__v": 0,
+        "notifications": [
+            {
+                "notification": "6675475e3bfefbb6373c7158",
+                "readFlag": false,
+                "_id": "6675475e3bfefbb6373c715a"
+            }
+        ]
+    },
+    {
+        "_id": "66758b8904c4e6f5bbaa6b81",
+        "username": "user3",
+        "email": "user3email@user3.com",
+        "idType": "National ID",
+        "idNumber": "user3IdNumber",
+        "allUserRoles": [
+            "Manager",
+            "Bartender"
+        ],
+        "personalDetails": {
+            "firstName": "user3FirstName",
+            "lastName": "user3LastName",
+            "nationality": "user3Nationality",
+            "gender": "Man",
+            "birthDate": "2014-10-10T14:48:00.000Z",
+            "phoneNumber": "user3PhoneNumber",
+            "_id": "66758b8904c4e6f5bbaa6b82"
+        },
+        "taxNumber": "user3TaxNumber",
+        "joinDate": "2024-06-10T14:48:00.000Z",
+        "active": true,
+        "onDuty": false,
+        "vacationDaysPerYear": 21,
+        "vacationDaysLeft": 2,
+        "business": "6673fef88c45d0a0ca5f34c5",
+        "photo": "../public/images/avatar.png",
+        "contractHoursWeek": 40,
+        "grossMonthlySalary": 2000,
+        "grossHourlySalary": 12.5,
+        "createdAt": "2024-06-21T14:17:45.730Z",
+        "updatedAt": "2024-06-22T09:23:15.786Z",
         "__v": 0
     }
 ]

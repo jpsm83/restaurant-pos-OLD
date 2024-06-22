@@ -2,9 +2,7 @@ import connectDB from "@/app/lib/db";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
-import { handleApiError } from "@/app/utils/handleApiError";
 import { Types } from "mongoose";
-import { NextResponse } from "next/server";
 
 // delete employee from schedule
 export const deleteEmployeeFromSchedule = async (
@@ -14,16 +12,12 @@ export const deleteEmployeeFromSchedule = async (
   try {
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return new NextResponse("Invalid schedule Id!", {
-        status: 400,
-      });
+      return "Invalid schedule Id!";
     }
 
     // check if the user ID is valid
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid user Id!", {
-        status: 400,
-      });
+      return "Invalid user Id!";
     }
 
     // connect before first call to DB
@@ -32,19 +26,17 @@ export const deleteEmployeeFromSchedule = async (
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft weekNumber"
+        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost weekNumber"
       )
       .lean();
 
     if (!schedule) {
-      return new NextResponse("Schedule not found!", {
-        status: 404,
-      });
+      return "Schedule not found!";
     }
 
     const employeeSchedule: IEmployee | null =
       schedule.employees.find(
-        (emp: { userId: Types.ObjectId }) => emp.userId === userId
+        (emp: { userId: Types.ObjectId }) => emp.userId == userId
       ) || null;
 
     const weekNumber = schedule.weekNumber;
@@ -85,8 +77,14 @@ export const deleteEmployeeFromSchedule = async (
 
     // Delete the employee from the schedule
     await Schedule.findByIdAndUpdate(
-      schedule._id, // Assuming schedule._id is the correct identifier
-      { $pull: { employees: { userId: userId } } },
+      scheduleId, // Assuming schedule._id is the correct identifier
+      {
+        $pull: { employees: { userId: userId } },
+        $inc: {
+          totalEmployeesScheduled: -1,
+          totalDayEmployeesCost: -(employeeSchedule?.employeeCost ?? 0),
+        },
+      },
       { new: true, useFindAndModify: false }
     );
 
@@ -98,7 +96,8 @@ export const deleteEmployeeFromSchedule = async (
         { new: true, useFindAndModify: false }
       );
     }
+    return "Employee deleted from schedule!";
   } catch (error) {
-    return handleApiError("Delete employee from schedule failed!", error);
+    return "Delete employee from schedule failed! " + error;
   }
 };
