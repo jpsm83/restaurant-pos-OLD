@@ -8,6 +8,7 @@ const roles = [
   "Manager",
   "Assistant Manager",
   "MoD",
+  "Admin",
   "Operator",
   "Employee",
   "Cashier",

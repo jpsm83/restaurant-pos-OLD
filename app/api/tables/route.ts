@@ -11,6 +11,7 @@ import { addUserToDailySalesReport } from "../dailySalesReports/utils/addUserToD
 import Business from "@/app/lib/models/business";
 import Table from "@/app/lib/models/table";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get all tables
 // @route   GET /tables
@@ -21,27 +22,32 @@ export const GET = async () => {
     await connectDB();
 
     const tables = await Table.find()
-      .populate("openedBy", "username currentShiftRole")
-      .populate("responsibleBy", "username currentShiftRole")
-      .populate("closedBy", "username currentShiftRole")
-      .populate({
-        path: "orders",
-        select:
-          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
-        populate: {
-          path: "businessGoods",
-          select: "name category subCategory allergens sellingPrice",
-        },
-      })
+      // .populate("openedBy", "username currentShiftRole")
+      // .populate("responsibleBy", "username currentShiftRole")
+      // .populate("closedBy", "username currentShiftRole")
+      // .populate({
+      //   path: "orders",
+      //   select:
+      //     "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
+      //   populate: {
+      //     path: "businessGoods",
+      //     select: "name category subCategory allergens sellingPrice",
+      //   },
+      // })
       .lean();
 
     return !tables?.length
-      ? new NextResponse(JSON.stringify({ message: "No tables found!" }), {
+      ? new NextResponse("No tables found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(tables), { status: 200 });
+      : new NextResponse(JSON.stringify(tables), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
   } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return handleApiError("Get all tables failed!", error);
   }
 };
 
@@ -59,7 +65,7 @@ export const POST = async (req: Request) => {
       responsibleBy,
       business,
       clientName,
-    } = req.body as unknown as ITable;
+    } = (await req.json()) as ITable;
 
     // check required fields
     if (
@@ -71,10 +77,7 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        JSON.stringify({
-          message:
-            "TableReference, guest, status, openedBy, responsibleBy and business are required!",
-        }),
+        "TableReference, guest, status, openedBy, responsibleBy and business are required!",
         { status: 400 }
       );
     }
@@ -91,9 +94,7 @@ export const POST = async (req: Request) => {
     // check if tableReference exists in the business (pre set tables that can be used)
     if (!validateTableReference) {
       return new NextResponse(
-        JSON.stringify({
-          message: "TableReference does not exist in this business!",
-        }),
+        "TableReference does not exist in this business!",
         { status: 400 }
       );
     }
@@ -139,9 +140,7 @@ export const POST = async (req: Request) => {
 
     if (duplicateTable) {
       return new NextResponse(
-        JSON.stringify({
-          message: `Table ${tableReference} already exists and it is not closed!`,
-        }),
+        `Table ${tableReference} already exists and it is not closed!`,
         { status: 409 }
       );
     }
@@ -165,15 +164,10 @@ export const POST = async (req: Request) => {
     // create the table
     await Table.create(tableObj);
 
-    return new NextResponse(
-      JSON.stringify({
-        message: `Table ${tableReference} created successfully!`,
-      }),
-      { status: 201 }
-    );
-  } catch (error: any) {
-    return new NextResponse("Table creation failed - Error: " + error, {
-      status: 500,
+    return new NextResponse(`Table ${tableReference} created successfully!`, {
+      status: 201,
     });
+  } catch (error) {
+    return handleApiError("Create table failed!", error);
   }
 };

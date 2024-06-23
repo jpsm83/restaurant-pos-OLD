@@ -4,3 +4,8 @@
 - promotion all GETs, they are not populating the businessGood from businessGoodsToApply array
 - notification UTILS, removeUserFromNotification.ts has to be tested somehow
 - schedule all GETs, they are not populating the employees - that is because employees doesnt exists yet or is an empty array
+- table all GETs, populate doesnt work
+- dailySalesReport all GETs, populate doesnt work on user
+- dailySalesReport helper function closeDailySalesReport MUST be review - error - "Failed to update daily sales report! TypeError: Reduce of empty array with no initial value" / "Failed to update daily sales report! TypeError: sale.forEach is not a function"
+
+- dailySalesReport helper function updateUserDailySalesReportGeneric been tested and it is working BUT, NEED all the controllers tested and with data to be real tested

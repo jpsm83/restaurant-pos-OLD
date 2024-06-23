@@ -11,6 +11,7 @@ import Business from "@/app/lib/models/business";
 import Table from "@/app/lib/models/table";
 import Order from "@/app/lib/models/order";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get tables by ID
 // @route   GET /tables/:tableId
@@ -20,7 +21,7 @@ export const GET = async (context: { params: any }) => {
     const tableId = context.params.tableId;
     // validate tableId
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid tableId" }), {
+      return new NextResponse("Invalid tableId!", {
         status: 400,
       });
     }
@@ -29,39 +30,42 @@ export const GET = async (context: { params: any }) => {
     await connectDB();
 
     const tables = await Table.findById(tableId)
-      .populate("openedBy", "username currentShiftRole")
-      .populate("responsibleBy", "username currentShiftRole")
-      .populate("closedBy", "username currentShiftRole")
-      .populate({
-        path: "orders",
-        select:
-          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
-        populate: {
-          path: "businessGoods",
-          select: "name category subCategory allergens sellingPrice",
-        },
-      })
+      // .populate("openedBy", "username currentShiftRole")
+      // .populate("responsibleBy", "username currentShiftRole")
+      // .populate("closedBy", "username currentShiftRole")
+      // .populate({
+      //   path: "orders",
+      //   select:
+      //     "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
+      //   populate: {
+      //     path: "businessGoods",
+      //     select: "name category subCategory allergens sellingPrice",
+      //   },
+      // })
       .lean();
 
     return !tables
-      ? new NextResponse(JSON.stringify({ message: "Table not found!" }), {
+      ? new NextResponse("Table not found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(tables), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(tables), { status: 200, headers: { "Content-Type": "application/json" } });
+  } catch (error) {
+    return handleApiError("Get user by its id failed!", error);
   }
 };
 
 // @desc    Update tables
 // @route   PATCH /tables/:tableId
 // @access  Private
-export const PATCH = async (req: Request, context: { params: any }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { tableId: Types.ObjectId } }
+) => {
   try {
     const tableId = context.params.tableId;
     // validate tableId
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid tableId" }), {
+      return new NextResponse("Invalid tableId!", {
         status: 400,
       });
     }
@@ -77,7 +81,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       tableTotalTips,
       orders,
       closedBy,
-    } = req.body as unknown as ITable;
+    } = await req.json() as ITable;
 
     // connect before first call to DB
     await connectDB();
@@ -85,7 +89,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     // check if table exists
     const table: ITable | null = await Table.findById(tableId).lean();
     if (!table) {
-      return new NextResponse(JSON.stringify({ message: "Table not found!" }), {
+      return new NextResponse("Table not found!", {
         status: 404,
       });
     }
@@ -112,10 +116,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
 
       // check if tableReference exists in the business (pre set tables that can be used)
       if (!validateTableReference) {
-        return new NextResponse(
-          JSON.stringify({
-            message: "TableReference does not exist in this business!",
-          }),
+        return new NextResponse("TableReference does not exist in this business!",
           { status: 400 }
         );
       }
@@ -130,23 +131,20 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       status: { $ne: "Closed" },
     }).lean();
     if (duplicateTable) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `Table ${tableReference} already exists and it is not closed!`,
-        }),
+      return new NextResponse(`Table ${tableReference} already exists and it is not closed!`,
         { status: 409 }
       );
     }
 
     // The order controller would handle the creation of orders and updating the relevant table's order array. The table controller would then only be responsible for reading and managing table data, not order data. This separation of concerns makes the code easier to maintain and understand.
 
-    // if table is transferred to another user, update the dailySalesReport
+    // if table is transferred to another user, and that is the first table from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
     if (responsibleBy && responsibleBy !== table.openedBy) {
       // check if user exists in the dailySalesReport
       const userDailySalesReport = await DailySalesReport.findOne({
         dayReferenceNumber: table.dayReferenceNumber,
         business: table.business,
-        "userDailySalesReportArray.user": responsibleBy,
+        "usersDailySalesReport.user": responsibleBy,
       }).lean();
 
       // if user does not exist in the dailySalesReport, create it
