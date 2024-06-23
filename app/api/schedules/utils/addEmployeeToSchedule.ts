@@ -35,21 +35,10 @@ export const addEmployeeToSchedule = async (
     if (!schedule) {
       return "Schedule not found!";
     }
-
-      // check if the employee is already scheduled
-      const employeeExists = schedule.employees.find(
-        (employee) => employee.userId == employeeSchedule.userId
-      );
-
-      if (employeeExists) {
-        return "Employee already scheduled!";
-      }
     
-    const userId = employeeSchedule.userId;
-    const role = employeeSchedule.role;
+    const { userId, role, vacation } = employeeSchedule;
     const startTime = new Date(employeeSchedule.timeRange.startTime);
     const endTime = new Date(employeeSchedule.timeRange.endTime);
-    const vacation = employeeSchedule.vacation;
 
     // Calculate difference in milliseconds, then convert to hours
     const differenceInHours =
@@ -131,12 +120,19 @@ export const addEmployeeToSchedule = async (
       employeeCost,
     };
 
+    let countsOfUserId = 0;
+    schedule.employees.forEach(employee => {
+      if(employee.userId == userId) {
+        countsOfUserId += 1;
+      }
+    });
+
     await Schedule.findByIdAndUpdate(
       scheduleId,
       {
         $push: { employees: employeeToAdd },
         $inc: {
-          totalEmployeesScheduled: 1,
+          totalEmployeesScheduled: countsOfUserId === 0 ? 1 : 0,
           totalDayEmployeesCost: employeeCost,
         },
       },

@@ -7,6 +7,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
 import { handleApiError } from "@/app/utils/handleApiError";
+import { removeUserFromNotification } from "./utils/removeUserFromNotification";
 
 // @desc    Get all notifications
 // @route   GET /notifications
@@ -64,9 +65,12 @@ export const POST = async (req: Request) => {
 
     // validate recipients
     if (!Array.isArray(recipients)) {
-      return new NextResponse("Recipients must be an array of user IDs or empty!", {
-        status: 400,
-      });
+      return new NextResponse(
+        "Recipients must be an array of user IDs or empty!",
+        {
+          status: 400,
+        }
+      );
     }
 
     // create new notification object
@@ -106,9 +110,12 @@ export const POST = async (req: Request) => {
           { status: 400 }
         );
       }
-      return new NextResponse(`Notification message created and sent to users`, {
-        status: 201,
-      });
+      return new NextResponse(
+        `Notification message created and sent to users`,
+        {
+          status: 201,
+        }
+      );
     } else {
       return new NextResponse("Notification could not be created!", {
         status: 400,
@@ -118,3 +125,19 @@ export const POST = async (req: Request) => {
     return handleApiError("Create notification failed!", error);
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     const userId = "66741dbbdf254a9fd7e3af59";
+//     const notificationId = "6675475e3bfefbb6373c7158";
+
+//     // @ts-ignore
+//     const result = await removeUserFromNotification(userId, notificationId);
+
+//     return new NextResponse(JSON.stringify(result), {
+//       status: 200,
+//     });
+//   } catch (error) {
+//     return handleApiError("Helper user function failed!", error);
+//   }
+// };

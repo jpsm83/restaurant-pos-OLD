@@ -7,7 +7,8 @@ import { Types } from "mongoose";
 // delete employee from schedule
 export const deleteEmployeeFromSchedule = async (
   scheduleId: Types.ObjectId,
-  userId: Types.ObjectId
+  userId: Types.ObjectId,
+  userScheduleId: Types.ObjectId
 ) => {
   try {
     // check if the schedule ID is valid
@@ -20,13 +21,18 @@ export const deleteEmployeeFromSchedule = async (
       return "Invalid user Id!";
     }
 
+    // check if the userScheduleId is valid
+    if (!userScheduleId || !Types.ObjectId.isValid(userScheduleId)) {
+      return "Invalid userScheduleId!";
+    }
+
     // connect before first call to DB
     await connectDB();
 
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost weekNumber"
+        "employees._id employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost weekNumber"
       )
       .lean();
 
@@ -36,8 +42,13 @@ export const deleteEmployeeFromSchedule = async (
 
     const employeeSchedule: IEmployee | null =
       schedule.employees.find(
-        (emp: { userId: Types.ObjectId }) => emp.userId == userId
+        (emp) => emp._id == userScheduleId && emp.userId == userId
       ) || null;
+
+    // check if the employee is in the schedule
+    if (!employeeSchedule) {
+      return "Employee not found in schedule!";
+    }
 
     const weekNumber = schedule.weekNumber;
     const weekHoursLeft =
@@ -75,13 +86,20 @@ export const deleteEmployeeFromSchedule = async (
       );
     }
 
+    let countsOfUserId = 0;
+    schedule.employees.forEach(employee => {
+      if(employee.userId == userId) {
+        countsOfUserId += 1;
+      }
+    });
+
     // Delete the employee from the schedule
     await Schedule.findByIdAndUpdate(
       scheduleId, // Assuming schedule._id is the correct identifier
       {
-        $pull: { employees: { userId: userId } },
+        $pull: { employees: { _id: userScheduleId } },
         $inc: {
-          totalEmployeesScheduled: -1,
+          totalEmployeesScheduled: - (countsOfUserId >= 2 ? 0 : 1),
           totalDayEmployeesCost: -(employeeSchedule?.employeeCost ?? 0),
         },
       },

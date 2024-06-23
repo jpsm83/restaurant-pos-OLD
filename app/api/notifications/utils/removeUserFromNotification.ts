@@ -1,5 +1,5 @@
 import Notification from "@/app/lib/models/notification";
-import { handleApiError } from "@/app/utils/handleApiError";
+import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
 
 // helper function used on user controller
@@ -22,16 +22,24 @@ export const removeUserFromNotification = async (
 
     const updatedNotification = await Notification.updateOne(
       { _id: notificationId },
-      { $pull: { recipient: userId } }
+      { $pull: { recipients: userId } }
+    );
+
+    const updatedUser = await User.updateOne(
+      { _id: userId },
+      { $pull: { notifications: { notification: notificationId } } }
     );
 
     if (updatedNotification.modifiedCount === 0) {
-      return "Notification could not be updated!";
+      return "Notification recipients could not be updated!";
+    }
+
+    if (updatedUser.modifiedCount === 0) {
+      return "User notifications could not be updated!";
     }
 
     return true;
-    
   } catch (error) {
-    return handleApiError("Remove user from notification failed!", error);
+    return "Remove user from notification and vice versa failed!";
   }
 };

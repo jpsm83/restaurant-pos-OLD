@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 export interface IEmployee {
+    _id: Types.ObjectId;
     userId: Types.ObjectId;
     role: string;
     timeRange: {

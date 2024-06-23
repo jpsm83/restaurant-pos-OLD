@@ -9,6 +9,8 @@ import { personalDetailsValidation } from "./utils/personalDetailsValidation";
 import { addressValidation } from "@/app/utils/addressValidation";
 import { handleApiError } from "@/app/utils/handleApiError";
 import { calculateVacationProportional } from "./utils/calculateVacationProportional";
+import { updateReadFlag } from "./utils/updateReadFlag";
+import { removeUserFromNotification } from "../notifications/utils/removeUserFromNotification";
 
 // @desc    Get all users
 // @route   GET /users
@@ -35,139 +37,155 @@ export const GET = async () => {
   }
 };
 
-// @desc    Create new user
-// @route   POST /users
-// @access  Private
+// // @desc    Create new user
+// // @route   POST /users
+// // @access  Private
+// export const POST = async (req: Request) => {
+//   try {
+//     const {
+//       username,
+//       email,
+//       password,
+//       idType,
+//       idNumber,
+//       allUserRoles,
+//       personalDetails,
+//       taxNumber,
+//       joinDate,
+//       active,
+//       onDuty,
+//       vacationDaysPerYear,
+//       business,
+//       address,
+//       photo,
+//       contractHoursWeek,
+//       grossMonthlySalary,
+//       netMonthlySalary,
+//       comments,
+//     } = (await req.json()) as IUser;
+
+//     // check required fields
+//     if (
+//       !username ||
+//       !email ||
+//       !password ||
+//       !idType ||
+//       !idNumber ||
+//       !allUserRoles ||
+//       !personalDetails ||
+//       !taxNumber ||
+//       !joinDate ||
+//       active === undefined ||
+//       onDuty === undefined ||
+//       !vacationDaysPerYear ||
+//       !business
+//     ) {
+//       return new NextResponse("Missing required fields!", { status: 400 });
+//     }
+
+//     // check address validation
+//     if (address) {
+//       const validAddress = addressValidation(address);
+//       if (validAddress !== true) {
+//         return new NextResponse(validAddress, {
+//           status: 400,
+//         });
+//       }
+//     }
+
+//     // check personalDetails validation
+//     const checkPersonalDetailsValidation =
+//       personalDetailsValidation(personalDetails);
+//     if (checkPersonalDetailsValidation !== true) {
+//       return new NextResponse(checkPersonalDetailsValidation, {
+//         status: 400,
+//       });
+//     }
+
+//     // connect before first call to DB
+//     await connectDB();
+
+//     // check for duplicates username, email, taxNumber and idNumber with same business ID
+//     const duplicateUser: IUser | null = await User.findOne({
+//       business,
+//       $or: [{ username }, { email }, { taxNumber }, { idNumber }],
+//     }).lean();
+
+//     if (duplicateUser) {
+//       if (duplicateUser.active === true) {
+//         return new NextResponse(
+//           "Username, email, taxNumber or idNumber already exists in an active user!",
+//           { status: 409 }
+//         );
+//       } else {
+//         return new NextResponse(
+//           "Username, email, taxNumber or idNumber already exists in an unactive user!",
+//           { status: 409 }
+//         );
+//       }
+//     }
+
+//     let grossHourlySalaryCalculation: number | undefined;
+//     if (
+//      typeof grossMonthlySalary === "number" &&
+//      typeof contractHoursWeek === "number"
+//     ) {
+//       grossHourlySalaryCalculation = grossMonthlySalary / (contractHoursWeek * 4);
+//     } else {
+//       grossHourlySalaryCalculation = undefined;
+//     }
+
+//     // create user object with required fields
+//     const newUser = {
+//       username,
+//       email,
+//       password: await hash(password, 10),
+//       idType,
+//       idNumber,
+//       allUserRoles,
+//       personalDetails: personalDetails,
+//       taxNumber,
+//       joinDate,
+//       active,
+//       onDuty,
+//       vacationDaysPerYear,
+//       vacationDaysLeft: calculateVacationProportional(
+//         new Date(joinDate),
+//         vacationDaysPerYear
+//       ),
+//       business,
+//       address: address || undefined,
+//       photo: photo || "../public/images/avatar.png",
+//       contractHoursWeek: contractHoursWeek || undefined,
+//       grossMonthlySalary: grossMonthlySalary || undefined,
+//       grossHourlySalary: grossHourlySalaryCalculation,
+//       netMonthlySalary: netMonthlySalary || undefined,
+//       comments: comments || undefined,
+//     };
+
+//     // create user
+//     await User.create(newUser);
+
+//     return new NextResponse(`New user ${username} created successfully!`, {
+//       status: 201,
+//     });
+//   } catch (error) {
+//     return handleApiError("Create user failed!", error);
+//   }
+// };
+
 export const POST = async (req: Request) => {
   try {
-    const {
-      username,
-      email,
-      password,
-      idType,
-      idNumber,
-      allUserRoles,
-      personalDetails,
-      taxNumber,
-      joinDate,
-      active,
-      onDuty,
-      vacationDaysPerYear,
-      business,
-      address,
-      photo,
-      contractHoursWeek,
-      grossMonthlySalary,
-      netMonthlySalary,
-      comments,
-    } = (await req.json()) as IUser;
+    const userId = "667412df373ad7f1a285534e";
+    const notificationId = "6675476e3bfefbb6373c715c";
 
-    // check required fields
-    if (
-      !username ||
-      !email ||
-      !password ||
-      !idType ||
-      !idNumber ||
-      !allUserRoles ||
-      !personalDetails ||
-      !taxNumber ||
-      !joinDate ||
-      active === undefined ||
-      onDuty === undefined ||
-      !vacationDaysPerYear ||
-      !business
-    ) {
-      return new NextResponse("Missing required fields!", { status: 400 });
-    }
+    // @ts-ignore
+    const result = await updateReadFlag(userId, notificationId);
 
-    // check address validation
-    if (address) {
-      const validAddress = addressValidation(address);
-      if (validAddress !== true) {
-        return new NextResponse(validAddress, {
-          status: 400,
-        });
-      }
-    }
-
-    // check personalDetails validation
-    const checkPersonalDetailsValidation =
-      personalDetailsValidation(personalDetails);
-    if (checkPersonalDetailsValidation !== true) {
-      return new NextResponse(checkPersonalDetailsValidation, {
-        status: 400,
-      });
-    }
-
-    // connect before first call to DB
-    await connectDB();
-
-    // check for duplicates username, email, taxNumber and idNumber with same business ID
-    const duplicateUser: IUser | null = await User.findOne({
-      business,
-      $or: [{ username }, { email }, { taxNumber }, { idNumber }],
-    }).lean();
-
-    if (duplicateUser) {
-      if (duplicateUser.active === true) {
-        return new NextResponse(
-          "Username, email, taxNumber or idNumber already exists in an active user!",
-          { status: 409 }
-        );
-      } else {
-        return new NextResponse(
-          "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          { status: 409 }
-        );
-      }
-    }
-
-    let grossHourlySalaryCalculation: number | undefined;
-    if (
-     typeof grossMonthlySalary === "number" &&
-     typeof contractHoursWeek === "number" 
-    ) {
-      grossHourlySalaryCalculation = grossMonthlySalary / (contractHoursWeek * 4);
-    } else {
-      grossHourlySalaryCalculation = undefined;
-    }
-
-    // create user object with required fields
-    const newUser = {
-      username,
-      email,
-      password: await hash(password, 10),
-      idType,
-      idNumber,
-      allUserRoles,
-      personalDetails: personalDetails,
-      taxNumber,
-      joinDate,
-      active,
-      onDuty,
-      vacationDaysPerYear,
-      vacationDaysLeft: calculateVacationProportional(
-        new Date(joinDate),
-        vacationDaysPerYear
-      ),
-      business,
-      address: address || undefined,
-      photo: photo || "../public/images/avatar.png",
-      contractHoursWeek: contractHoursWeek || undefined,
-      grossMonthlySalary: grossMonthlySalary || undefined,
-      grossHourlySalary: grossHourlySalaryCalculation,
-      netMonthlySalary: netMonthlySalary || undefined,
-      comments: comments || undefined,
-    };
-
-    // create user
-    await User.create(newUser);
-
-    return new NextResponse(`New user ${username} created successfully!`, {
-      status: 201,
+    return new NextResponse(JSON.stringify(result), {
+      status: 200,
     });
   } catch (error) {
-    return handleApiError("Create user failed!", error);
+    return handleApiError("Helper user function failed!", error);
   }
 };

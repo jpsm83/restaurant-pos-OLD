@@ -94,22 +94,33 @@ export const POST = async (req: Request) => {
 //   try {
 //     const scheduleId = "66771473b2b36aea9e001747";
 //     const userId = "66758b8904c4e6f5bbaa6b81";
+//     const userScheduleId = "6677f5cb911035d92c5d5ec6";
 
 //     const employeeSchedule = {
 //       userId: "66758b8904c4e6f5bbaa6b81",
 //       role: "Manager",
 //       timeRange: {
 //         startTime: "2024-06-15T10:00:00.000Z",
-//         endTime: "2024-06-15T17:00:00.000Z",
+//         endTime: "2024-06-15T11:00:00.000Z",
 //       },
 //       vacation: false,
+//       _id: "6677f5cb911035d92c5d5ec6",
 //     };
 
-//     //@ts-ignore
+//     // // @ts-ignore
 //     // const addEmploy = await addEmployeeToSchedule(scheduleId, employeeSchedule);
-//     const deleteEmploy = await deleteEmployeeFromSchedule(scheduleId, userId);
-//     // const updateEmploy = await updateEmployeeSchedule(scheduleId, employeeSchedule);
+//     // return new NextResponse(JSON.stringify(addEmploy), {
+//     //   status: 201, headers: { "Content-Type": "application/json" },
+//     // });
 
+//     // // @ts-ignore
+//     // const updateEmploy = await updateEmployeeSchedule(scheduleId, employeeSchedule);
+//     // return new NextResponse(JSON.stringify(updateEmploy), {
+//     //   status: 201, headers: { "Content-Type": "application/json" },
+//     // });
+
+//     // @ts-ignore
+//     const deleteEmploy = await deleteEmployeeFromSchedule(scheduleId, userId, userScheduleId);
 //     return new NextResponse(JSON.stringify(deleteEmploy), {
 //       status: 201, headers: { "Content-Type": "application/json" },
 //     });

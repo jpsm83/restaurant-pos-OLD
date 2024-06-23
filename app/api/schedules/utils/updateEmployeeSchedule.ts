@@ -5,23 +5,32 @@ import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
 import User from "@/app/lib/models/user";
 import { employeesValidation } from "./employeesValidation";
+import { getWeekNumber } from "./getWeekNumber";
 
 export const updateEmployeeSchedule = async (
   scheduleId: Types.ObjectId,
   employeeSchedule: IEmployee
 ) => {
   try {
-    // check if the schedule ID is valid
+    // check if the scheduleId is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return "Invalid schedule Id!";
+      return "Invalid scheduleId Id!";
     }
 
-    // check if the user ID is valid
+    // check if the userId is valid
     if (
       !employeeSchedule.userId ||
       !Types.ObjectId.isValid(employeeSchedule.userId)
     ) {
-      return "Invalid user Id!";
+      return "Invalid userId Id!";
+    }
+
+    // check if the userScheduleId is valid
+    if (
+      !employeeSchedule._id ||
+      !Types.ObjectId.isValid(employeeSchedule.userId)
+    ) {
+      return "Invalid userScheduleId Id!";
     }
 
     // validate employee object
@@ -30,128 +39,118 @@ export const updateEmployeeSchedule = async (
       return validEmployees;
     }
 
+    const weekNumber = getWeekNumber(
+      new Date(employeeSchedule.timeRange.startTime)
+    );
+
     // connect before first call to DB
     await connectDB();
 
-    // check if the schedule exists
-    const schedule: ISchedule | null = await Schedule.findById(scheduleId)
-      .select(
-        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost employees.timeRange weekNumber totalDayEmployeesCost"
-      )
-      .lean();
+    // get all schedules from the week where user is scheduled
+    const employeeScheduleOnTheWeek: ISchedule[] | any[] = await Schedule.find({
+      weekNumber: weekNumber,
+      employees: {
+        $elemMatch: {
+          userId: { $in: [employeeSchedule.userId] },
+        },
+      },
+    }).lean();
 
-    if (!schedule) {
-      return "Schedule not found!";
+    // employeeScheduleOnTheWeek is an array of schedules
+    let employeeScheduleToUpdate: IEmployee | null = null;
+    let scheduleToUpdateId: Types.ObjectId | null = null;
+
+    // Iterate over each schedule to find the employee
+    for (const schedule of employeeScheduleOnTheWeek) {
+      employeeScheduleToUpdate = schedule.employees.find(
+        (emp: { userId: Types.ObjectId; _id: Types.ObjectId }) =>
+          emp.userId == employeeSchedule.userId &&
+          emp._id == employeeSchedule._id
+      );
+      scheduleToUpdateId = schedule._id;
+      // If the employee is found, break the loop
+      if (employeeScheduleToUpdate) break;
     }
 
-    const employeeScheduleToUpdate: IEmployee | null =
-      schedule.employees.find(
-        (emp: { userId: Types.ObjectId }) =>
-          emp.userId == employeeSchedule.userId
-      ) || null;
+    if (!employeeScheduleToUpdate) {
+      return "Employee not found in schedule!";
+    }
 
-    const userId = employeeSchedule?.userId;
-    const role = employeeSchedule?.role;
-    const startTime = employeeSchedule?.timeRange.startTime
-      ? new Date(employeeSchedule.timeRange.startTime)
-      : new Date();
-    const endTime = employeeSchedule?.timeRange.endTime
-      ? new Date(employeeSchedule.timeRange.endTime)
-      : new Date();
-    const vacation = employeeSchedule?.vacation;
+    // calculate the new difference in hours
+    const startTime =
+      new Date(employeeSchedule?.timeRange.startTime) ||
+      new Date(employeeScheduleToUpdate.timeRange.startTime);
+    const endTime =
+      new Date(employeeSchedule?.timeRange.endTime) ||
+      new Date(employeeScheduleToUpdate.timeRange.endTime);
 
-    // Calculate difference in milliseconds, then convert to hours
     const differenceInHours =
       (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
-      const userEmployee: IUser | null = await User.findById(userId)
-      .select("contractHoursWeek grossHourlySalary vacationDaysLeft")
-      .lean();
+    // calculate the new week hours left
+    const newWeekHoursLeft =
+      employeeScheduleToUpdate.weekHoursLeft +
+      employeeScheduleToUpdate.shiftHours -
+      differenceInHours;
+    const employeeCostPerHour =
+      (employeeScheduleToUpdate.employeeCost ?? 0) /
+      (employeeScheduleToUpdate.shiftHours ?? 0);
 
-    const employeeScheduleOnTheWeek: ISchedule[] | any[] = await Schedule.find({
-      _id: { $ne: scheduleId },
-      weekNumber: schedule.weekNumber,
-      "employees.userId": { $in: [userId] },
-    })
-      .select(
-        "_id employees.userId employees.weekHoursLeft employees.shiftHours date"
-      )
-      .lean();
-
-    let weekHoursLeft;
-    let totalScheduleWeekHours = differenceInHours;
-    const updates: { scheduleId: Types.ObjectId; userId: Types.ObjectId }[] =
-      [];
-
-    if (
-      employeeScheduleOnTheWeek !== null &&
-      employeeScheduleOnTheWeek.length > 0
-    ) {
-      employeeScheduleOnTheWeek.forEach((schedule) => {
-        schedule.employees.forEach(
-          (user: { userId: Types.ObjectId; shiftHours: number }) => {
-            if (user.userId == userId) {
-              totalScheduleWeekHours += user.shiftHours;
-              updates.push({ scheduleId: schedule._id, userId: userId });
-            }
-          }
-        );
-      });
-      weekHoursLeft =
-        (userEmployee?.contractHoursWeek ?? 0) - totalScheduleWeekHours;
-    } else {
-      weekHoursLeft =
-        (userEmployee?.contractHoursWeek ?? 0) - differenceInHours;
-    }
-
-    if (updates.length > 0) {
-      for (const update of updates) {
-        await Schedule.findByIdAndUpdate(
-          update.scheduleId,
-          { $set: { "employees.$[elem].weekHoursLeft": weekHoursLeft } },
-          {
-            new: true,
-            arrayFilters: [{ "elem.userId": update.userId }], // Specify the filter condition for the array
-          }
-        );
-      }
-    }
-
-    if (vacation) {
-      await User.findByIdAndUpdate(
-        userId,
-        { $inc: { vacationDaysLeft: -1 } },
-        { new: true, useFindAndModify: false }
-      );
-    }
-
-    const hourlySalary = userEmployee?.grossHourlySalary ?? 0;
-    const newEmployeeCost = hourlySalary * differenceInHours;
-    const newTotalDayEmployeesCost = schedule.employees.reduce((acc, emp) => acc + emp.employeeCost, 0) - (employeeScheduleToUpdate?.employeeCost ?? 0) + newEmployeeCost;
-
-    const employeeToUpdate = {
-      userId: userId,
-      role: role,
+    // create updated employee schedule
+    let updatedUserSchedule = {
+      role: employeeSchedule.role || employeeScheduleToUpdate.role,
       timeRange: {
         startTime: startTime,
         endTime: endTime,
       },
-      vacation: vacation,
+      vacation: employeeSchedule.vacation || employeeScheduleToUpdate.vacation,
       shiftHours: differenceInHours,
-      weekHoursLeft,
-      employeeCost: newEmployeeCost,
+      weekHoursLeft: newWeekHoursLeft,
+      employeeCost: differenceInHours * employeeCostPerHour || 0,
     };
 
-    await Schedule.findByIdAndUpdate(
-      scheduleId,
+    // update all schedules where the employee is scheduled with the new week hours left
+    for (const schedule of employeeScheduleOnTheWeek) {
+      await Schedule.findByIdAndUpdate(
+        { _id: schedule._id, "employees.userId": employeeScheduleToUpdate.userId },
+        { $set: { "employees.$[elem].weekHoursLeft": newWeekHoursLeft } },
+        {
+          new: true,
+          arrayFilters: [{ "elem.userId": employeeScheduleToUpdate.userId }], // Correctly match the elements with the specified userId
+        }
+      );
+    }
+    
+    // update user vacation days left if the employee is on vacation
+    if (employeeSchedule.vacation) {
+      await User.findByIdAndUpdate(
+        { _id: employeeSchedule.userId },
+        { $inc: { vacationDaysLeft: -1 } },
+        { new: true }
+      );
+    }
+
+    await Schedule.updateOne(
+      {
+        _id: scheduleToUpdateId,
+        "employees._id": employeeScheduleToUpdate._id,
+      },
       {
         $set: {
-          "employees.$[elem]": employeeToUpdate, // Correctly replaces the entire matching employee object
-          totalDayEmployeesCost: newTotalDayEmployeesCost // Moved inside the $set object
-        }
-      },      {
+          "employees.$[elem].role": updatedUserSchedule.role,
+          "employees.$[elem].timeRange.startTime":
+            updatedUserSchedule.timeRange.startTime,
+          "employees.$[elem].timeRange.endTime":
+            updatedUserSchedule.timeRange.endTime,
+          "employees.$[elem].vacation": updatedUserSchedule.vacation,
+          "employees.$[elem].shiftHours": updatedUserSchedule.shiftHours,
+          "employees.$[elem].weekHoursLeft": updatedUserSchedule.weekHoursLeft,
+          "employees.$[elem].employeeCost": updatedUserSchedule.employeeCost,
+        },
+      },
+      {
+        arrayFilters: [{ "elem._id": employeeScheduleToUpdate._id }],
         new: true,
-        arrayFilters: [{ "elem.userId": userId }], // Ensure this correctly identifies the employee
       }
     );
     return "Employee schedule updated!";
