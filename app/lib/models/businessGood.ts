@@ -57,9 +57,9 @@ const businessGoodSchema = new Schema(
       required: true,
     },
 
-    // BUSINESSGOOD CAN HAVE A SUPPLIERGOODS ARRAY OR SETMENU ARRAY - IT CANNOT BE BOTH
+    // BUSINESSGOOD CAN HAVE A INGREDIENTS ARRAY OR SETMENU ARRAY - IT CANNOT BE BOTH
     // AT LEAST ONE OF THEM IS REQUIRED
-    // supplierGoods is an array of objects that contains the supplierGood and the quantity needed to build a businessGood
+    // ingredients is an array of objects that contains the supplierGood and the quantity needed to build a businessGood
     ingredients: {
       type: [
         {
@@ -89,6 +89,7 @@ const businessGoodSchema = new Schema(
       ref: "BusinessGood",
       default: undefined,
     }, // all business goods that are part of the set menu
+    
     // optional fields
     costPrice: { type: Number }, // sun of all ingredients.costOfRequiredQuantity
     description: { type: String }, // description of the business good

@@ -16,7 +16,7 @@ export interface IIngredients {
     onMenu: boolean;
     available: boolean;
     sellingPrice: number;
-    business: Types.ObjectId;
+    business?: Types.ObjectId;
     ingredients?: IIngredients[];
     setMenu?: Types.ObjectId[];
     costPrice?: number;

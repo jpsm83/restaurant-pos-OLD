@@ -1,0 +1,9 @@
+{
+    "name": "burger",
+    "keyword": "burger",
+    "category": "Food",
+    "available": true,
+    "sellingPrice": 12.45,
+    "currency": "EUR",
+    "business": "6612cd163684524f0bb078da"
+}

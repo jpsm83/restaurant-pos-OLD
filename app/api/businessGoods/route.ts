@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 // import models
 import BusinessGood from "@/app/lib/models/businessGood";
 import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
-import { ingredientsHelper } from "./utils/ingredientsHelper";
-import { setMenuHelper } from "./utils/setMenuHelper";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { validateIngredients } from "./utils/validateIngredients";
+import { calculateIngredientsCostPriceAndAllery } from "./utils/calculateIngredientsCostPriceAndAllery";
+import { calculateSetMenuCostPriceAndAllery } from "./utils/calculateSetMenuCostPriceAndAllery";
 
 // @desc    Get all business goods
 // @route   GET /businessGoods
@@ -18,13 +20,13 @@ export const GET = async () => {
       .populate("ingredients.ingredient", "name category")
       .lean();
     return !businessGoods.length
-      ? new NextResponse(
-          JSON.stringify({ message: "No business goods found" }),
-          { status: 404 }
-        )
-      : new NextResponse(JSON.stringify(businessGoods), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      ? new NextResponse("No business goods found!", { status: 404 })
+      : new NextResponse(JSON.stringify(businessGoods), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get all business goods failed!", error);
   }
 };
 
@@ -45,10 +47,9 @@ export const POST = async (req: Request) => {
       ingredients,
       setMenu,
       description,
-      allergens,
       image,
       deliveryTime,
-    } = req.body as unknown as IBusinessGood;
+    } = (await req.json()) as IBusinessGood;
 
     // check required fields
     if (
@@ -62,25 +63,19 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        JSON.stringify({
-          message:
-            "Name, keyword, category, subcategory, onMenu, available, sellingPrice and business are required!",
-        }),
+        "Name, keyword, category, subcategory, onMenu, available, sellingPrice and business are required!",
         { status: 400 }
       );
     }
 
     // one of the two fields should be present (ingredients or setMenu)
     if (!ingredients && !setMenu) {
-      return new NextResponse(
-        JSON.stringify({ message: "Ingredients or setMenu is required!" }),
-        { status: 400 }
-      );
+      return new NextResponse("Ingredients or setMenu is required!", {
+        status: 400,
+      });
     } else if (ingredients && setMenu) {
       return new NextResponse(
-        JSON.stringify({
-          message: "Only one of ingredients or setMenu is required!",
-        }),
+        "Only one of ingredients or setMenu is required!",
         { status: 400 }
       );
     }
@@ -95,16 +90,13 @@ export const POST = async (req: Request) => {
     });
 
     if (duplicateBusinessGood) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `${name} already exists on business goods!`,
-        }),
-        { status: 400 }
-      );
+      return new NextResponse(`${name} already exists on business goods!`, {
+        status: 400,
+      });
     }
 
     // create a business good object
-    let businessGoodObj: IBusinessGood = {
+    let newBusinessGood: IBusinessGood = {
       name,
       keyword,
       category,
@@ -118,74 +110,120 @@ export const POST = async (req: Request) => {
       deliveryTime: deliveryTime || undefined,
     };
 
-    let allergensArray = [...(allergens ?? [])];
-
-    // if ingredients exist, validate the ingredients array and create the ingredients array with objects
-    // const ingredients = [
-    //    {
-    //      ingredient: "6612cd163684524f0bb078da",
-    //      measurementUnit: "kg",
-    //      requiredQuantity: 10,
-    //      costOfRequiredQuantity: 100,
-    //    },
-    //    {
-    //      ingredient: "6612cd163684524f0bb078da",
-    //      measurementUnit: "kg",
-    //      requiredQuantity: 10,
-    //      costOfRequiredQuantity: 100,
-    //    },
-    // ];
+    // validate ingredients if they exist and calculate the cost price and allergens
     if (ingredients) {
-      const ingredientsHelperResult = await ingredientsHelper(
-        ingredients,
-        allergensArray,
-        businessGoodObj
-      );
-      if (ingredientsHelperResult !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: ingredientsHelperResult }),
-          { status: 400 }
-        );
+      const validateIngredientsResult = validateIngredients(ingredients);
+      if (validateIngredientsResult !== true) {
+        return new NextResponse(validateIngredientsResult, { status: 400 });
+      }
+      const calculateIngredientsCostPriceAndAlleryResult =
+        await calculateIngredientsCostPriceAndAllery(ingredients);
+      if (typeof calculateIngredientsCostPriceAndAlleryResult !== "object") {
+        return new NextResponse(calculateIngredientsCostPriceAndAlleryResult, {
+          status: 400,
+        });
+      } else {
+        newBusinessGood.ingredients =
+          calculateIngredientsCostPriceAndAlleryResult.map((ing) => {
+            return {
+              ingredient: ing.ingredient,
+              measurementUnit: ing.measurementUnit,
+              requiredQuantity: ing.requiredQuantity ?? 0,
+              costOfRequiredQuantity: ing.costOfRequiredQuantity,
+            };
+          });
+        newBusinessGood.setMenu = undefined;
+        newBusinessGood.costPrice =
+          calculateIngredientsCostPriceAndAlleryResult.reduce(
+            (acc, curr) => acc + curr.costOfRequiredQuantity,
+            0
+          );
+        newBusinessGood.allergens =
+          calculateIngredientsCostPriceAndAlleryResult.reduce(
+            (acc: string[], curr) => {
+              if (curr.allergens) {
+                curr.allergens.forEach((allergen) => {
+                  if (!acc.includes(allergen)) {
+                    acc.push(allergen);
+                  }
+                });
+              }
+              return acc;
+            },
+            []
+          );
       }
     }
 
-    // if setMenu exist, validate the setMenu array
-    // const setMenu: [
-    //     "60d1f26734a5d2a41c8d2a5b",
-    //     "60d1f26734a5d2a41c8d2a5c"
-    //   ],
+    // calculate the cost price and allergens for the setMenu if they exist
     if (setMenu) {
-      const setMenuHelperResult = await setMenuHelper(
-        setMenu,
-        allergensArray,
-        businessGoodObj
-      );
-      if (setMenuHelperResult !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: setMenuHelperResult }),
-          { status: 400 }
-        );
+      const calculateSetMenuCostPriceAndAlleryResult =
+        await calculateSetMenuCostPriceAndAllery(setMenu);
+      if (typeof calculateSetMenuCostPriceAndAlleryResult !== "object") {
+        return new NextResponse(calculateSetMenuCostPriceAndAlleryResult, {
+          status: 400,
+        });
+      } else {
+        newBusinessGood.ingredients = undefined;
+        newBusinessGood.setMenu = setMenu;
+        newBusinessGood.costPrice =
+          calculateSetMenuCostPriceAndAlleryResult.costPrice;
+        newBusinessGood.allergens =
+          calculateSetMenuCostPriceAndAlleryResult.allergens;
       }
     }
-
-    // update the allergens array
-    businessGoodObj.allergens = allergensArray;
 
     // create the new business good
-    const businessGood = await BusinessGood.create(businessGoodObj);
+    await BusinessGood.create(newBusinessGood);
 
-    return businessGood
-      ? new NextResponse(
-          JSON.stringify({
-            message: `Business good ${name} created successfully!`,
-          }),
-          { status: 201 }
-        )
-      : new NextResponse(
-          JSON.stringify({ message: "Failed to create business good!" }),
-          { status: 500 }
-        );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return new NextResponse(`Business good ${name} created successfully!`, {
+      status: 201,
+    });
+  } catch (error) {
+    return handleApiError("Create business good failed!", error);
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     const ingredientsArr = [
+//       {
+//         ingredient: "6612cd163684524f0bb078da",
+//         measurementUnit: "kg",
+//         requiredQuantity: 10,
+//       },
+//       {
+//         ingredient: "6612cd163684524f0bb078da",
+//         measurementUnit: "kg",
+//         requiredQuantity: 10,
+//       },
+//     ];
+
+//     const setMenuArr = ["66758b8904c4e6f5bbaa6b81", "66758b8904c4e6f5bbaa6b81"];
+
+//     // @ts-ignore
+//     const ingredients = await calculateIngredientsCostPriceAndAllery(
+//       ingredientsArr
+//     );
+//     return new NextResponse(JSON.stringify(ingredients), {
+//       status: 201,
+//       headers: { "Content-Type": "application/json" },
+//     });
+
+//     // @ts-ignore
+//     const setMenu = await calculateSetMenuCostPriceAndAllery(setMenuArr);
+//     return new NextResponse(JSON.stringify(setMenu), {
+//       status: 201,
+//       headers: { "Content-Type": "application/json" },
+//     });
+
+//     // @ts-ignore
+//     const validate = validateIngredients(ingredientsArr);
+//     return new NextResponse(JSON.stringify(validate), {
+//       status: 201,
+//       headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Create schedule failed!", error);
+//   }
+// };

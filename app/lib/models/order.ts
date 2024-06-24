@@ -1,5 +1,5 @@
 import { Schema, model, models } from "mongoose";
-import { allergens } from "../enums.js";
+import { allergens, billingStatus, orderStatus } from "../enums.js";
 
 // example of a payment method object
 // paymentMethod = [
@@ -49,19 +49,16 @@ const paymentMethodSchema = new Schema({
   }, // amount paid by the client
 });
 
-const billingStatus = ["Open", "Paid", "Void", "Cancelled", "Invitation"];
-// OPEN - order is open and can be paid
-// PAID - order is paid and can't be changed
-// VOID - order been done but is voided by manager, good been lost and business will not be paid, ex: client left without paying, good was badly done and have to be remake, mistake was made
-// CANCELLED - good been order but has not been done and is cancelled by manager, there is no lost for the business, ex: user order by mistake and cancel it before it is done
-// INVITATION - order is an invitation, no payment is required, ex: business is offering a free meal to a client
-
-const orderStatus = ["Sent", "Done", "Dont Make", "Hold"];
-
 const orderSchema = new Schema(
   {
     // required fields
     dayReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
+    
+    // OPEN - order is open and can be paid
+    // PAID - order is paid and can't be changed
+    // VOID - order been done but is voided by manager, good been lost and business will not be paid, ex: client left without paying, good was badly done and have to be remake, mistake was made
+    // CANCELLED - good been order but has not been done and is cancelled by manager, there is no lost for the business, ex: user order by mistake and cancel it before it is done
+    // INVITATION - order is an invitation, no payment is required, ex: business is offering a free meal to a client
     billingStatus: {
       type: String,
       enum: billingStatus,
