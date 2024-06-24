@@ -1,122 +1,10 @@
 import { Schema, model, models } from "mongoose";
-
-const mainCategories = ["Food", "Set Menu", "Beverage", "Merchandise"];
-
-const foodCategories = [
-  "Set menu",
-  "Pastries",
-  "Sandwiches",
-  "Snacks",
-  "Burgers",
-  "Gluten-free",
-  "Add-ons", // for example, extra cheese, extra bacon, etc.
-  "Main",
-  "Appetizer",
-  "Starter",
-  "Entrée",
-  "Pasta",
-  "Pizza",
-  "Salad",
-  "Dessert",
-  "Snack",
-  "Other",
-];
-
-const beverageCategories = [
-  "Red Wine",
-  "White Wine",
-  "Rose Wine",
-  "Sparkling Wine",
-  "Champagne",
-  "Beer",
-  "Vodka",
-  "Whiskey",
-  "Rum",
-  "Gin",
-  "Tequila",
-  "Brandy",
-  "Cognac",
-  "Liqueur",
-  "Juices",
-  "Water",
-  "Milk",
-  "Cocktail",
-  "Non-Alcoholic Wine",
-  "Non-Alcoholic Beer",
-  "Energy Drinks",
-  "Coffee",
-  "Tea",
-  "Soft Drinks",
-  "Others",
-];
-
-const merchandiseCategories = [
-  "Clothing",
-  "Accessories",
-  "Toys & Games",
-  "Health & Beauty",
-  "Souvenirs",
-  "Others",
-];
-
-const measurementUnit = [
-  "mg",
-  "g",
-  "kg",
-  "oz",
-  "lb",
-  "ml",
-  "l",
-  "kl",
-  "tsp",
-  "Tbs",
-  "fl-oz",
-  "cup",
-  "pnt",
-  "qt",
-  "gal",
-];
-
-// metric abreveations for the convert-units library
-//    MASS
-//      mg - Milligram
-//      g - Gram
-//      kg - Kilogram
-//      oz - Ounce
-//      lb - Pound
-//    VOLUME
-//      ml - Milliliter
-//      l - Liter
-//      kl - Kiloliter
-//      tsp - Teaspoon
-//      Tbs - Tablespoon
-//      fl-oz - Fluid Ounce
-//      cup - Cup
-//      pnt - Pint
-//      qt - Quart
-//      gal - Gallon
-
-const allergen = [
-  "Gluten",
-  "Crustaceans",
-  "Eggs",
-  "Fish",
-  "Peanuts",
-  "Soybeans",
-  "Milk",
-  "Nuts",
-  "Celery",
-  "Mustard",
-  "Sesame",
-  "Sulphur dioxide",
-  "Lupin",
-  "Molluscs",
-];
+import { category, measurementUnit, allergens } from "../enums.js";
 
 const categorySchema = new Schema({
   mainCategory: {
     type: String,
-    enum: mainCategories,
+    enum: category,
     required: true,
   }, // main category of the business good
   setMenuSubCategory: {
@@ -126,30 +14,29 @@ const categorySchema = new Schema({
       return this.mainCategory === "Set Menu";
     },
   }, // subcategories for the "Set Menu" category
-  foodSubCategory: {
-    type: String,
-    enum: [foodCategories],
-    required: function () {
-      // @ts-ignore
-      return this.mainCategory === "Food";
-    },
-  }, // subcategories for the "Food" category
-  beverageSubCategory: {
-    type: String,
-    enum: [beverageCategories],
-    required: function () {
-      // @ts-ignore
-      return this.mainCategory === "Beverage";
-    },
-  }, // subcategories for the "Beverage" category
-  merchandiseSubCategory: {
-    type: String,
-    enum: [merchandiseCategories],
-    required: function () {
-      // @ts-ignore
-      return this.mainCategory === "Merchandise";
-    },
-  }, // subcategories for the "Merchandise" category
+
+    // required subcategory fields
+    foodSubCategory: {
+      type: String,
+      required: function () {
+        // @ts-ignore
+        return this.mainCategory === "Food";
+      },
+    }, // subcategory of the good - "Bake"
+    beverageSubCategory: {
+      type: String,
+      required: function () {
+        // @ts-ignore
+        return this.mainCategory === "Beverage";
+      },
+    }, // subcategory of the good - "Beer"
+    merchandiseSubCategory: {
+      type: String,
+      required: function () {
+        // @ts-ignore
+        return this.mainCategory === "Merchandise";
+      },
+    }, // subcategory of the good - "Clothing"
 });
 
 const businessGoodSchema = new Schema(
@@ -205,7 +92,7 @@ const businessGoodSchema = new Schema(
     // optional fields
     costPrice: { type: Number }, // sun of all ingredients.costOfRequiredQuantity
     description: { type: String }, // description of the business good
-    allergens: { type: [String], enum: allergen, default: undefined }, // allergens of the business good - have to follow the allergens from the supplier goods and add more if needed
+    allergens: { type: [String], enum: allergens, default: undefined }, // allergens of the business good - have to follow the allergens from the supplier goods and add more if needed
     image: { type: String, default: "../public/images/default_img.png" }, // photo of the business good
     deliveryTime: { type: Number }, // maximun time to deliver the business good to client
   },

@@ -5,10 +5,22 @@ export interface ISupplierGood {
     name: string;
     keyword: string;
     category: string;
-    subCategory: string;
+    subCategory?: string;
     currentlyInUse: boolean;
     supplier: Types.ObjectId;
     business?: Types.ObjectId;
+
+    foodSubCategory?: string;
+    beverageSubCategory?: string;
+    merchandiseSubCategory?: string;
+    cleaningSubCategory?: string;
+    officeSubCategory?: string;
+    furnitureSubCategory?: string;
+    disposableSubCategory?: string;
+    servicesSubCategory?: string;
+    equipmentSubCategory?: string;
+    othersSubCategory?: string;
+
     description?: string;
     allergens?: string[];
     budgetImpact?: string;

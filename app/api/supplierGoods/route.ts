@@ -4,6 +4,8 @@ import connectDB from "@/app/lib/db";
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { updateDynamicCountFromLastInventory } from "./utils/updateDynamicCountFromLastInventory";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods
@@ -14,17 +16,17 @@ export const GET = async () => {
     await connectDB();
 
     const supplierGoods = await SupplierGood.find()
-      .populate("supplier", "tradeName")
+      // .populate("supplier", "tradeName")
       .lean();
 
     return !supplierGoods.length
-      ? new NextResponse(
-          JSON.stringify({ message: "No supplier goods found!" }),
-          { status: 404 }
-        )
-      : new NextResponse(JSON.stringify(supplierGoods), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      ? new NextResponse("No supplier goods found!!", { status: 404 })
+      : new NextResponse(JSON.stringify(supplierGoods), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get all supplier goods failed!", error);
   }
 };
 
@@ -37,7 +39,7 @@ export const POST = async (req: Request) => {
       name,
       keyword,
       category,
-      subCategory,
+      subCategory, // can be foodSubCategory, beverageSubCategory, merchandiseSubCategory or othersSubcategory
       currentlyInUse,
       supplier,
       business,
@@ -53,7 +55,7 @@ export const POST = async (req: Request) => {
       minimumQuantityRequired,
       inventorySchedule,
       dynamicCountFromLastInventory,
-    } = req.body as unknown as ISupplierGood;
+    } = (await req.json()) as ISupplierGood;
 
     // check required fields
     if (
@@ -66,10 +68,7 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        JSON.stringify({
-          message:
-            "Name, keyword, category, subCategory, currentlyInUse, supplier and business are required!",
-        }),
+        "Name, keyword, category, subCategory, currentlyInUse, supplier and business are required!",
         { status: 400 }
       );
     }
@@ -82,14 +81,11 @@ export const POST = async (req: Request) => {
       business,
       name,
     });
-    
+
     if (duplicateSupplierGood) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `${name} already exists on supplier goods!`,
-        }),
-        { status: 400 }
-      );
+      return new NextResponse(`${name} already exists on supplier goods!`, {
+        status: 400,
+      });
     }
 
     // Create a supplier good object with required fields
@@ -97,7 +93,16 @@ export const POST = async (req: Request) => {
       name,
       keyword,
       category,
-      subCategory,
+      foodSubCategory: category === "Food" ? subCategory : undefined,
+      beverageSubCategory: category === "Beverage" ? subCategory : undefined,
+      merchandiseSubCategory: category === "Merchandise" ? subCategory : undefined,
+      cleaningSubCategory: category === "Cleaning" ? subCategory : undefined,
+      officeSubCategory: category === "Office" ? subCategory : undefined,
+      furnitureSubCategory: category === "Furniture" ? subCategory : undefined,
+      disposableSubCategory: category === "Disposable" ? subCategory : undefined,
+      servicesSubCategory: category === "Services" ? subCategory : undefined,
+      equipmentSubCategory: category === "Equipment" ? subCategory : undefined,
+      othersSubCategory: category === "Others" ? subCategory : undefined,
       currentlyInUse,
       supplier,
       business,
@@ -123,21 +128,29 @@ export const POST = async (req: Request) => {
     };
 
     // create a new supplier good
-    const supplierGood = await SupplierGood.create(supplierGoodObj);
+    await SupplierGood.create(supplierGoodObj);
 
     // confirm supplier good was created
-    return supplierGood
-      ? new NextResponse(
-          JSON.stringify({
-            message: `Supplier good ${name} created successfully!`,
-          }),
-          { status: 201 }
-        )
-      : new NextResponse(
-          JSON.stringify({ message: "Failed to create supplier good!" }),
-          { status: 500 }
-        );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return new NextResponse(`Supplier good ${name} created successfully!`, {
+      status: 201,
+    });
+  } catch (error) {
+    return handleApiError("Create supplier good failed!", error);
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     const supplierGoodId = "6679367f607463b1e8782e43";
+//     const updatedCountQuantity = 10;
+
+//     // @ts-ignore
+//     const result = await updateDynamicCountFromLastInventory(supplierGoodId, updatedCountQuantity);
+
+//     return new NextResponse(JSON.stringify(result), {
+//       status: 201, headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Create schedule failed!", error);
+//   }
+// };

@@ -4,54 +4,54 @@ import connectDB from "@/app/lib/db";
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
-import Inventory from "@/app/lib/models/inventory";
 import { Types } from "mongoose";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get supplier good by ID
 // @route   GET /supplierGoods/:supplierGoodId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { supplierGoodId: Types.ObjectId } }
+) => {
   try {
     const supplierGoodId = context.params.supplierGoodId;
     // check if the supplier good is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierGoodId" }),
-        { status: 400 }
-      );
+      return new NextResponse("Invalid supplierGoodId!", { status: 400 });
     }
 
     // connect before first call to DB
     await connectDB();
 
     const supplierGood = await SupplierGood.findById(supplierGoodId)
-      .populate("supplier", "tradeName")
+      // .populate("supplier", "tradeName")
       .lean();
 
     return !supplierGood
-      ? new NextResponse(
-          JSON.stringify({ message: "Supplier good not found!" }),
-          { status: 404 }
-        )
-      : new NextResponse(JSON.stringify(supplierGood), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      ? new NextResponse("Supplier good not found!", { status: 404 })
+      : new NextResponse(JSON.stringify(supplierGood), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get supplier good by its id failed!", error);
   }
 };
 
 // @desc    Update supplier good by ID
 // @route   PATCH /supplierGoods/:supplierGoodId
 // @access  Private
-export const PATCH = async (req: Request, context: { params: any }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { supplierGoodId: Types.ObjectId } }
+) => {
   try {
     const supplierGoodId = context.params.supplierGoodId;
     // check if supplierGoodId is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierGoodId" }),
-        { status: 400 }
-      );
+      return new NextResponse("Invalid supplierGoodId!", { status: 400 });
     }
 
     const {
@@ -73,7 +73,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       inventorySchedule,
       totalQuantityPerUnit,
       dynamicCountFromLastInventory,
-    } = req.body as unknown as ISupplierGood;
+    } = (await req.json()) as ISupplierGood;
 
     // connect before first call to DB
     await connectDB();
@@ -83,10 +83,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       supplierGoodId
     ).lean();
     if (!supplierGood) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier good not found!" }),
-        { status: 404 }
-      );
+      return new NextResponse("Supplier good not found!", { status: 404 });
     }
 
     // check for duplicates supplier good name
@@ -99,9 +96,7 @@ export const PATCH = async (req: Request, context: { params: any }) => {
 
     if (duplicateSupplierGood) {
       return new NextResponse(
-        JSON.stringify({
-          message: `Supplier good ${name} already exists on this supplier!`,
-        }),
+        `Supplier good ${name} already exists on this supplier!`,
         { status: 409 }
       );
     }
@@ -111,7 +106,20 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       name: name || supplierGood.name,
       keyword: keyword || supplierGood.keyword,
       category: category || supplierGood.category,
-      subCategory: subCategory || supplierGood.subCategory,
+
+      foodSubCategory: category === "Food" ? subCategory : undefined,
+      beverageSubCategory: category === "Beverage" ? subCategory : undefined,
+      merchandiseSubCategory:
+        category === "Merchandise" ? subCategory : undefined,
+      cleaningSubCategory: category === "Cleaning" ? subCategory : undefined,
+      officeSubCategory: category === "Office" ? subCategory : undefined,
+      furnitureSubCategory: category === "Furniture" ? subCategory : undefined,
+      disposableSubCategory:
+        category === "Disposable" ? subCategory : undefined,
+      servicesSubCategory: category === "Services" ? subCategory : undefined,
+      equipmentSubCategory: category === "Equipment" ? subCategory : undefined,
+      othersSubCategory: category === "Others" ? subCategory : undefined,
+
       currentlyInUse: currentlyInUse || supplierGood.currentlyInUse,
       supplier: supplier || supplierGood.supplier,
       description: description || supplierGood.description,
@@ -147,20 +155,15 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     };
 
     // updated supplier good
-    await SupplierGood.findByIdAndUpdate({ _id: supplierGoodId }, updateObj, {
+    await SupplierGood.findByIdAndUpdate(supplierGoodId, updateObj, {
       new: true,
-    }).lean();
-
-    return new NextResponse(
-      JSON.stringify({
-        message: `Supplier good ${name} updated successfully!`,
-      }),
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return new NextResponse("Updated supplier good fail - Error: " + error, {
-      status: 500,
     });
+
+    return new NextResponse(`Supplier good ${name} updated successfully!`, {
+      status: 200,
+    });
+  } catch (error) {
+    return handleApiError("Update supplier good failed!", error);
   }
 };
 
@@ -171,15 +174,15 @@ export const PATCH = async (req: Request, context: { params: any }) => {
 // @desc    Delete supplier good by ID
 // @route   DELETE /supplierGoods/:supplierGoodId
 // @access  Private
-export const DELETE = async (contect: { params: any }) => {
+export const DELETE = async (
+  req: Request,
+  context: { params: { supplierGoodId: Types.ObjectId } }
+) => {
   try {
-    const supplierGoodId = contect.params.supplierGoodId;
+    const supplierGoodId = context.params.supplierGoodId;
     // check if the supplier good is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierGoodId" }),
-        { status: 400 }
-      );
+      return new NextResponse("Invalid supplierGoodId!", { status: 400 });
     }
 
     // connect before first call to DB
@@ -190,10 +193,7 @@ export const DELETE = async (contect: { params: any }) => {
     ).lean();
 
     if (!supplierGood) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier good not found!" }),
-        { status: 404 }
-      );
+      return new NextResponse("Supplier good not found!", { status: 404 });
     }
 
     // check if the supplier good is used in any business goods
@@ -203,37 +203,26 @@ export const DELETE = async (contect: { params: any }) => {
       .select("name")
       .lean();
 
-    if (businessGoodsUsingSupplierGood.length) {
-      return new NextResponse(
-        JSON.stringify({
-          message: `Supplier good ${
-            supplierGood.name
-          } is used in the following business goods: ${businessGoodsUsingSupplierGood
-            .map((good) => good.name)
-            .join(
-              ", "
-            )}. Please remove it from the business goods before deleting it!`,
-        }),
-        { status: 409 }
-      );
-    }
+    const supplierGoodBeenUsedMessage = `Supplier good ${
+      supplierGood.name
+    } is used in the following business goods: ${businessGoodsUsingSupplierGood
+      .map((good) => good.name)
+      .join(
+        ", "
+      )}. Please remove it from the business goods before deleting it!`;
 
-    // remove the supplier good property from all inventory goods
-    await Inventory.updateMany(
-      { "inventoryGoods.supplierGood": supplierGoodId },
-      { $unset: { "inventoryGoods.$.supplierGood": "" } }
-    );
+    if (businessGoodsUsingSupplierGood.length) {
+      return new NextResponse(supplierGoodBeenUsedMessage, { status: 409 });
+    }
 
     // delete the supplier good
     await SupplierGood.deleteOne({ _id: supplierGoodId });
 
     return new NextResponse(
-      JSON.stringify({
-        message: `Supplier good ${supplierGood.name} deleted successfully!`,
-      }),
+      `Supplier good ${supplierGood.name} deleted successfully!`,
       { status: 200 }
     );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+  } catch (error) {
+    return handleApiError("Delete supplier good failed!", error);
   }
 };

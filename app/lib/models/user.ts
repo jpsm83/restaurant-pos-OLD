@@ -1,33 +1,7 @@
 import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
+import { idTypes, userRoles } from "../enums.js";
 
-const idTypes = ["National ID", "Passport", "Driving License"];
-
-const roles = [
-  "General Manager",
-  "Manager",
-  "Assistant Manager",
-  "MoD",
-  "Admin",
-  "Operator",
-  "Employee",
-  "Cashier",
-  "Floor Staff",
-  "Bartender",
-  "Barista",
-  "Waiter",
-  "Head Chef",
-  "Sous Chef",
-  "Line Cooks",
-  "Kitchen Porter",
-  "Cleaner",
-  "Security",
-  "Host",
-  "Runner",
-  "Supervisor",
-  "Client",
-  "Other",
-];
 
 const personalDetailsSchema = new Schema({
   // required fields
@@ -54,7 +28,7 @@ const userSchema = new Schema(
     allUserRoles: [
       {
         type: String,
-        enum: roles,
+        enum: userRoles,
         required: true,
       },
     ], // all roles of the user, can be multiple
@@ -72,7 +46,7 @@ const userSchema = new Schema(
     }, // business where the user works
 
     // optional fields
-    currentShiftRole: { type: String, enum: roles }, // current shift role of the user
+    currentShiftRole: { type: String, enum: userRoles }, // current shift role of the user
     address: addressSchema, // address of the user
     photo: { type: String, default: "../public/images/avatar.png" }, // photo of the user
     contractHoursWeek: { type: Number }, // contract hours per week

@@ -1,6 +1,5 @@
 import { Schema, model, models } from "mongoose";
-
-const status = ["Occupied", "Reserved", "Bill", "Closed"];
+import { tableStatus } from "../enums.js";
 
 const tableSchema = new Schema(
   {
@@ -8,7 +7,7 @@ const tableSchema = new Schema(
     dayReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
     tableReference: { type: String, required: true }, // reference for the table - have to match the businessTables array in the business
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
-    status: { type: String, enum: status, default: "Occupied", required: true }, // status of the table
+    status: { type: String, enum: tableStatus, default: "Occupied", required: true }, // status of the table
     openedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

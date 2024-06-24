@@ -1,7 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
-
-const subscription = ["Free", "Basic", "Premium", "Enterprise"];
+import { subscription } from "../enums.js";
 
 const businessSchema = new Schema(
   {

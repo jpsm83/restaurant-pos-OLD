@@ -1,21 +1,5 @@
 import { Schema, model, models } from "mongoose";
-
-const allergen = [
-  "Gluten",
-  "Crustaceans",
-  "Eggs",
-  "Fish",
-  "Peanuts",
-  "Soybeans",
-  "Milk",
-  "Nuts",
-  "Celery",
-  "Mustard",
-  "Sesame",
-  "Sulphur dioxide",
-  "Lupin",
-  "Molluscs",
-];
+import { allergens } from "../enums.js";
 
 // example of a payment method object
 // paymentMethod = [
@@ -116,7 +100,7 @@ const orderSchema = new Schema(
       type: [paymentMethodSchema],
       default: undefined,
     },
-    allergens: { type: [String], enum: allergen, default: undefined }, // this property is manualy added by the user, the pos will filter all the business goods allergens that applyed and dont offer them to be purchased, this value will go to the kitcken
+    allergens: { type: [String], enum: allergens, default: undefined }, // this property is manualy added by the user, the pos will filter all the business goods allergens that applyed and dont offer them to be purchased, this value will go to the kitcken
     promotionApplyed: { type: String }, // check if promotion is applyed by promotion date and time - done on the front end
     discountPercentage: { type: Number }, // percentage discount applyed manually to the order
     comments: { type: String }, // if discount, void or cancel are applyed, the reason for it or if or if kitchen needs to know something

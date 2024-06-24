@@ -1,18 +1,5 @@
 import { Schema, model, models } from "mongoose";
-
-const notificationTypes = ["Warning", "Emergency", "Info", "Message"];
-
-// example of prependListener
-//   "Supplier good is running low",
-//   "Supplier good is out of stock",
-//   "Business good is running low",
-//   "Business good is out of stock",
-//   "Employee is late",
-//   "Employee was absent",
-//   "Employee is leaving early",
-//   "Daily report was closed",
-//   "Message from the general manager",
-//   "Message",
+import { notificationTypes } from "../enums.js";
 
 const notificationSchema = new Schema(
   {
