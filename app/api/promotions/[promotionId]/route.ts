@@ -75,6 +75,23 @@ export const PATCH = async (
       description,
     } = (await req.json()) as IPromotion;
 
+    // validate businessGoodsToApply
+    if (businessGoodsToApply) {
+      if (!Array.isArray(businessGoodsToApply)) {
+        return new NextResponse(
+          "BusinessGoodsToApply should be an array of business goods IDs!",
+          { status: 400 }
+        );
+      }
+      businessGoodsToApply.forEach((businessGoodId) => {
+        if (!Types.ObjectId.isValid(businessGoodId)) {
+          return new NextResponse("BusinessGoodsToApply IDs not valid!", {
+            status: 400,
+          });
+        }
+      });
+    }
+
     // validate dateRange and timeRange
     if (promotionPeriod) {
       const validateDateAndTimeResult = validateDateAndTime(promotionPeriod);

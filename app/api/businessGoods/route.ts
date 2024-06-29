@@ -18,6 +18,7 @@ export const GET = async () => {
     await connectDB();
     const businessGoods = await BusinessGood.find()
       .populate("ingredients.ingredient", "name category")
+      .populate("setMenu", "name category sellingPrice")
       .lean();
     return !businessGoods.length
       ? new NextResponse("No business goods found!", { status: 404 })
@@ -69,13 +70,9 @@ export const POST = async (req: Request) => {
     }
 
     // one of the two fields should be present (ingredients or setMenu)
-    if (!ingredients && !setMenu) {
-      return new NextResponse("Ingredients or setMenu is required!", {
-        status: 400,
-      });
-    } else if (ingredients && setMenu) {
+    if (ingredients && setMenu) {
       return new NextResponse(
-        "Only one of ingredients or setMenu is required!",
+        "Only one of ingredients or setMenu can be asigned!",
         { status: 400 }
       );
     }
@@ -99,8 +96,13 @@ export const POST = async (req: Request) => {
     let newBusinessGood: IBusinessGood = {
       name,
       keyword,
-      category,
-      subCategory,
+      category: {
+        mainCategory: category as unknown as string,
+        setMenuSubCategory: undefined,
+        foodSubCategory: undefined,
+        beverageSubCategory: undefined,
+        merchandiseSubCategory: undefined,
+      },
       onMenu,
       available,
       sellingPrice,
@@ -109,6 +111,25 @@ export const POST = async (req: Request) => {
       image: image || undefined,
       deliveryTime: deliveryTime || undefined,
     };
+
+    // set the category and subcategory
+    switch (category as unknown as string) {
+      case "Set Menu":
+        newBusinessGood.category.setMenuSubCategory = subCategory;
+        break;
+      case "Food":
+        newBusinessGood.category.foodSubCategory = subCategory;
+        break;
+      case "Beverage":
+        newBusinessGood.category.beverageSubCategory = subCategory;
+        break;
+      case "Merchandise":
+        newBusinessGood.category.merchandiseSubCategory = subCategory;
+        break;
+      default:
+        newBusinessGood.category.merchandiseSubCategory = "No subcategory";
+        break;
+    }
 
     // validate ingredients if they exist and calculate the cost price and allergens
     if (ingredients) {
@@ -138,7 +159,7 @@ export const POST = async (req: Request) => {
             (acc, curr) => acc + curr.costOfRequiredQuantity,
             0
           );
-        newBusinessGood.allergens =
+        const reducedAllergens =
           calculateIngredientsCostPriceAndAlleryResult.reduce(
             (acc: string[], curr) => {
               if (curr.allergens) {
@@ -152,6 +173,7 @@ export const POST = async (req: Request) => {
             },
             []
           );
+          newBusinessGood.allergens = reducedAllergens && reducedAllergens.length > 0 ? reducedAllergens : undefined;
       }
     }
 
@@ -169,7 +191,7 @@ export const POST = async (req: Request) => {
         newBusinessGood.costPrice =
           calculateSetMenuCostPriceAndAlleryResult.costPrice;
         newBusinessGood.allergens =
-          calculateSetMenuCostPriceAndAlleryResult.allergens;
+          calculateSetMenuCostPriceAndAlleryResult.allergens && calculateSetMenuCostPriceAndAlleryResult.allergens.length > 0 ? calculateSetMenuCostPriceAndAlleryResult.allergens : undefined;
       }
     }
 
@@ -186,29 +208,52 @@ export const POST = async (req: Request) => {
 
 // export const POST = async (req: Request) => {
 //   try {
-//     const ingredientsArr = [
+//     const ingredientsArr: any = [
 //       {
-//         ingredient: "6612cd163684524f0bb078da",
-//         measurementUnit: "kg",
+//         ingredient: "667bfac8d28a7ee19d9be443",
+//         measurementUnit: "unit",
+//         requiredQuantity: 1,
+//       },
+//       {
+//         ingredient: "667bfac8d28a7ee19d9be444",
+//         measurementUnit: "g",
+//         requiredQuantity: 0.5,
+//       },
+//       {
+//         ingredient: "667bfac8d28a7ee19d9be445",
+//         measurementUnit: "unit",
+//         requiredQuantity: 1,
+//       },
+//       {
+//         ingredient: "667bfac8d28a7ee19d9be446",
+//         measurementUnit: "g",
+//         requiredQuantity: 20,
+//       },
+//       {
+//         ingredient: "667bfac8d28a7ee19d9be447",
+//         measurementUnit: "g",
 //         requiredQuantity: 10,
 //       },
 //       {
-//         ingredient: "6612cd163684524f0bb078da",
-//         measurementUnit: "kg",
-//         requiredQuantity: 10,
+//         ingredient: "667bfac8d28a7ee19d9be44c",
+//         measurementUnit: "g",
+//         requiredQuantity: 15,
 //       },
 //     ];
 
-//     const setMenuArr = ["66758b8904c4e6f5bbaa6b81", "66758b8904c4e6f5bbaa6b81"];
+//     // cheeseburger - fries
+//     const setMenuArr = ["667bfc0c5d50be40f0c7b065", "667bfddd5d50be40f0c7b079"];
 
-//     // @ts-ignore
-//     const ingredients = await calculateIngredientsCostPriceAndAllery(
-//       ingredientsArr
-//     );
-//     return new NextResponse(JSON.stringify(ingredients), {
-//       status: 201,
-//       headers: { "Content-Type": "application/json" },
-//     });
+//     await connectDB();
+
+//     // // @ts-ignore
+//     // const ingredients = await calculateIngredientsCostPriceAndAllery(
+//     //   ingredientsArr
+//     // );
+//     // return new NextResponse(JSON.stringify(ingredients), {
+//     //   status: 201,
+//     //   headers: { "Content-Type": "application/json" },
+//     // });
 
 //     // @ts-ignore
 //     const setMenu = await calculateSetMenuCostPriceAndAllery(setMenuArr);
@@ -217,12 +262,12 @@ export const POST = async (req: Request) => {
 //       headers: { "Content-Type": "application/json" },
 //     });
 
-//     // @ts-ignore
-//     const validate = validateIngredients(ingredientsArr);
-//     return new NextResponse(JSON.stringify(validate), {
-//       status: 201,
-//       headers: { "Content-Type": "application/json" },
-//     });
+//     // // @ts-ignore
+//     // const validate = validateIngredients(ingredientsArr);
+//     // return new NextResponse(JSON.stringify(validate), {
+//     //   status: 201,
+//     //   headers: { "Content-Type": "application/json" },
+//     // });
 //   } catch (error) {
 //     return handleApiError("Create schedule failed!", error);
 //   }

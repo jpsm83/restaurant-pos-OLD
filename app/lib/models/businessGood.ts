@@ -15,28 +15,28 @@ const categorySchema = new Schema({
     },
   }, // subcategories for the "Set Menu" category
 
-    // required subcategory fields
-    foodSubCategory: {
-      type: String,
-      required: function () {
-        // @ts-ignore
-        return this.mainCategory === "Food";
-      },
-    }, // subcategory of the good - "Bake"
-    beverageSubCategory: {
-      type: String,
-      required: function () {
-        // @ts-ignore
-        return this.mainCategory === "Beverage";
-      },
-    }, // subcategory of the good - "Beer"
-    merchandiseSubCategory: {
-      type: String,
-      required: function () {
-        // @ts-ignore
-        return this.mainCategory === "Merchandise";
-      },
-    }, // subcategory of the good - "Clothing"
+  // required subcategory fields
+  foodSubCategory: {
+    type: String,
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Food";
+    },
+  }, // subcategory of the good - "Bake"
+  beverageSubCategory: {
+    type: String,
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Beverage";
+    },
+  }, // subcategory of the good - "Beer"
+  merchandiseSubCategory: {
+    type: String,
+    required: function () {
+      // @ts-ignore
+      return this.mainCategory === "Merchandise";
+    },
+  }, // subcategory of the good - "Clothing"
 });
 
 const businessGoodSchema = new Schema(
@@ -58,7 +58,6 @@ const businessGoodSchema = new Schema(
     },
 
     // BUSINESSGOOD CAN HAVE A INGREDIENTS ARRAY OR SETMENU ARRAY - IT CANNOT BE BOTH
-    // AT LEAST ONE OF THEM IS REQUIRED
     // ingredients is an array of objects that contains the supplierGood and the quantity needed to build a businessGood
     ingredients: {
       type: [
@@ -89,7 +88,7 @@ const businessGoodSchema = new Schema(
       ref: "BusinessGood",
       default: undefined,
     }, // all business goods that are part of the set menu
-    
+
     // optional fields
     costPrice: { type: Number }, // sun of all ingredients.costOfRequiredQuantity
     description: { type: String }, // description of the business good

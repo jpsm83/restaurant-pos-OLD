@@ -105,21 +105,19 @@ export const PATCH = async (
     const updateObj: ISupplierGood = {
       name: name || supplierGood.name,
       keyword: keyword || supplierGood.keyword,
-      category: category || supplierGood.category,
-
-      foodSubCategory: category === "Food" ? subCategory : undefined,
-      beverageSubCategory: category === "Beverage" ? subCategory : undefined,
-      merchandiseSubCategory:
-        category === "Merchandise" ? subCategory : undefined,
-      cleaningSubCategory: category === "Cleaning" ? subCategory : undefined,
-      officeSubCategory: category === "Office" ? subCategory : undefined,
-      furnitureSubCategory: category === "Furniture" ? subCategory : undefined,
-      disposableSubCategory:
-        category === "Disposable" ? subCategory : undefined,
-      servicesSubCategory: category === "Services" ? subCategory : undefined,
-      equipmentSubCategory: category === "Equipment" ? subCategory : undefined,
-      othersSubCategory: category === "Others" ? subCategory : undefined,
-
+      category: {
+        mainCategory: category as unknown as string,
+        foodSubCategory: undefined,
+        beverageSubCategory: undefined,
+        merchandiseSubCategory: undefined,
+        cleaningSubCategory: undefined,
+        officeSubCategory: undefined,
+        furnitureSubCategory: undefined,
+        disposableSubCategory: undefined,
+        servicesSubCategory: undefined,
+        equipmentSubCategory: undefined,
+        othersSubCategory: undefined,
+      },
       currentlyInUse: currentlyInUse || supplierGood.currentlyInUse,
       supplier: supplier || supplierGood.supplier,
       description: description || supplierGood.description,
@@ -153,6 +151,43 @@ export const PATCH = async (
         dynamicCountFromLastInventory ||
         supplierGood.dynamicCountFromLastInventory,
     };
+
+    // set the category and subcategory
+    switch (category as unknown as string) {
+      case "Food":
+        updateObj.category.foodSubCategory = subCategory;
+        break;
+      case "Beverage":
+        updateObj.category.beverageSubCategory = subCategory;
+        break;
+      case "Merchandise":
+        updateObj.category.merchandiseSubCategory = subCategory;
+        break;
+      case "Cleaning":
+        updateObj.category.cleaningSubCategory = subCategory;
+        break;
+      case "Office":
+        updateObj.category.officeSubCategory = subCategory;
+        break;
+      case "Furniture":
+        updateObj.category.furnitureSubCategory = subCategory;
+        break;
+      case "Disposable":
+        updateObj.category.disposableSubCategory = subCategory;
+        break;
+      case "Services":
+        updateObj.category.servicesSubCategory = subCategory;
+        break;
+      case "Equipment":
+        updateObj.category.equipmentSubCategory = subCategory;
+        break;
+      case "Others":
+        updateObj.category.othersSubCategory = subCategory;
+        break;
+      default:
+        updateObj.category.merchandiseSubCategory = "No subcategory";
+        break;
+    }
 
     // updated supplier good
     await SupplierGood.findByIdAndUpdate(supplierGoodId, updateObj, {
@@ -196,6 +231,10 @@ export const DELETE = async (
       return new NextResponse("Supplier good not found!", { status: 404 });
     }
 
+
+    // give it a warning on the front application
+    // make user delete the supplier good from all business goods before deleting it
+    // thats way he will know that he need to replace the supplier good with another one for the business good be a valid one
     // check if the supplier good is used in any business goods
     const businessGoodsUsingSupplierGood = await BusinessGood.find({
       ingredients: { $elemMatch: { ingredient: supplierGoodId } },

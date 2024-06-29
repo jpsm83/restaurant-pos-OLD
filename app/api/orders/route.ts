@@ -5,6 +5,9 @@ import { IOrder } from "@/app/lib/interface/IOrder";
 // import models
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
+import { cancelOrderAndUpdateDynamicCount } from "./utils/cancelOrderAndUpdateDynamicCount";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -24,12 +27,15 @@ export const GET = async () => {
       .lean();
 
     return !orders.length
-      ? new NextResponse(JSON.stringify({ message: "No orders found!" }), {
+      ? new NextResponse("No orders found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(orders), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(orders), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get all orders failed!", error);
   }
 };
 
@@ -58,39 +64,40 @@ export const GET = async () => {
 // SECOND ROUND OF ORDERS
 // ORDER_4 PRICE_0 PROMO_2x1
 
+// ORDERS ARE CREATED INDIVIDUALLY UNLESS IT HAS ADDONS
+// THAT WAY WE CAN APPLY PROMOTIONS TO INDIVIDUAL ORDERS, MANAGE PAYMENTS AND TRACK THE STATUS OF EACH ORDER EASILY
+
 // @desc    Create new order
 // @route   POST /orders
 // @access  Private
-// paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
 export const POST = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDB();
 
+    // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
     const {
       dayReferenceNumber,
-      orderStatus,
       orderPrice,
       orderNetPrice,
       orderCostPrice,
       user,
       table,
-      businessGoods,
+      businessGoods, // can be an aray of business goods (3 IDs) "burger with extra cheese and add bacon"
       business,
       allergens,
       promotionApplyed,
       discountPercentage,
       comments,
-    } = req.body as unknown as IOrder;
+    } = (await req.json()) as IOrder;
 
     // promotionApplyed is automatically set by the front end upon creation
     // net price is calculated on the front end following the promotion rules
-    // IT MUST BE DONE ON THE FRONT SO THE CLIENT CAN SEE THE DISCOUNT
+    // IT MUST BE DONE ON THE FRONT SO THE CLIENT CAN SEE THE DISCOUNT REAL TIME
 
     // check required fields
     if (
       !dayReferenceNumber ||
-      !orderStatus ||
       !orderPrice ||
       !orderNetPrice ||
       !orderCostPrice ||
@@ -100,10 +107,7 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        JSON.stringify({
-          message:
-            "DayReferenceNumber, orderStatus, orderPrice, orderNetPrice, user, table, businessGoods and business are required fields!",
-        }),
+        "DayReferenceNumber, orderPrice, orderNetPrice, user, table, businessGoods and business are required fields!",
         { status: 400 }
       );
     }
@@ -113,11 +117,10 @@ export const POST = async (req: Request) => {
     // ***********************************************
 
     // create an order object with required fields
-    const orderObj: IOrder = {
+    const newOrder: IOrder = {
       dayReferenceNumber: dayReferenceNumber,
       // order status is automatically set by the front end
-      // because we already got the current user role
-      // flow in case if customer pays at the time of the order
+      // FLOW - in case if customer pays at the time of the order
       //    - CREATE the order with billing status "Open"
       //    - GET the order by its ID
       //    - UPDATE the order with the payment method and billing status "Paid"
@@ -125,8 +128,7 @@ export const POST = async (req: Request) => {
       //    - *** IMPORTANT ***
       //         - Because it has been payed, doesn't mean orderStatus is "Done"
       //         - BARISTA, BARTENDER, CASHIER orders are automatically set to "Done" if all business goods are beverages because they make it on spot, if food, set to "Sent" because kitchen has to make it
-      //         - ALL THE REST OF STAFF orders are automatically set to "Sent" NOT "Done" because they have to wait for the order to be ready
-      orderStatus,
+      //         - ALL THE REST OF STAFF orders are automatically set to "Sent" NOT "Done" because they have to wait for the order to be done by somebody else
       orderPrice,
       orderNetPrice,
       orderCostPrice,
@@ -137,57 +139,53 @@ export const POST = async (req: Request) => {
       // add non-required fields
       allergens: allergens || undefined,
       promotionApplyed: promotionApplyed || undefined,
+      discountPercentage: discountPercentage || undefined,
       comments: comments || undefined,
     };
 
     // if promotion applyed, discountPercentage cannot be applyed
-    if (promotionApplyed) {
-      if (discountPercentage) {
-        return new NextResponse(
-          JSON.stringify({
-            message:
-              "You cannot apply discount to an order that has a promotion already!",
-          }),
-          { status: 400 }
-        );
-      } else {
-        orderObj.discountPercentage = discountPercentage || undefined;
-      }
+    if (promotionApplyed && discountPercentage) {
+      return new NextResponse(
+        "You cannot apply discount to an order that has a promotion already!",
+        { status: 400 }
+      );
     }
 
     // create a new order
-    const order = await Order.create(orderObj);
+    const order = await Order.create(newOrder);
 
     // confirm order was created
     if (order) {
-      // LOGIC TO BE DONE *************
-      // every time an order is created, we MUST update the supplier goods
-      // check all the ingredients of the business goods
-      // each ingredient is a supplier good
-      // deduct the quantity used from the supplierGood.dynamicCountFromLastInventory
-      // if insted of ingredients we have setMenu
-      //get all business goods from the setMenu
-      // every business good has ingredients
-      // deduct the quantity used from the supplierGood.dynamicCountFromLastInventory
+      // update the dynamic count of supplier goods
+      await updateDynamicCountSupplierGood(newOrder.businessGoods, "add");
 
-      // REVIEW ON ALL FUNCTIONS IN THIS CONTROLLER
       // After order is created, add order ID to table
       await Table.findByIdAndUpdate(
         { _id: table },
         { $push: { orders: order._id } },
-        { new: true, useFindAndModify: false }
-      ).lean();
-      return new NextResponse(
-        JSON.stringify({ message: "Order created successfully!" }),
-        { status: 201 }
+        { new: true }
       );
-    } else {
-      return new NextResponse(
-        JSON.stringify({ message: "Order creation failed!" }),
-        { status: 400 }
-      );
+      return new NextResponse("Order created successfully!", { status: 201 });
     }
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+  } catch (error) {
+    return handleApiError("Create order failed!", error);
   }
 };
+
+// // @desc    Create new order
+// // @route   POST /orders
+// // @access  Private
+// export const POST = async (req: Request) => {
+//   try {
+//     const orderId = "66800d40ec4e6345a3102aee";
+
+//     // @ts-ignore
+//     const result = cancelOrderAndUpdateDynamicCount(orderId);
+
+//     return new NextResponse(result, {
+//       status: 200
+//     });
+//   } catch (error) {
+//     return handleApiError("Cancel order failed!", error);
+//   }
+// };

@@ -78,13 +78,9 @@ export const PATCH = async (
     }
 
     // one of the two fields should be present (ingredients or setMenu)
-    if (!ingredients && !setMenu) {
-      return new NextResponse("Ingredients or setMenu is required!", {
-        status: 400,
-      });
-    } else if (ingredients && setMenu) {
+    if (ingredients && setMenu) {
       return new NextResponse(
-        "Only one of ingredients or setMenu is required!",
+        "Only one of ingredients or setMenu can be asigned!",
         { status: 400 }
       );
     }
@@ -118,8 +114,13 @@ export const PATCH = async (
     const updatedBusinessGood: IBusinessGood = {
       name: name || businessGood.name,
       keyword: keyword || businessGood.keyword,
-      category: category || businessGood.category,
-      subCategory: subCategory || businessGood.subCategory,
+      category: {
+        mainCategory: category as unknown as string,
+        setMenuSubCategory: undefined,
+        foodSubCategory: undefined,
+        beverageSubCategory: undefined,
+        merchandiseSubCategory: undefined,
+      },
       onMenu: onMenu || businessGood.onMenu,
       available: available || businessGood.available,
       sellingPrice: sellingPrice || businessGood.sellingPrice,
@@ -127,6 +128,25 @@ export const PATCH = async (
       image: image || businessGood.image,
       deliveryTime: deliveryTime || businessGood.deliveryTime,
     };
+
+    // set the category and subcategory
+    switch (category as unknown as string) {
+      case "Set Menu":
+        updatedBusinessGood.category.setMenuSubCategory = subCategory;
+        break;
+      case "Food":
+        updatedBusinessGood.category.foodSubCategory = subCategory;
+        break;
+      case "Beverage":
+        updatedBusinessGood.category.beverageSubCategory = subCategory;
+        break;
+      case "Merchandise":
+        updatedBusinessGood.category.merchandiseSubCategory = subCategory;
+        break;
+      default:
+        updatedBusinessGood.category.merchandiseSubCategory = "No subcategory";
+        break;
+    }
 
     // validate ingredients if they exist and calculate the cost price and allergens
     if (ingredients) {
@@ -150,13 +170,12 @@ export const PATCH = async (
               costOfRequiredQuantity: ing.costOfRequiredQuantity,
             };
           });
-        updatedBusinessGood.setMenu = undefined;
         updatedBusinessGood.costPrice =
           calculateIngredientsCostPriceAndAlleryResult.reduce(
             (acc, curr) => acc + curr.costOfRequiredQuantity,
             0
           );
-        updatedBusinessGood.allergens =
+        const reducedAllergens =
           calculateIngredientsCostPriceAndAlleryResult.reduce(
             (acc: string[], curr) => {
               if (curr.allergens) {
@@ -170,7 +189,13 @@ export const PATCH = async (
             },
             []
           );
+        updatedBusinessGood.allergens =
+          reducedAllergens && reducedAllergens.length > 0
+            ? reducedAllergens
+            : [];
       }
+      // @ts-ignore
+      updatedBusinessGood.$unset = { setMenu: "" }; // This removes the setMenu field
     }
 
     // calculate the cost price and allergens for the setMenu if they exist
@@ -182,27 +207,32 @@ export const PATCH = async (
           status: 400,
         });
       } else {
-        updatedBusinessGood.ingredients = undefined;
         updatedBusinessGood.setMenu = setMenu;
         updatedBusinessGood.costPrice =
           calculateSetMenuCostPriceAndAlleryResult.costPrice;
         updatedBusinessGood.allergens =
-          calculateSetMenuCostPriceAndAlleryResult.allergens;
+          calculateSetMenuCostPriceAndAlleryResult.allergens &&
+          calculateSetMenuCostPriceAndAlleryResult.allergens.length > 0
+            ? calculateSetMenuCostPriceAndAlleryResult.allergens
+            : [];
       }
+      // @ts-ignore
+      updatedBusinessGood.$unset = { ingredients: "" }; // This removes the ingredients field
     }
 
     // update the business good
     await BusinessGood.findByIdAndUpdate(
       { _id: businessGoodId },
       updatedBusinessGood,
-      {
-        new: true,
-      }
+      { new: true }
     );
 
-    return new NextResponse(`Business good ${name} updated successfully!`, {
-      status: 200,
-    });
+    return new NextResponse(
+      `Business good ${updatedBusinessGood.name} updated successfully!`,
+      {
+        status: 200,
+      }
+    );
   } catch (error) {
     return handleApiError("Update business good failed!", error);
   }
@@ -263,8 +293,8 @@ export const DELETE = async (
 
     // delete the business good id reference from promotions
     await Promotion.updateMany(
-      { businessGoods: businessGoodId },
-      { $pull: { businessGoods: businessGoodId } }
+      { businessGoodsToApply: businessGoodId },
+      { $pull: { businessGoodsToApply: businessGoodId } }
     );
 
     return new NextResponse(

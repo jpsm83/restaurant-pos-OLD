@@ -11,11 +11,17 @@ export interface IIngredients {
   export interface IBusinessGood {
     name: string;
     keyword: string;
-    category: string;
-    subCategory: string;
+    category: {
+      mainCategory: string;
+      setMenuSubCategory?: string;
+      foodSubCategory?: string;
+      beverageSubCategory?: string;
+      merchandiseSubCategory?: string;
+    };
     onMenu: boolean;
     available: boolean;
     sellingPrice: number;
+    subCategory?: string;
     business?: Types.ObjectId;
     ingredients?: IIngredients[];
     setMenu?: Types.ObjectId[];

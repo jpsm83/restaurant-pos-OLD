@@ -11,7 +11,6 @@ export interface IPaymentMethod {
 export interface IOrder {
     _id?: Types.ObjectId;
     dayReferenceNumber: number;
-    orderStatus: string;
     orderPrice: number;
     orderNetPrice: number;
     orderCostPrice: number;
@@ -19,6 +18,7 @@ export interface IOrder {
     table: Types.ObjectId;
     businessGoods: Types.ObjectId[];
     business: Types.ObjectId;
+    orderStatus?: string;
     allergens?: string[];
     promotionApplyed?: string;
     discountPercentage?: number;

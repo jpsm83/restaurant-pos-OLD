@@ -39,7 +39,7 @@ export const POST = async (req: Request) => {
       name,
       keyword,
       category,
-      subCategory, // can be foodSubCategory, beverageSubCategory, merchandiseSubCategory or othersSubcategory
+      subCategory,
       currentlyInUse,
       supplier,
       business,
@@ -92,17 +92,19 @@ export const POST = async (req: Request) => {
     const supplierGoodObj: ISupplierGood = {
       name,
       keyword,
-      category,
-      foodSubCategory: category === "Food" ? subCategory : undefined,
-      beverageSubCategory: category === "Beverage" ? subCategory : undefined,
-      merchandiseSubCategory: category === "Merchandise" ? subCategory : undefined,
-      cleaningSubCategory: category === "Cleaning" ? subCategory : undefined,
-      officeSubCategory: category === "Office" ? subCategory : undefined,
-      furnitureSubCategory: category === "Furniture" ? subCategory : undefined,
-      disposableSubCategory: category === "Disposable" ? subCategory : undefined,
-      servicesSubCategory: category === "Services" ? subCategory : undefined,
-      equipmentSubCategory: category === "Equipment" ? subCategory : undefined,
-      othersSubCategory: category === "Others" ? subCategory : undefined,
+      category: {
+        mainCategory: category as unknown as string,
+        foodSubCategory: undefined,
+        beverageSubCategory: undefined,
+        merchandiseSubCategory: undefined,
+        cleaningSubCategory: undefined,
+        officeSubCategory: undefined,
+        furnitureSubCategory: undefined,
+        disposableSubCategory: undefined,
+        servicesSubCategory: undefined,
+        equipmentSubCategory: undefined,
+        othersSubCategory: undefined,
+      },
       currentlyInUse,
       supplier,
       business,
@@ -126,6 +128,43 @@ export const POST = async (req: Request) => {
       // IMPORTANT *** THAT NUMBER IS THE START POINT FOR THE INVENTORY COUNT
       dynamicCountFromLastInventory: dynamicCountFromLastInventory || undefined,
     };
+
+    // set the category and subcategory
+    switch (category as unknown as string) {
+      case "Food":
+        supplierGoodObj.category.foodSubCategory = subCategory;
+        break;
+      case "Beverage":
+        supplierGoodObj.category.beverageSubCategory = subCategory;
+        break;
+      case "Merchandise":
+        supplierGoodObj.category.merchandiseSubCategory = subCategory;
+        break;
+      case "Cleaning":
+        supplierGoodObj.category.cleaningSubCategory = subCategory;
+        break;
+      case "Office":
+        supplierGoodObj.category.officeSubCategory = subCategory;
+        break;
+      case "Furniture":
+        supplierGoodObj.category.furnitureSubCategory = subCategory;
+        break;
+      case "Disposable":
+        supplierGoodObj.category.disposableSubCategory = subCategory;
+        break;
+      case "Services":
+        supplierGoodObj.category.servicesSubCategory = subCategory;
+        break;
+      case "Equipment":
+        supplierGoodObj.category.equipmentSubCategory = subCategory;
+        break;
+      case "Others":
+        supplierGoodObj.category.othersSubCategory = subCategory;
+        break;
+      default:
+        supplierGoodObj.category.merchandiseSubCategory = "No subcategory";
+        break;
+    }
 
     // create a new supplier good
     await SupplierGood.create(supplierGoodObj);

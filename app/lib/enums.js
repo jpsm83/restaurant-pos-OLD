@@ -21,6 +21,7 @@ export const saleUnit = [
   "Piece",
   "Packet",
   "Bag",
+  "Block",
   "Box",
   "Can",
   "Jar",
@@ -78,6 +79,7 @@ export const billingStatus = ["Open", "Paid", "Void", "Cancelled", "Invitation"]
 
 // metric abreveations for the convert-units library
 export const measurementUnit = [
+  "unit", // This is not on convert-units library - this is just to recognize the unit as a single item
   "mg", // Milligram
   "g", // Gram
   "kg", // Kilogram

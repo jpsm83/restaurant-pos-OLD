@@ -8,6 +8,7 @@ import { validateDateAndTime } from "./utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "./utils/validateDaysOfTheWeek";
 import { handleApiError } from "@/app/utils/handleApiError";
 import { validatePromotionType } from "./utils/validatePromotionType";
+import { Types } from "mongoose";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
@@ -68,6 +69,23 @@ export const POST = async (req: Request) => {
         "PromotionName, promotionPeriod, weekDays, activePromotion promotionType and business are required fields!",
         { status: 400 }
       );
+    }
+
+    // validate businessGoodsToApply
+    if (businessGoodsToApply) {
+      if (!Array.isArray(businessGoodsToApply)) {
+        return new NextResponse(
+          "BusinessGoodsToApply should be an array of business goods IDs!",
+          { status: 400 }
+        );
+      }
+      businessGoodsToApply.forEach((businessGoodId) => {
+        if (!Types.ObjectId.isValid(businessGoodId)) {
+          return new NextResponse("BusinessGoodsToApply IDs not valid!", {
+            status: 400,
+          });
+        }
+      });
     }
 
     // validate dateRange and timeRange
