@@ -12,6 +12,8 @@ import Business from "@/app/lib/models/business";
 import Table from "@/app/lib/models/table";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { handleApiError } from "@/app/utils/handleApiError";
+import { create } from "domain";
+import { createTable } from "./utils/createTable";
 
 // @desc    Get all tables
 // @route   GET /tables
@@ -85,20 +87,6 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDB();
 
-    // check if tableReference exists in the business
-    const validateTableReference = await Business.findOne({
-      _id: business,
-      businessTables: { $in: [tableReference] },
-    });
-
-    // check if tableReference exists in the business (pre set tables that can be used)
-    if (!validateTableReference) {
-      return new NextResponse(
-        "TableReference does not exist in this business!",
-        { status: 400 }
-      );
-    }
-
     // check if there is a daily report for the day already created
     const currentDateNoTime = new Date();
     currentDateNoTime.setHours(0, 0, 0, 0);
@@ -116,21 +104,9 @@ export const POST = async (req: Request) => {
       ? dailySalesReport.dayReferenceNumber
       : await createDailySalesReport(business);
 
-    // create a tables object with required fields
-    const tableObj = {
-      dayReferenceNumber: dayReferenceNumber,
-      tableReference,
-      guests,
-      status,
-      openedBy,
-      responsibleBy,
-      business,
-      clientName: clientName || undefined,
-    };
-
     // check if tables already exists and it is not closed
     const duplicateTable = await Table.findOne({
-      dayReferenceNumber: tableObj.dayReferenceNumber,
+      dayReferenceNumber: dayReferenceNumber,
       business,
       tableReference,
       status: { $ne: "Closed" },
@@ -145,24 +121,16 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // check if user exists in the dailySalesReport
-    const userDailySalesReport = await DailySalesReport.findOne({
-      dayReferenceNumber: dayReferenceNumber,
+    // create new table
+    await createTable(
+      tableReference,
+      guests,
+      openedBy,
+      responsibleBy,
       business,
-      "userDailySalesReportArray.user": openedBy,
-    }).lean();
-
-    // if user does not exist in the dailySalesReport, create it
-    if (!userDailySalesReport) {
-      await addUserToDailySalesReport(
-        openedBy,
-        dayReferenceNumber as number,
-        tableObj.business
-      );
-    }
-
-    // create the table
-    await Table.create(tableObj);
+      clientName,
+      dayReferenceNumber as number
+    );
 
     return new NextResponse(`Table ${tableReference} created successfully!`, {
       status: 201,

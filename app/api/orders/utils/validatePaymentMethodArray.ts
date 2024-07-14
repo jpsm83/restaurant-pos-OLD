@@ -13,6 +13,8 @@ export const validatePaymentMethodArray = (paymentMethod: IPaymentMethod[]) => {
     //     paymentMethodAmount: 60,
     //   },
     // ];
+   
+    
     if (!Array.isArray(paymentMethod)) {
       return "Invalid paymentMethod array!";
     }
@@ -34,14 +36,15 @@ export const validatePaymentMethodArray = (paymentMethod: IPaymentMethod[]) => {
           break;
         case "Other":
           if (!payment.other) {
-            return "Other payment method provided without other details";
+            return "'Others' payment method provided without 'other' details";
           }
           break;
         case "Cash":
           // No additional validation needed for cash payments
           break;
         default:
-          return "Invalid payment method";
+          // No additional validation needed for cash payments
+          break;
       }
     }
     return paymentMethod;

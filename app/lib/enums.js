@@ -68,13 +68,16 @@ export const userRoles = [
   "Other",
 ];
 
-export const orderStatus = ["Sent", "Done", "Dont Make", "Hold"];
+export const orderStatus = ["Sent", "Started", "Done", "Dont Make", "Hold", "Started Hold"];
+// "Started" and "Started Hold" are a value sent by the kitchen indicatiog the order is being prepared
+// once it has been started, it can't be cancel
+// "Dont Make" means it has been done before it been requested, it cannot be cancel
 
-export const billingStatus = ["Open", "Paid", "Void", "Cancelled", "Invitation"];
+export const billingStatus = ["Open", "Paid", "Void", "Cancel", "Invitation"];
 // OPEN - order is open and can be paid
 // PAID - order is paid and can't be changed
 // VOID - order been done but is voided by manager, good been lost and business will not be paid, ex: client left without paying, good was badly done and have to be remake, mistake was made
-// CANCELLED - good been order but has not been done and is cancelled by manager, there is no lost for the business, ex: user order by mistake and cancel it before it is done
+// CANCEL - good been order but has not been done and is cancel by manager, there is no lost for the business, ex: user order by mistake and cancel it before it is done
 // INVITATION - order is an invitation, no payment is required, ex: business is offering a free meal to a client
 
 // metric abreveations for the convert-units library

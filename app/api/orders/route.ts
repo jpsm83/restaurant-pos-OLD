@@ -8,6 +8,8 @@ import Table from "@/app/lib/models/table";
 import { handleApiError } from "@/app/utils/handleApiError";
 import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
 import { cancelOrderAndUpdateDynamicCount } from "./utils/cancelOrderAndUpdateDynamicCount";
+import { ITable } from "@/app/lib/interface/ITable";
+import { transferOrderBetweenTables } from "./utils/transferOrderBetweenTables";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -18,8 +20,8 @@ export const GET = async () => {
     await connectDB();
 
     const orders = await Order.find()
-      .populate("table", "tableReferenceNumber dayReferenceNumber")
-      .populate("user", "username allUserRoles currentShiftRole")
+      .populate("table", "tableReference")
+      // .populate("user", "username allUserRoles currentShiftRole")
       .populate(
         "businessGoods",
         "name category subCategory productionTime sellingPrice allergens"
@@ -72,9 +74,6 @@ export const GET = async () => {
 // @access  Private
 export const POST = async (req: Request) => {
   try {
-    // connect before first call to DB
-    await connectDB();
-
     // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
     const {
       dayReferenceNumber,
@@ -83,7 +82,7 @@ export const POST = async (req: Request) => {
       orderCostPrice,
       user,
       table,
-      businessGoods, // can be an aray of business goods (3 IDs) "burger with extra cheese and add bacon"
+      businessGoods, // can be an array of business goods (3 IDs) "burger with extra cheese and add bacon"
       business,
       allergens,
       promotionApplyed,
@@ -91,8 +90,8 @@ export const POST = async (req: Request) => {
       comments,
     } = (await req.json()) as IOrder;
 
-    // promotionApplyed is automatically set by the front end upon creation
-    // net price is calculated on the front end following the promotion rules
+    // promotionApplyed is automatically set by the front_end upon creation
+    // orderNetPrice is calculated on the front_end following the promotion rules
     // IT MUST BE DONE ON THE FRONT SO THE CLIENT CAN SEE THE DISCOUNT REAL TIME
 
     // check required fields
@@ -110,6 +109,14 @@ export const POST = async (req: Request) => {
         "DayReferenceNumber, orderPrice, orderNetPrice, user, table, businessGoods and business are required fields!",
         { status: 400 }
       );
+    }
+
+    // check if table exists and its open
+    const tableExists: ITable | null = await Table.findById(table)
+      .select("status")
+      .lean();
+    if (!tableExists || tableExists.status === "Closed") {
+      return new NextResponse("Table not found or closed!", { status: 404 });
     }
 
     // ***********************************************
@@ -151,12 +158,16 @@ export const POST = async (req: Request) => {
       );
     }
 
+    // connect before first call to DB
+    await connectDB();
+
     // create a new order
     const order = await Order.create(newOrder);
 
     // confirm order was created
     if (order) {
       // update the dynamic count of supplier goods
+      // "add" or "remove" from the count
       await updateDynamicCountSupplierGood(newOrder.businessGoods, "add");
 
       // After order is created, add order ID to table
@@ -165,8 +176,9 @@ export const POST = async (req: Request) => {
         { $push: { orders: order._id } },
         { new: true }
       );
-      return new NextResponse("Order created successfully!", { status: 201 });
     }
+
+    return new NextResponse("Order created successfully!", { status: 201 });
   } catch (error) {
     return handleApiError("Create order failed!", error);
   }
@@ -177,12 +189,16 @@ export const POST = async (req: Request) => {
 // // @access  Private
 // export const POST = async (req: Request) => {
 //   try {
-//     const orderId = "66800d40ec4e6345a3102aee";
+//     const orderId = "6693c0fd0693ec3374a899b5";
+//     const orderIds = ["6693c0fd0693ec3374a899b5", "66803987d9aaa4219f274618"];
+//     const userId = "667412df373ad7f1a285534e";
+//     const businessId = "6673fed98c45d0a0ca5f34c1";
 
 //     // @ts-ignore
-//     const result = cancelOrderAndUpdateDynamicCount(orderId);
+//     // const result = await cancelOrderAndUpdateDynamicCount(orderId);
+//     const result = await transferOrderBetweenTables(orderIds, "business1table3", 5, userId, "cliente one", businessId);
 
-//     return new NextResponse(result, {
+//     return new NextResponse(JSON.stringify(result), {
 //       status: 200
 //     });
 //   } catch (error) {

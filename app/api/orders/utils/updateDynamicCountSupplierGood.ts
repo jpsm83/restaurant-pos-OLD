@@ -1,3 +1,4 @@
+import connectDB from "@/app/lib/db";
 import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
@@ -16,6 +17,9 @@ export const updateDynamicCountSupplierGood = async (
   addOrRemove: string
 ) => {
   try {
+    // connect before first call to DB
+    await connectDB();
+
     const businessGoodsIngredients: IBusinessGood[] = await BusinessGood.find({
       _id: { $in: businessGoodsIds },
     })
@@ -62,7 +66,7 @@ export const updateDynamicCountSupplierGood = async (
       }
     });
 
-    // // @ts-ignore
+    // @ts-ignore
     for (let ing of allIngredientsUser) {
       const supplierGood: ISupplierGood | null = await SupplierGood.findById(
         ing.ingredientId
@@ -71,33 +75,18 @@ export const updateDynamicCountSupplierGood = async (
         .lean();
 
       if (supplierGood?.measurementUnit === ing.measurementUnit) {
-        if (ing.measurementUnit === ("unit" as string)) {
-          await SupplierGood.findByIdAndUpdate(
-            ing.ingredientId,
-            {
-              $inc: {
-                dynamicCountFromLastInventory:
-                  addOrRemove === "add"
-                    ? -ing.requiredQuantity
-                    : ing.requiredQuantity,
-              },
+        await SupplierGood.findByIdAndUpdate(
+          ing.ingredientId,
+          {
+            $inc: {
+              dynamicCountFromLastInventory:
+                addOrRemove === "add"
+                  ? -ing.requiredQuantity
+                  : ing.requiredQuantity,
             },
-            { new: true }
-          );
-        } else {
-          await SupplierGood.findByIdAndUpdate(
-            ing.ingredientId,
-            {
-              $inc: {
-                dynamicCountFromLastInventory:
-                  addOrRemove === "add"
-                    ? -ing.requiredQuantity
-                    : ing.requiredQuantity,
-              },
-            },
-            { new: true }
-          );
-        }
+          },
+          { new: true }
+        );
       } else {
         const convertedQuantity = convert(ing.requiredQuantity)
           .from(ing.measurementUnit as Unit)

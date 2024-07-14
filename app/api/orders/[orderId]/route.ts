@@ -7,16 +7,22 @@ import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray"
 // import models
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { cancelOrderAndUpdateDynamicCount } from "../utils/cancelOrderAndUpdateDynamicCount";
+import { create } from "domain";
 
 // @desc    Get order by ID
 // @route   GET /orders/:orderId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { orderId: Types.ObjectId } }
+) => {
   try {
     const orderId = context.params.orderId;
     // check if orderId is valid
     if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid orderId" }), {
+      return new NextResponse("Invalid orderId!", {
         status: 400,
       });
     }
@@ -25,8 +31,8 @@ export const GET = async (context: { params: any }) => {
     await connectDB();
 
     const order = await Order.findById(orderId)
-      .populate("table", "tableReferenceNumber dayReferenceNumber")
-      .populate("user", "username allUserRoles currentShiftRole")
+      .populate("table", "tableReference")
+      // .populate("user", "username allUserRoles currentShiftRole")
       .populate(
         "businessGoods",
         "name category subCategory productionTime sellingPrice allergens"
@@ -34,12 +40,15 @@ export const GET = async (context: { params: any }) => {
       .lean();
 
     return !order
-      ? new NextResponse(JSON.stringify({ message: "Order not found!" }), {
+      ? new NextResponse("Order not found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(order), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+      : new NextResponse(JSON.stringify(order), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get order by its id failed!", error);
   }
 };
 
@@ -47,29 +56,31 @@ export const GET = async (context: { params: any }) => {
 // @route   PATCH /orders/:orderId
 // @access  Private
 // UPDATE PAYMENT METHOD FOR INDIVIDUAL ORDERS
-export const PATCH = async (req: Request, context: { params: any }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { orderId: Types.ObjectId } }
+) => {
   try {
     const orderId = context.params.orderId;
     // check if orderId is valid
     if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid orderId" }), {
+      return new NextResponse("Invalid orderId!", {
         status: 400,
       });
     }
-
-    // connect before first call to DB
-    await connectDB();
 
     const {
       billingStatus,
       orderStatus,
       orderPrice,
       orderNetPrice,
-      table,
       paymentMethod,
       discountPercentage,
       comments,
-    } = req.body as unknown as IOrder;
+    } = (await req.json()) as IOrder;
+
+    // connect before first call to DB
+    await connectDB();
 
     // check if order exists
     const order: IOrder | null = await Order.findById(orderId)
@@ -77,40 +88,24 @@ export const PATCH = async (req: Request, context: { params: any }) => {
         "_id table billingStatus orderStatus orderPrice orderNetPrice promotionApplyed discountPercentage paymentMethod"
       )
       .lean();
+
     if (!order) {
-      return new NextResponse(JSON.stringify({ message: "Order not found!" }), {
+      return new NextResponse("Order not found!", {
         status: 404,
       });
     }
 
     // prepare the update object
-    let updateObj = {
+    let updatedOrder = {
       billingStatus: billingStatus || order.billingStatus,
       orderStatus: orderStatus || order.orderStatus,
       orderPrice: orderPrice || order.orderPrice,
       orderNetPrice: orderNetPrice || order.orderNetPrice,
       orderTips: 0,
-      table: table || order.table,
       discountPercentage:
         discountPercentage || order.discountPercentage || undefined,
       paymentMethod: paymentMethod || order.paymentMethod || undefined,
     };
-
-    // check if table is not duplicated
-    if (table !== order.table) {
-      // Update the table document by adding the order id to it
-      await Table.findOneAndUpdate(
-        { _id: table },
-        { $push: { orders: order._id } },
-        { new: true, useFindAndModify: false }
-      );
-      // Remove the order id from the old table
-      await Table.findOneAndUpdate(
-        { _id: order.table },
-        { $pull: { orders: order._id } },
-        { new: true, useFindAndModify: false }
-      );
-    }
 
     // if billing status is "Void" or "Invitation", comments are required
     switch (billingStatus) {
@@ -118,38 +113,17 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       case "Invitation":
         if (!comments) {
           return new NextResponse(
-            JSON.stringify({
-              message:
-                "Comments are required for Void and Invitation billing status!",
-            }),
+            "Comments are required for Void and Invitation billing status!",
             { status: 400 }
           );
         }
-        updateObj.orderNetPrice = 0;
+        updatedOrder.orderNetPrice = 0;
         break;
-      case "Cancelled":
-        if (order.orderStatus === "Done") {
-          return new NextResponse(
-            JSON.stringify({ message: "Done orders cannot be Cancelled!" }),
-            { status: 400 }
-          );
-        }
-        // CANCELLED orders are deleted because they have no effect on the business IF they havent been done
-        // not done, no loss, no gain
-        const orderDeleted = await Order.deleteOne();
-        // remove the order id from the table
-        await Table.findByIdAndUpdate(
-          //@ts-ignore
-          { _id: orderDeleted.table },
-          { $pull: { orders: order._id } },
-          { new: true, useFindAndModify: false }
-        ).lean();
-        return new NextResponse(
-          JSON.stringify({
-            message: "Order cancelled and deleted successfully!",
-          }),
-          { status: 200 }
-        );
+      case "Cancel":
+        await cancelOrderAndUpdateDynamicCount(orderId);
+        return new NextResponse("Order cancel and deleted successfully!", {
+          status: 200,
+        });
       default:
         break;
     }
@@ -160,36 +134,31 @@ export const PATCH = async (req: Request, context: { params: any }) => {
     if (discountPercentage) {
       if (order.promotionApplyed) {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "You cannot add discount to an order that has a promotion already!",
-          }),
+          "You cannot add discount to an order that has a promotion already!",
           { status: 400 }
         );
       }
       if (!comments) {
-        return new NextResponse(
-          JSON.stringify({
-            message: "Comments are required if promotion applied!",
-          }),
-          { status: 400 }
-        );
+        return new NextResponse("Comments are required if promotion applied!", {
+          status: 400,
+        });
       }
       if (discountPercentage > 100 || discountPercentage < 0) {
         return new NextResponse(
-          JSON.stringify({
-            message: "Discount value has to be between 0 and 100!",
-          }),
-          { status: 400 }
+          "Discount value has to be a number between 0 and 100!",
+          {
+            status: 400,
+          }
         );
       }
-      updateObj.discountPercentage = discountPercentage;
+      updatedOrder.discountPercentage = discountPercentage;
     }
 
     // if payment method is provided, check if object is valid them update the payment method
-    // paymentMethod is coming from the front as an array with objects with method, card, crypto, or other
+    // paymentMethod is coming from the front as an array with objects with payment method, card, crypto, or other
     if (paymentMethod) {
       let validPaymentMethods = validatePaymentMethodArray(paymentMethod);
+
       if (Array.isArray(validPaymentMethods)) {
         let totalOrderPaid = 0;
 
@@ -199,93 +168,58 @@ export const PATCH = async (req: Request, context: { params: any }) => {
 
         if (totalOrderPaid < order.orderNetPrice) {
           return new NextResponse(
-            JSON.stringify({
-              message:
-                "Total amount paid is lower than the total price of the order!",
-            }),
+            "Total amount paid is lower than the total price of the order!",
             { status: 400 }
           );
         }
 
         if (totalOrderPaid > order.orderNetPrice) {
-          updateObj.orderTips = totalOrderPaid - order.orderNetPrice;
+          updatedOrder.orderTips = totalOrderPaid - order.orderNetPrice;
         }
 
-        updateObj.billingStatus = "Paid";
-        updateObj.orderStatus = "Done";
+        updatedOrder.billingStatus = "Paid";
+        updatedOrder.orderStatus = "Done";
       } else {
-        return new NextResponse(
-          JSON.stringify({ message: validPaymentMethods }),
-          { status: 400 }
-        );
+        return new NextResponse(validPaymentMethods, { status: 400 });
       }
     }
-    updateObj.paymentMethod = paymentMethod;
+    updatedOrder.paymentMethod = paymentMethod;
 
-    // updateObj the order
-    const updatedOrder = await Order.findOneAndUpdate(
-      { _id: orderId },
-      updateObj,
-      {
-        new: true,
-      }
+    // updatedOrder the order
+    await Order.findOneAndUpdate({ _id: orderId }, updatedOrder, {
+      new: true,
+    });
+
+    return new NextResponse(
+      `Order from table ${order.table} updated successfully!`,
+      { status: 200 }
     );
-
-    return updatedOrder
-      ? new NextResponse(
-          JSON.stringify({
-            message: `Order id ${updatedOrder.id} updated successfully!`,
-          }),
-          { status: 200 }
-        )
-      : new NextResponse(JSON.stringify({ message: "Order update failed!" }), {
-          status: 500,
-        });
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+  } catch (error) {
+    return handleApiError("Update order failed!", error);
   }
 };
 
 // delete a order shouldnt be allowed for data integrity and historical purposes
 // the only case where a order should be deleted is if the business itself is deleted
-// or if the order was created by mistake and has billing status "Cancelled"
+// or if the order was created by mistake and has billing status "Cancel"
 // @desc    Delete order by ID
 // @route   DELETE /orders/:orderId
 // @access  Private
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (
+  req: Request,
+  context: { params: { orderId: Types.ObjectId } }
+) => {
   try {
     const orderId = context.params.orderId;
-    // check if orderId is valid
-    if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid orderId" }), {
-        status: 400,
-      });
+
+    const result = await cancelOrderAndUpdateDynamicCount(orderId);
+
+    if (result !== "Cancel order and update dynamic count success") {
+      return new NextResponse(result, { status: 400 });
     }
 
-    // connect before first call to DB
-    await connectDB();
-
-    const order = await Order.findById(orderId);
-
-    if (!order) {
-      return new NextResponse(JSON.stringify({ message: "Order not found!" }), {
-        status: 404,
-      });
-    }
-
-    // delete the order id reference from table
-    await Table.updateMany(
-      { _id: order.table },
-      { $pull: { orders: orderId } }
-    );
-
-    // delete the order
-    await Order.deleteOne({ _id: orderId });
-    return new NextResponse(
-      JSON.stringify({ message: "Order deleted successfully!" }),
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return new NextResponse("Error: " + error, { status: 500 });
+    return new NextResponse("Order deleted successfully!", { status: 200 });
+  } catch (error) {
+    return handleApiError("Delete order failed!", error);
   }
 };

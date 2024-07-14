@@ -1,10 +1,100 @@
-{
-    "dayReferenceNumber": 1714285649454,
-    "orderPrice": 20,
-    "orderNetPrice": 20,
-    "orderCostPrice": 20,
-    "user": "667412df373ad7f1a285534e",
-    "table": "6673fed98c45d0a0ca5f34c1",
-    "businessGoods": ["667bfc0c5d50be40f0c7b065"],
-    "business": "6673fed98c45d0a0ca5f34c1"
-}
+[
+    {
+        "_id": "66803987d9aaa4219f274618",
+        "dayReferenceNumber": 1714285649454,
+        "billingStatus": "Invitation",
+        "orderStatus": "Done",
+        "orderPrice": 200,
+        "orderNetPrice": 0,
+        "orderCostPrice": 20,
+        "user": "667412df373ad7f1a285534e",
+        "table": {
+            "_id": "6693eb1c0693ec3374a89b41",
+            "tableReference": "business1table3"
+        },
+        "businessGoods": [
+            {
+                "_id": "667c0761b1f9de2be3a80e17",
+                "name": "Cheeseburger with Fries",
+                "category": {
+                    "mainCategory": "Food",
+                    "foodSubCategory": "Burger set",
+                    "_id": "667c0761b1f9de2be3a80e18"
+                },
+                "sellingPrice": 12.5,
+                "allergens": [
+                    "Gluten",
+                    "Eggs",
+                    "Milk"
+                ]
+            }
+        ],
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-06-29T16:42:47.150Z",
+        "updatedAt": "2024-07-14T15:13:32.442Z",
+        "__v": 0,
+        "discountPercentage": 50,
+        "orderTips": 0
+    },
+    {
+        "_id": "6693c0fd0693ec3374a899b5",
+        "dayReferenceNumber": 1714285649454,
+        "billingStatus": "Paid",
+        "orderStatus": "Done",
+        "orderPrice": 200,
+        "orderNetPrice": 200,
+        "orderCostPrice": 20,
+        "user": "667412df373ad7f1a285534e",
+        "table": {
+            "_id": "6693eb1c0693ec3374a89b41",
+            "tableReference": "business1table3"
+        },
+        "businessGoods": [
+            {
+                "_id": "667bfc0c5d50be40f0c7b065",
+                "name": "Cheeseburger",
+                "category": {
+                    "mainCategory": "Beverage",
+                    "beverageSubCategory": "Drinks",
+                    "_id": "667c13f2f22bdc543f105884"
+                },
+                "sellingPrice": 16.45,
+                "allergens": [
+                    "Gluten",
+                    "Eggs",
+                    "Milk"
+                ]
+            }
+        ],
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-07-14T12:13:49.342Z",
+        "updatedAt": "2024-07-14T15:14:12.013Z",
+        "__v": 0,
+        "discountPercentage": 20,
+        "orderTips": 10,
+        "paymentMethod": [
+            {
+                "method": "Card",
+                "card": "Visa",
+                "paymentMethodAmount": 40,
+                "_id": "6693c57a0693ec3374a899e4"
+            },
+            {
+                "method": "Cash",
+                "paymentMethodAmount": 60,
+                "_id": "6693c57a0693ec3374a899e5"
+            },
+            {
+                "method": "Cripto",
+                "paymentMethodAmount": 60,
+                "_id": "6693c57a0693ec3374a899e6"
+            },
+            {
+                "method": "Other",
+                "other": "Voucher",
+                "paymentMethodAmount": 50,
+                "_id": "6693c57a0693ec3374a899e7"
+            }
+        ]
+    }
+]

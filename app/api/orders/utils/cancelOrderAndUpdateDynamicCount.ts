@@ -3,7 +3,9 @@ import { updateDynamicCountSupplierGood } from "./updateDynamicCountSupplierGood
 import Order from "@/app/lib/models/order";
 import { IOrder } from "@/app/lib/interface/IOrder";
 import Table from "@/app/lib/models/table";
+import connectDB from "@/app/lib/db";
 
+// order with status "Started", "Done", "Dont Make" and "Started Hold" cannot be canceled
 export const cancelOrderAndUpdateDynamicCount = async (
   orderId: Types.ObjectId
 ) => {
@@ -13,11 +15,19 @@ export const cancelOrderAndUpdateDynamicCount = async (
       return "Invalid orderId!";
     }
 
+        // connect before first call to DB
+        await connectDB();
+
+        // check if order exists and can be canceled
     const orderBusinessGoods: IOrder | null = await Order.findById(orderId)
-      .select("businessGoods table")
+      .select("businessGoods table orderStatus")
       .lean();
     if (!orderBusinessGoods) {
       return "Order not found!";
+    }
+    const notAllowedToCancel = ["Started", "Done", "Dont Make", "Started Hold"];
+    if (notAllowedToCancel.includes(orderBusinessGoods?.orderStatus ?? "")) {
+      return "Order cannot be canceled because its been started or done!";
     }
 
     const updateDynamicCountSupplierGoodResult =
@@ -30,13 +40,16 @@ export const cancelOrderAndUpdateDynamicCount = async (
       updateDynamicCountSupplierGoodResult ===
       "Dynamic count supplier good updated!"
     ) {
-      await Table.updateOne(
+      await Table.findOneAndUpdate(
         { _id: orderBusinessGoods.table },
-        { $pull: { orders: orderId } }
+        { $pull: { orders: orderId } },
+        { new: true } // Now this option is valid and will return the updated document
       );
     }
 
-    return "Cancel order and update dynamic count success!";
+    await Order.deleteOne({ _id: orderId });
+
+    return "Cancel order and update dynamic count success";
   } catch (error) {
     return "Cancel order and update dynamic count failed! " + error;
   }

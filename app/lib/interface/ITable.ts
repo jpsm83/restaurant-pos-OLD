@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 export interface ITable {
+  _id?: Types.ObjectId;
   dayReferenceNumber?: number;
   tableReference: string;
   guests: number;

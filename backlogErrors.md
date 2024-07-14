@@ -10,7 +10,7 @@
 - supplierGoods all GETs, populate supplier tradename error
 - supplierGoods, create a helper function in case of delete supplier good, all the business goods have to update their ingredients and calculate the cost price
 - businessGoods DELETE, must wait to get ORDERS to full test
-
+- orders all GETs, all get with populate user doesnt work
 
 - supplierGoods DELETE - must await data from businessGoods for a full testing
 - dailySalesReport helper function updateUserDailySalesReportGeneric been tested and it is working BUT, NEED all the controllers tested and with data to be real tested
