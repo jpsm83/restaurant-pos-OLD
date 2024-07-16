@@ -6,19 +6,18 @@ import { NextResponse } from "next/server";
 // add user to daily sales report
 export const addUserToDailySalesReport = async (
   userId: Types.ObjectId,
-  dayReferenceNumber: number,
   businessId: Types.ObjectId
 ) => {
   try {
     // check required fields
-    if (!userId || !dayReferenceNumber || !businessId) {
-      return "UserId, dayReferenceNumber and businessId are required!";
+    if (!userId || !businessId) {
+      return "UserId, and businessId are required!";
     }
 
-    // check daily report exists
+    // check open daily report exists
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
-        dayReferenceNumber: dayReferenceNumber,
+        dailyReportOpen: true,
         business: businessId,
       })
         .select("_id usersDailySalesReport.user")

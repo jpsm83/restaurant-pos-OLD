@@ -11,6 +11,7 @@ export interface ITable {
   business: Types.ObjectId;
   clientName?: string;
   tableTotalPrice?: number;
+  tableTotalNetPrice?: number;
   tableTotalNetPaid?: number;
   tableTotalTips?: number;
   orders?: Types.ObjectId[];

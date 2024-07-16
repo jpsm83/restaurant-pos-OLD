@@ -5,18 +5,21 @@ import { ITable } from "@/app/lib/interface/ITable";
 
 // import functions
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // import models
 import Business from "@/app/lib/models/business";
 import Table from "@/app/lib/models/table";
 import Order from "@/app/lib/models/order";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get tables by ID
 // @route   GET /tables/:tableId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { tableId: Types.ObjectId } }
+) => {
   try {
     const tableId = context.params.tableId;
     // validate tableId
@@ -48,7 +51,10 @@ export const GET = async (context: { params: any }) => {
       ? new NextResponse("Table not found!", {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(tables), { status: 200, headers: { "Content-Type": "application/json" } });
+      : new NextResponse(JSON.stringify(tables), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
   } catch (error) {
     return handleApiError("Get user by its id failed!", error);
   }
@@ -70,18 +76,9 @@ export const PATCH = async (
       });
     }
 
-    const {
-      tableReference,
-      guests,
-      status,
-      responsibleBy,
-      clientName,
-      tableTotalPrice,
-      tableTotalNetPaid,
-      tableTotalTips,
-      orders,
-      closedBy,
-    } = await req.json() as ITable;
+    // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so user can see the total price, net price, net paid and tips in real time
+    const { guests, status, responsibleBy, clientName, tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips, closedBy } =
+      (await req.json()) as ITable;
 
     // connect before first call to DB
     await connectDB();
@@ -94,47 +91,22 @@ export const PATCH = async (
       });
     }
 
+    // get table orders
+    const tableOrders = await Order.find({ table: tableId })
+      .select("orderPrice orderNetPrice orderTips billingStatus")
+      .lean();
+
     // prepare the tableObj to update
-    let updateObj = {
+    let updatedTable = {
       guests: guests || table.guests,
       status: status || table.status,
       responsibleBy: responsibleBy || table.responsibleBy,
       clientName: clientName || table.clientName,
       tableTotalPrice: tableTotalPrice || table.tableTotalPrice,
+      tableTotalNetPrice: tableTotalNetPrice || table.tableTotalNetPrice,
       tableTotalNetPaid: tableTotalNetPaid || table.tableTotalNetPaid,
       tableTotalTips: tableTotalTips || table.tableTotalTips,
-      closedAt: undefined as Date | undefined,
-      closedBy: closedBy || table.closedBy,
     };
-
-    // check if tableReference exists in the business
-    if (tableReference) {
-      const validateTableReference = await Business.findOne({
-        _id: table.business,
-        businessTables: { $in: [tableReference] },
-      });
-
-      // check if tableReference exists in the business (pre set tables that can be used)
-      if (!validateTableReference) {
-        return new NextResponse("TableReference does not exist in this business!",
-          { status: 400 }
-        );
-      }
-    }
-
-    // check for duplicates open table at the same day
-    const duplicateTable = await Table.findOne({
-      _id: { $ne: tableId },
-      dayReferenceNumber: table.dayReferenceNumber,
-      business: table.business,
-      tableReference,
-      status: { $ne: "Closed" },
-    }).lean();
-    if (duplicateTable) {
-      return new NextResponse(`Table ${tableReference} already exists and it is not closed!`,
-        { status: 409 }
-      );
-    }
 
     // The order controller would handle the creation of orders and updating the relevant table's order array. The table controller would then only be responsible for reading and managing table data, not order data. This separation of concerns makes the code easier to maintain and understand.
 
@@ -142,69 +114,39 @@ export const PATCH = async (
     if (responsibleBy && responsibleBy !== table.openedBy) {
       // check if user exists in the dailySalesReport
       const userDailySalesReport = await DailySalesReport.findOne({
-        dayReferenceNumber: table.dayReferenceNumber,
+        dailyReportOpen: true,
         business: table.business,
         "usersDailySalesReport.user": responsibleBy,
       }).lean();
 
       // if user does not exist in the dailySalesReport, create it
       if (!userDailySalesReport) {
-        await addUserToDailySalesReport(
-          responsibleBy,
-          table.dayReferenceNumber as number,
-          table.business
-        );
+        await addUserToDailySalesReport(responsibleBy, table.business);
       }
     }
 
-    // if no open orders and closeBy exists, close the table
-    if (table.orders && table.orders.length > 0) {
-      const openOrders = await Order.find({
-        table: tableId,
-        billingStatus: "Open",
-      }).lean();
-      if (openOrders.length === 0) {
-        if (closedBy) {
-          updateObj.status = "Closed";
-          updateObj.closedAt = new Date();
-          updateObj.closedBy = closedBy;
-        } else {
-          return new NextResponse(
-            JSON.stringify({
-              message: "Closed by is required to close a Table!",
-            }),
-            { status: 400 }
-          );
-        }
-      }
-
-      // if table is occupied and no orders, delete the table
-      if (table.status === "Occupied" && !orders) {
-        await Table.deleteOne();
-        return new NextResponse(
-          JSON.stringify({
-            message: "Occupied table with no orders been deleted!",
-          }),
-          { status: 200 }
-        );
-      }
-
-      // save the updated table
-      await Table.findOneAndUpdate({ _id: tableId }, updateObj, {
-        new: true,
+    // if table is occupied and no orders, delete the table
+    if (
+      table.status === "Occupied" &&
+      (!table.orders || table.orders.length === 0)
+    ) {
+      await Table.deleteOne({ _id: tableId });
+      return new NextResponse("Occupied table with no orders been deleted!", {
+        status: 200,
       });
-
-      return new NextResponse(
-        JSON.stringify({
-          message: `Table ${tableReference} updated successfully!`,
-        }),
-        { status: 200 }
-      );
     }
-  } catch (error: any) {
-    return new NextResponse("Table update failed - Error: " + error, {
-      status: 500,
+
+    // save the updated table
+    await Table.findOneAndUpdate({ _id: tableId }, updatedTable, {
+      new: true,
     });
+
+    return new NextResponse(
+      `Table ${table.tableReference} updated successfully!`,
+      { status: 200 }
+    );
+  } catch (error) {
+    return handleApiError("Update table failed!", error);
   }
 };
 
@@ -214,12 +156,15 @@ export const PATCH = async (
 // @desc    Delete table
 // @route   DELETE /table/:tableId
 // @access  Private
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (
+  req: Request,
+  context: { params: { tableId: Types.ObjectId } }
+) => {
   try {
     const tableId = context.params.tableId;
     // validate tableId
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid tableId" }), {
+      return new NextResponse("Invalid tableId", {
         status: 400,
       });
     }
@@ -230,38 +175,26 @@ export const DELETE = async (context: { params: any }) => {
     const table: ITable | null = await Table.findById(tableId).lean();
 
     if (!table) {
-      return new NextResponse(JSON.stringify({ message: "Table not found!" }), {
+      return new NextResponse("Table not found!", {
         status: 404,
       });
     }
 
-    // do not allow delete if table has open orders
-    if (table.orders && table.orders.length > 0) {
-      const orders = await Order.find({ _id: { $in: table.orders } }).lean();
-      const hasOpenOrders = orders.some(
-        (order) => order.billingStatus === "Open"
-      );
-
-      if (hasOpenOrders) {
-        return new NextResponse(
-          JSON.stringify({ message: "Cannot delete TABLE with open orders!" }),
-          { status: 400 }
-        );
-      }
+    // do not allow delete if table has orders
+    if ((table?.orders ?? []).length > 0) {
+      return new NextResponse("Cannot delete TABLE with orders!", {
+        status: 400,
+      });
     }
 
     // delete the table
     await Table.deleteOne({ _id: tableId });
 
     return new NextResponse(
-      JSON.stringify({
-        message: `Table ${table.tableReference} deleted successfully!`,
-      }),
+      `Table ${table.tableReference} deleted successfully!`,
       { status: 200 }
     );
-  } catch (error: any) {
-    return new NextResponse("Fail to delete table - Error: " + error, {
-      status: 500,
-    });
+  } catch (error) {
+    return handleApiError("Fail to delete table", error);
   }
 };

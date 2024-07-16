@@ -4,7 +4,6 @@ import { notificationTypes } from "../enums.js";
 const notificationSchema = new Schema(
   {
     // required fields
-    dayReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
     notificationType: { type: notificationTypes, required: true }, // Type of notification "warning", "emergency", "info"
     message: { type: String, required: true }, // notification message
     recipients: {

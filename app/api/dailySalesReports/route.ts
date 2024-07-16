@@ -41,7 +41,7 @@ export const GET = async () => {
 //     const dailySalesReportId = "66787e9f172573616f1d59cc";
 
 //     // // @ts-ignore
-//     // const result = await addUserToDailySalesReport(userId, dayReferenceNumber, businessId);
+//     // const result = await addUserToDailySalesReport(userId, businessId);
 
 //     // // @ts-ignore
 //     // const result = await createDailySalesReport(businessId);

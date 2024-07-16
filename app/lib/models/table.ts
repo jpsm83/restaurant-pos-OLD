@@ -27,7 +27,8 @@ const tableSchema = new Schema(
     // non required fields
     clientName: { type: String }, // name of the client that is in the table
     tableTotalPrice: { type: Number }, // table total price is the sum of all orders prices regardless of any discounts, voids, or cancellations - sum of all orders orderPrice
-    tableTotalNetPaid: { type: Number }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions - sum of all orders orderNetPrice
+    tableTotalNetPrice: { type: Number }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions - sum of all orders orderNetPrice
+    tableTotalNetPaid: { type: Number }, // amount of orders already paid  - sum of all orders orderNetPrice with billing status Paid
     tableTotalTips: { type: Number }, // sum of all orders tips
     orders: {
       type: [Schema.Types.ObjectId],

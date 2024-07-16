@@ -15,8 +15,10 @@ export interface IOrder {
     orderNetPrice: number;
     orderCostPrice: number;
     user: Types.ObjectId;
+    userRole?: string;
     table: Types.ObjectId;
     businessGoods: Types.ObjectId[];
+    businessGoodsCategory?: string;
     business: Types.ObjectId;
     orderStatus?: string;
     allergens?: string[];

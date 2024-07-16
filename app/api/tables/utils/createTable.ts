@@ -21,9 +21,10 @@ export const createTable = async (
       !guests ||
       !openedBy ||
       !responsibleBy ||
-      !business
+      !business ||
+      !dayReferenceNumber
     ) {
-      return "TableReference, guest, openedBy, responsibleBy and business are required!";
+      return "TableReference, guest, openedBy, responsibleBy, business and dayReferenceNumber are required!";
     }
 
     // connect before first call to DB
@@ -62,7 +63,6 @@ export const createTable = async (
     if (!userDailySalesReport) {
       await addUserToDailySalesReport(
         openedBy,
-        dayReferenceNumber,
         tableObj.business
       );
     }

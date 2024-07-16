@@ -5,15 +5,12 @@ import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // import functions
 import { createDailySalesReport } from "../dailySalesReports/utils/createDailySalesReport";
-import { addUserToDailySalesReport } from "../dailySalesReports/utils/addUserToDailySalesReport";
+import { handleApiError } from "@/app/utils/handleApiError";
+import { createTable } from "./utils/createTable";
 
 // import models
-import Business from "@/app/lib/models/business";
 import Table from "@/app/lib/models/table";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { handleApiError } from "@/app/utils/handleApiError";
-import { create } from "domain";
-import { createTable } from "./utils/createTable";
 
 // @desc    Get all tables
 // @route   GET /tables
@@ -48,7 +45,7 @@ export const GET = async () => {
             "Content-Type": "application/json",
           },
         });
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError("Get all tables failed!", error);
   }
 };
@@ -87,14 +84,9 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDB();
 
-    // check if there is a daily report for the day already created
-    const currentDateNoTime = new Date();
-    currentDateNoTime.setHours(0, 0, 0, 0);
-    const currentDateUnix = currentDateNoTime.getTime();
-
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
-        dayReferenceNumber: currentDateUnix,
+        dailyReportOpen: true,
         business,
       })
         .select("dayReferenceNumber")
@@ -139,3 +131,25 @@ export const POST = async (req: Request) => {
     return handleApiError("Create table failed!", error);
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     // create new table
+//     const result = await createTable(
+//       "business1table1",
+//       3,
+//       "66758b8904c4e6f5bbaa6b81",
+//       "66758b8904c4e6f5bbaa6b81",
+//       "6673fed98c45d0a0ca5f34c1",
+//       "clienteNameField",
+//       1720908000000
+//     );
+
+//     return new NextResponse(result, {
+//       status: 201,
+//       headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Create table failed!", error);
+//   }
+// };

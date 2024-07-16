@@ -10,6 +10,7 @@ import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSuppli
 import { cancelOrderAndUpdateDynamicCount } from "./utils/cancelOrderAndUpdateDynamicCount";
 import { ITable } from "@/app/lib/interface/ITable";
 import { transferOrderBetweenTables } from "./utils/transferOrderBetweenTables";
+import { closeOrder } from "./utils/closeOrder";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -81,8 +82,10 @@ export const POST = async (req: Request) => {
       orderNetPrice,
       orderCostPrice,
       user,
+      userRole,
       table,
       businessGoods, // can be an array of business goods (3 IDs) "burger with extra cheese and add bacon"
+      businessGoodsCategory,
       business,
       allergens,
       promotionApplyed,
@@ -101,12 +104,14 @@ export const POST = async (req: Request) => {
       !orderNetPrice ||
       !orderCostPrice ||
       !user ||
+      !userRole ||
       !table ||
       !businessGoods ||
+      !businessGoodsCategory ||
       !business
     ) {
       return new NextResponse(
-        "DayReferenceNumber, orderPrice, orderNetPrice, user, table, businessGoods and business are required fields!",
+        "DayReferenceNumber, orderPrice, orderNetPrice, user, userRole, table, businessGoods, businessGoodsCategory and business are required fields!",
         { status: 400 }
       );
     }
@@ -124,7 +129,7 @@ export const POST = async (req: Request) => {
     // ***********************************************
 
     // create an order object with required fields
-    const newOrder: IOrder = {
+    const newOrder = {
       dayReferenceNumber: dayReferenceNumber,
       // order status is automatically set by the front end
       // FLOW - in case if customer pays at the time of the order
@@ -139,6 +144,7 @@ export const POST = async (req: Request) => {
       orderPrice,
       orderNetPrice,
       orderCostPrice,
+      orderStatus: "Sent",
       user,
       table,
       businessGoods,
@@ -149,6 +155,16 @@ export const POST = async (req: Request) => {
       discountPercentage: discountPercentage || undefined,
       comments: comments || undefined,
     };
+
+    // set orderStatus based on userRole
+    if (
+      (userRole === "Barista" ||
+        userRole === "Bartender" ||
+        userRole === "Cashier") &&
+      businessGoodsCategory === "Beverage"
+    ) {
+      newOrder.orderStatus = "Done";
+    }
 
     // if promotion applyed, discountPercentage cannot be applyed
     if (promotionApplyed && discountPercentage) {
@@ -189,14 +205,36 @@ export const POST = async (req: Request) => {
 // // @access  Private
 // export const POST = async (req: Request) => {
 //   try {
-//     const orderId = "6693c0fd0693ec3374a899b5";
-//     const orderIds = ["6693c0fd0693ec3374a899b5", "66803987d9aaa4219f274618"];
+//     const orderId = "669642706e92805872dbfb3e";
+//     const orderIds = ["6693c0fd0693ec3374a899b5", "669642706e92805872dbfb3e"];
 //     const userId = "667412df373ad7f1a285534e";
 //     const businessId = "6673fed98c45d0a0ca5f34c1";
+//     const paymentMethod = [
+//       {
+//           "method": "Card",
+//           "card": "Visa",
+//           "paymentMethodAmount": 33,
+//       },
+//       {
+//           "method": "Cash",
+//           "paymentMethodAmount": 75,
+//       },
+//       {
+//           "method": "Crypto",
+//           "crypto": "Bitcoin",
+//           "paymentMethodAmount": 230,
+//       },
+//       {
+//           "method": "Other",
+//           "other": "Voucher",
+//           "paymentMethodAmount": 63,
+//       }
+//   ]
 
 //     // @ts-ignore
 //     // const result = await cancelOrderAndUpdateDynamicCount(orderId);
-//     const result = await transferOrderBetweenTables(orderIds, "business1table3", 5, userId, "cliente one", businessId);
+//     // const result = await transferOrderBetweenTables(orderIds, "business1table3", 5, userId, "cliente one", businessId, 1720908000000);
+//     const result = await closeOrder(orderIds, paymentMethod, 300);
 
 //     return new NextResponse(JSON.stringify(result), {
 //       status: 200

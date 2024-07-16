@@ -2,7 +2,6 @@ import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { IOrder } from "@/app/lib/interface/IOrder";
-import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
 
 // import models
 import Order from "@/app/lib/models/order";
@@ -72,8 +71,6 @@ export const PATCH = async (
     const {
       billingStatus,
       orderStatus,
-      orderPrice,
-      orderNetPrice,
       paymentMethod,
       discountPercentage,
       comments,
@@ -85,7 +82,7 @@ export const PATCH = async (
     // check if order exists
     const order: IOrder | null = await Order.findById(orderId)
       .select(
-        "_id table billingStatus orderStatus orderPrice orderNetPrice promotionApplyed discountPercentage paymentMethod"
+        "_id table billingStatus orderStatus promotionApplyed discountPercentage paymentMethod"
       )
       .lean();
 
@@ -99,9 +96,7 @@ export const PATCH = async (
     let updatedOrder = {
       billingStatus: billingStatus || order.billingStatus,
       orderStatus: orderStatus || order.orderStatus,
-      orderPrice: orderPrice || order.orderPrice,
-      orderNetPrice: orderNetPrice || order.orderNetPrice,
-      orderTips: 0,
+      orderNetPrice: order.orderNetPrice,
       discountPercentage:
         discountPercentage || order.discountPercentage || undefined,
       paymentMethod: paymentMethod || order.paymentMethod || undefined,
@@ -154,39 +149,8 @@ export const PATCH = async (
       updatedOrder.discountPercentage = discountPercentage;
     }
 
-    // if payment method is provided, check if object is valid them update the payment method
-    // paymentMethod is coming from the front as an array with objects with payment method, card, crypto, or other
-    if (paymentMethod) {
-      let validPaymentMethods = validatePaymentMethodArray(paymentMethod);
-
-      if (Array.isArray(validPaymentMethods)) {
-        let totalOrderPaid = 0;
-
-        for (let payment of validPaymentMethods) {
-          totalOrderPaid += payment.paymentMethodAmount;
-        }
-
-        if (totalOrderPaid < order.orderNetPrice) {
-          return new NextResponse(
-            "Total amount paid is lower than the total price of the order!",
-            { status: 400 }
-          );
-        }
-
-        if (totalOrderPaid > order.orderNetPrice) {
-          updatedOrder.orderTips = totalOrderPaid - order.orderNetPrice;
-        }
-
-        updatedOrder.billingStatus = "Paid";
-        updatedOrder.orderStatus = "Done";
-      } else {
-        return new NextResponse(validPaymentMethods, { status: 400 });
-      }
-    }
-    updatedOrder.paymentMethod = paymentMethod;
-
     // updatedOrder the order
-    await Order.findOneAndUpdate({ _id: orderId }, updatedOrder, {
+    await Order.findOneAndUpdate({ _id: orderId}, updatedOrder, {
       new: true,
     });
 

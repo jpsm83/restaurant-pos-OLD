@@ -41,7 +41,6 @@ export const POST = async (req: Request) => {
   try {
     // recipients have to be an array of user IDs coming from the front end
     const {
-      dayReferenceNumber,
       notificationType,
       message,
       recipients,
@@ -51,14 +50,13 @@ export const POST = async (req: Request) => {
 
     // check required fields
     if (
-      !dayReferenceNumber ||
       !notificationType ||
       !message ||
       !recipients ||
       !business
     ) {
       return new NextResponse(
-        "DayReferenceNumber, notificationType, message, recipients and business are required!",
+        "NotificationType, message, recipients and business are required!",
         { status: 400 }
       );
     }
@@ -75,7 +73,6 @@ export const POST = async (req: Request) => {
 
     // create new notification object
     const notificationObj = {
-      dayReferenceNumber,
       notificationType,
       message,
       recipients: recipients,

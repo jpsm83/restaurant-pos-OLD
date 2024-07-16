@@ -11,7 +11,8 @@ export const transferOrderBetweenTables = async (
   guests: number,
   user: Types.ObjectId,
   clientName: string | undefined | null,
-  business: Types.ObjectId
+  business: Types.ObjectId,
+  dayReferenceNumber: number
 ) => {
   // validate array of orders IDs
   if (Array.isArray(ordersArray) && ordersArray.length > 0) {
@@ -20,11 +21,6 @@ export const transferOrderBetweenTables = async (
         return "Invalid order ID!";
       }
     }
-
-    // check if there is a daily report for the day already created
-    const currentDateNoTime = new Date();
-    currentDateNoTime.setHours(0, 0, 0, 0);
-    const currentDateUnix = currentDateNoTime.getTime();
 
     const originalTable: IOrder | null = await Order.findOne({
       _id: ordersArray[0],
@@ -37,7 +33,7 @@ export const transferOrderBetweenTables = async (
     // we transfer tables following its tableReference because table might not exist yet
     // check if tables exist and it is not closed
     const tableToTransfer: ITable | null = await Table.findOne({
-      dayReferenceNumber: currentDateUnix,
+      dayReferenceNumber: dayReferenceNumber,
       business,
       tableReference: { $in: [table] },
       status: { $ne: "Closed" },
@@ -55,7 +51,7 @@ export const transferOrderBetweenTables = async (
         user,
         business,
         clientName,
-        currentDateUnix
+        dayReferenceNumber
       )) as { message: string; tableId: any };
       if (!newTable.message) {
         return newTable;
