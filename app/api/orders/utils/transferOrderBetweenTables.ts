@@ -7,7 +7,7 @@ import { createTable } from "../../tables/utils/createTable";
 
 export const transferOrderBetweenTables = async (
   ordersArray: [Types.ObjectId],
-  table: string,
+  tableReference: string,
   guests: number,
   user: Types.ObjectId,
   clientName: string | undefined | null,
@@ -35,7 +35,7 @@ export const transferOrderBetweenTables = async (
     const tableToTransfer: ITable | null = await Table.findOne({
       dayReferenceNumber: dayReferenceNumber,
       business,
-      tableReference: { $in: [table] },
+      tableReference: tableReference,
       status: { $ne: "Closed" },
     })
       .select("_id")
@@ -44,19 +44,19 @@ export const transferOrderBetweenTables = async (
     if (tableToTransfer) {
       tableToTransferId = tableToTransfer._id;
     } else {
-      const newTable = (await createTable(
-        table,
+      const newTable = await createTable(
+        tableReference,
         guests,
         user,
         user,
         business,
         clientName,
         dayReferenceNumber
-      )) as { message: string; tableId: any };
-      if (!newTable.message) {
-        return newTable;
+      );
+      if (!newTable) {
+        return "Table creation for transfer failed!";
       } else {
-        tableToTransferId = newTable.tableId;
+        tableToTransferId = newTable._id;
       }
     }
 

@@ -11,6 +11,7 @@ import { createTable } from "./utils/createTable";
 // import models
 import Table from "@/app/lib/models/table";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import { closeTable } from "./utils/closeTable";
 
 // @desc    Get all tables
 // @route   GET /tables
@@ -84,6 +85,7 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDB();
 
+    // dailySalesReport is created when the first table is created
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
         dailyReportOpen: true,
@@ -113,6 +115,7 @@ export const POST = async (req: Request) => {
       );
     }
 
+    // we use a outside function to create the table because this function is used in other places
     // create new table
     await createTable(
       tableReference,
@@ -134,18 +137,31 @@ export const POST = async (req: Request) => {
 
 // export const POST = async (req: Request) => {
 //   try {
-//     // create new table
-//     const result = await createTable(
-//       "business1table1",
-//       3,
-//       "66758b8904c4e6f5bbaa6b81",
-//       "66758b8904c4e6f5bbaa6b81",
-//       "6673fed98c45d0a0ca5f34c1",
-//       "clienteNameField",
-//       1720908000000
-//     );
+//     const tableReference ="business1table1";
+//     const guests = 3;
+//     const openedBy = "66758b8904c4e6f5bbaa6b81";
+//     const responsibleBy = "66758b8904c4e6f5bbaa6b81";
+//     const business = "6673fed98c45d0a0ca5f34c1";
+//     const clientName = "clienteNameField";
+//     const dayReferenceNumber = 1720908000000;
+//     const tableId = "6693eb1c0693ec3374a89b41";
 
-//     return new NextResponse(result, {
+//     // // create new table
+//     // const result = await createTable(
+//     //   tableReference,
+//     //   guest,
+//     //   openedBy,
+//     //   responsibleBy,
+//     //   business,
+//     //   clientName,
+//     //   dayReferenceNumber
+//     // );
+
+//     // delete table
+//     // @ts-ignore
+//     const result = await closeTable(tableId, openedBy);
+
+//     return new NextResponse(JSON.stringify(result), {
 //       status: 201,
 //       headers: { "Content-Type": "application/json" },
 //     });

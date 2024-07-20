@@ -1,6 +1,44 @@
-{
-    "guests": 1,
-    "status": "Occupied",
-    "responsibleBy": "66758b8904c4e6f5bbaa6b81",
-    "clientName": "John Doe"
-}
+[
+    {
+        "_id": "667856f2d15d9c4bf3e1b53e",
+        "dayReferenceNumber": 1719093600000,
+        "tableReference": "business1table1",
+        "guests": 1,
+        "status": "Closed",
+        "openedBy": "66758b8904c4e6f5bbaa6b81",
+        "responsibleBy": "66758b8904c4e6f5bbaa6b81",
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-06-23T17:10:10.004Z",
+        "updatedAt": "2024-07-14T15:13:32.503Z",
+        "__v": 0,
+        "orders": []
+    },
+    {
+        "_id": "66785dcf6c4422d1ab204b07",
+        "dayReferenceNumber": 1719093600000,
+        "tableReference": "business1table2",
+        "guests": 1,
+        "status": "Closed",
+        "openedBy": "66758b8904c4e6f5bbaa6b81",
+        "responsibleBy": "66758b8904c4e6f5bbaa6b81",
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-06-23T17:39:27.288Z",
+        "updatedAt": "2024-07-14T15:14:12.077Z",
+        "__v": 0,
+        "orders": []
+    },
+    {
+        "_id": "6694d577e213878112113be7",
+        "dayReferenceNumber": 1720908000000,
+        "tableReference": "business1table1",
+        "guests": 3,
+        "status": "Occupied",
+        "openedBy": "66758b8904c4e6f5bbaa6b81",
+        "responsibleBy": "66758b8904c4e6f5bbaa6b81",
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "clientName": "clienteNameField",
+        "createdAt": "2024-07-15T07:53:27.761Z",
+        "updatedAt": "2024-07-15T07:53:27.761Z",
+        "__v": 0
+    }
+]

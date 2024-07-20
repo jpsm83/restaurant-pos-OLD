@@ -91,11 +91,6 @@ export const PATCH = async (
       });
     }
 
-    // get table orders
-    const tableOrders = await Order.find({ table: tableId })
-      .select("orderPrice orderNetPrice orderTips billingStatus")
-      .lean();
-
     // prepare the tableObj to update
     let updatedTable = {
       guests: guests || table.guests,
@@ -110,6 +105,8 @@ export const PATCH = async (
 
     // The order controller would handle the creation of orders and updating the relevant table's order array. The table controller would then only be responsible for reading and managing table data, not order data. This separation of concerns makes the code easier to maintain and understand.
 
+    // function closeOrders will automaticaly close the table once all OPEN orders are closed
+    
     // if table is transferred to another user, and that is the first table from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
     if (responsibleBy && responsibleBy !== table.openedBy) {
       // check if user exists in the dailySalesReport

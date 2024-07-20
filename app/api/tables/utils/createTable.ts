@@ -61,19 +61,17 @@ export const createTable = async (
 
     // if user does not exist in the dailySalesReport, create it
     if (!userDailySalesReport) {
-      await addUserToDailySalesReport(
-        openedBy,
-        tableObj.business
-      );
+      await addUserToDailySalesReport(openedBy, tableObj.business);
     }
 
     // create the table
     const newTable = await Table.create(tableObj);
 
-    return {
-      message: `Table ${tableReference} created successfully!`,
-      tableId: newTable._id,
-    };
+    if (newTable) {
+      return newTable;
+    } else {
+      return "Table not created!";
+    }
   } catch (error) {
     return "Create table failed!";
   }

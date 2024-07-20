@@ -1,4 +1,5 @@
 import connectDB from "@/app/lib/db";
+import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
 import { Types } from "mongoose";
@@ -12,12 +13,14 @@ export const closeTable = async (
     await connectDB();
 
     // get all orders from the table
-    const tableOrders = await Order.find({ table: tableId })
+    const tableOrders: ITable[] | null = await Order.find({ table: tableId })
       .select("billingStatus")
       .lean();
 
-    if (!tableOrders) {
-      throw new Error("Table not found!");
+      // if no orders, delete the table
+    if (!tableOrders || tableOrders?.length === 0) {
+      await Table.deleteOne({ _id: tableId });
+            return "Table with no orders deleted successfully";
     }
 
     // check if any order billingStatus is Open
@@ -36,9 +39,9 @@ export const closeTable = async (
         },
         { new: true }
       );
-      return "Table closed successfully!";
+      return "Table closed successfully";
     }
-    return "Table cant be closed because it still having open orders!";
+    return "Table cant be closed because it still having open orders";
   } catch (error) {
     return "Close table failed! " + error;
   }

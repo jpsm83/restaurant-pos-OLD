@@ -28,10 +28,3 @@ export interface IOrder {
     billingStatus?: string;
     paymentMethod?: IPaymentMethod[];
 }
-
-export interface IBulkOrders {
-    ordersIds: Types.ObjectId[];
-    paymentMethod: IPaymentMethod;
-    ordersTotalNetPrice: number;
-}
-
