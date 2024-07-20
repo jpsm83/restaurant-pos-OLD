@@ -10,6 +10,7 @@ export interface IInventoryGood {
 }
 
 export interface IInventory {
+    title: string;
     business: Types.ObjectId;
     setFinalCount: boolean;
     inventoryGoods: IInventoryGood[];

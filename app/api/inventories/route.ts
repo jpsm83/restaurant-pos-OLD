@@ -44,11 +44,22 @@ export const POST = async (req: Request) => {
 
     // upon CREATION of the inventory, SUPPLIER GOOD systemCountQuantity, currentCountQuantity, deviationPercent and quantityNeeded will be undefined
     // the inventory will be completed on the UPDATE route
-    const { business, supplierGoodsIdsArr, comments } = (await req.json()) as {
+    const { title, business, supplierGoodsIdsArr, comments } = (await req.json()) as {
+      title: string;
       business: Types.ObjectId;
       supplierGoodsIdsArr: Types.ObjectId[];
       comments: string;
     };
+
+    // check required fields
+    if (!title || !business || !supplierGoodsIdsArr) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Title, business and supplierGoodsIdsArr are required!",
+        }),
+        { status: 400 }
+      );
+    }
 
     // check if the business is valid
     if (!Types.ObjectId.isValid(business)) {
@@ -68,6 +79,32 @@ export const POST = async (req: Request) => {
         JSON.stringify({
           message:
             "SupplierGoodsIdsArr must be an array of valid supplier goods IDs!",
+        }),
+        { status: 400 }
+      );
+    }
+
+    // Fetch all inventories with setFinalCount set to false
+    const existingInventories = await Inventory.find({
+      setFinalCount: false,
+    }).select("inventoryGoods").lean();
+
+    // Extract all supplierGood IDs from these inventories
+    const existingSupplierGoodIds = new Set(
+      existingInventories.flatMap((inventory) =>
+        inventory.inventoryGoods.map((good: any) => good.supplierGood.toString())
+      )
+    );
+
+    // Check for duplicates with the current request
+    const hasDuplicateSupplierGoods = supplierGoodsIdsArr.some((id) =>
+      existingSupplierGoodIds.has(id.toString())
+    );
+    if (hasDuplicateSupplierGoods) {
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "One or more supplier goods are already in use in another pending inventory.",
         }),
         { status: 400 }
       );
@@ -94,6 +131,7 @@ export const POST = async (req: Request) => {
 
     // create inventory object
     const newInventory: IInventory = {
+      title: title,
       business: business,
       setFinalCount: false,
       inventoryGoods: inventoryGoodsArr,

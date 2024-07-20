@@ -20,6 +20,7 @@ const inventoryGoodsSchema = new Schema({
 // Then the supplierGood.dynamicCountFromLastInventory will be updated to the currentCountQuantity
 const inventorySchema = new Schema(
   {
+    title: { type: String, required: true }, // title of the inventory
     // required fields
     business: {
       type: Schema.Types.ObjectId,

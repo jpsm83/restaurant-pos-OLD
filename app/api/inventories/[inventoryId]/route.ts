@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { IInventory, IInventoryGood } from "@/app/lib/interface/IInventory";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import connectDB from "@/app/lib/db";
-import { updateDynamicCountFromLastInventory } from "../../supplierGoods/utils/updateDynamicCountFromLastInventory";
 
 // import models
 import Inventory from "@/app/lib/models/inventory";
@@ -75,22 +74,18 @@ export const PATCH = async (
     //   supplierGood: "5f9d1f3b4f3c4b001f3b4f3c4b001f3b",
     //   currentCountQuantity: 20
     // }
-    const { supplierGoodsObj, setFinalCount, comments, doneBy } =
+    const { setFinalCount, comments, doneBy } =
       (await req.json()) as {
-        supplierGoodsObj: {
-          supplierGood: Types.ObjectId;
-          currentCountQuantity: number;
-        }[];
         setFinalCount?: boolean;
         comments?: string;
         doneBy: Types.ObjectId[];
       };
 
     // check required fields
-    if (!supplierGoodsObj || !doneBy || setFinalCount === undefined) {
+    if (setFinalCount === undefined) {
       return new NextResponse(
         JSON.stringify({
-          message: "SupplierGoodsObj, doneby and setFinalCout are required!",
+          message: "SetFinalCout is required!",
         }),
         { status: 400 }
       );
@@ -120,62 +115,26 @@ export const PATCH = async (
       );
     }
 
-    // Fetch all supplierGoods at once
-    const supplierGoodIds = supplierGoodsObj.map((good) => good.supplierGood);
-    const supplierGoodsDocs: ISupplierGood[] = await SupplierGood.find({
-      _id: { $in: supplierGoodIds },
-    })
-      .select("dynamicCountFromLastInventory parLevel")
-      .lean();
-
-    // create a array with the update supplierGoods objects
-    const updateInventorySupplierGoodsArray = supplierGoodsDocs.map((good) => {
-      const foundGood = supplierGoodsObj.find(
-        (invGood) => invGood.supplierGood.toString() === good._id?.toString()
-      );
-      if (!foundGood) {
-        throw new Error(
-          `Inventory good not found for supplierGood ID: ${good._id}`
-        );
+    if (setFinalCount) {
+      for(let supplierGood of inventory.inventoryGoods) {
+        await SupplierGood.findByIdAndUpdate(supplierGood.supplierGood, {
+          dynamicCountFromLastInventory: supplierGood.currentCountQuantity,
+          lastInventoryCountDate: supplierGood.lastInventoryCountDate,
+        })
+      }
       }
 
-      const { currentCountQuantity } = foundGood;
-      const systemCountQuantity = good.dynamicCountFromLastInventory;
-      const deviationPercent = (((good.dynamicCountFromLastInventory ?? 0) - currentCountQuantity) / (good.parLevel || 1)) * 100;
-      const quantityNeeded = (good.parLevel || 0) - currentCountQuantity;
-
-      return {
-        supplierGood: good._id,
-        systemCountQuantity,
-        currentCountQuantity,
-        deviationPercent,
-        quantityNeeded,
-      };
-    });
-
-    if (setFinalCount) {
-      const updatePromises = updateInventorySupplierGoodsArray.map((good) =>
-        SupplierGood.findByIdAndUpdate(good.supplierGood, {
-          dynamicCountFromLastInventory: good.currentCountQuantity,
-          lastInventoryCountDate: new Date(),
-        })
-      );
-      await Promise.all(updatePromises);
-    }
-
     // create inventory object
-    const updateObj = {
+    const updatedInventory = {
       setFinalCount: setFinalCount,
-      inventoryGoods: updateInventorySupplierGoodsArray,
-      countedDate: new Date(),
-      doneBy,
       comments: comments || inventory.comments,
+      countedDate: new Date(),
+      doneBy: doneBy || inventory.doneBy,
     };
 
     // update inventory
-    await Inventory.findByIdAndUpdate({ _id: inventoryId }, updateObj, {
+    await Inventory.findByIdAndUpdate({ _id: inventoryId }, updatedInventory, {
       new: true,
-      usefindAndModify: false,
     });
 
     return new NextResponse(

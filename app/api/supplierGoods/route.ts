@@ -5,7 +5,6 @@ import connectDB from "@/app/lib/db";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import { handleApiError } from "@/app/utils/handleApiError";
-import { updateDynamicCountFromLastInventory } from "./utils/updateDynamicCountFromLastInventory";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods
@@ -177,19 +176,3 @@ export const POST = async (req: Request) => {
     return handleApiError("Create supplier good failed!", error);
   }
 };
-
-// export const POST = async (req: Request) => {
-//   try {
-//     const supplierGoodId = "6679367f607463b1e8782e43";
-//     const updatedCountQuantity = 10;
-
-//     // @ts-ignore
-//     const result = await updateDynamicCountFromLastInventory(supplierGoodId, updatedCountQuantity);
-
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 201, headers: { "Content-Type": "application/json" },
-//     });
-//   } catch (error) {
-//     return handleApiError("Create schedule failed!", error);
-//   }
-// };

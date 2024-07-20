@@ -5,7 +5,7 @@ import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
 
-export const updateIndividualSupplierGoodInventory = async (
+export const updateSupplierGoodInventory = async (
   inventoryId: Types.ObjectId,
   supplierGoodId: Types.ObjectId,
   currentCountQuantity: number
