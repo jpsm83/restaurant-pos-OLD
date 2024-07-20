@@ -144,6 +144,7 @@ const supplierGoodSchema = new Schema(
     // ONLY FOR FOOD AND BEVERAGE GOODS
     // LOGIC HAVE TO BE CREATE IN THE ORDER CONTROLLER
     dynamicCountFromLastInventory: { type: Number, default: 0 }, // quantity start point of the good. Its first value will be the first inventory.currentCountQuantity. From there, it will be automaticaly updated base on the orders, substracting its supplierGood used to manufactured the businessGoods in the orders. Upon next inventory count, this field will set the inventory.systemCountQuantity value, then it will be reset to the value of inventory.currentCountQuantity - REQUIRED FOR ANALITCS
+    lastInventoryCountDate: { type: Date }, // date of the last real inventory count
   },
   {
     timestamps: true,

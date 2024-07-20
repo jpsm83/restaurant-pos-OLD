@@ -34,4 +34,5 @@ export interface ISupplierGood {
   minimumQuantityRequired?: number;
   inventorySchedule?: string;
   dynamicCountFromLastInventory?: number;
+  lastInventoryCountDate?: Date;
 }

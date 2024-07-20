@@ -61,7 +61,7 @@ export const GET = async (req: Request, context: { params: any }) => {
     const inventories = await Inventory.find({
       query
     })
-      .select("currentCountScheduleDate previewsCountedDate doneBy")
+      .select("countedDate doneBy")
       .lean();
 
     return !inventories.length

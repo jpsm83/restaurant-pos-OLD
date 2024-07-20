@@ -1,0 +1,41 @@
+{
+    "business": "6673fed98c45d0a0ca5f34c1",
+    "supplierGoodsIdsArr": [
+        "667bfac8d28a7ee19d9be443",
+        "667bfac8d28a7ee19d9be444"
+    ]
+}
+
+
+{
+    "supplierGoodsObj": [
+        {
+            "supplierGood": "667bfac8d28a7ee19d9be443",
+            "currentCountQuantity": 500
+        },
+        {
+            "supplierGood": "667bfac8d28a7ee19d9be444",
+            "currentCountQuantity": 500
+        }
+    ],
+    "setFinalCount": false,
+    "comments": "commentUpdated",
+    "doneBy": "6673fed98c45d0a0ca5f34c1"
+}
+
+[
+    {
+        "supplierGood": "667bfac8d28a7ee19d9be443",
+        "systemCountQuantity": 107,
+        "currentCountQuantity": 107,
+        "deviationPercent": 0,
+        "quantityNeeded": 13
+    },
+    {
+        "supplierGood": "667bfac8d28a7ee19d9be444",
+        "systemCountQuantity": 8.996499999999996,
+        "currentCountQuantity": 5,
+        "deviationPercent": 44.40555555555551,
+        "quantityNeeded": 4
+    }
+]

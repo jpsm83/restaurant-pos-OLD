@@ -8,15 +8,15 @@ import { updateDynamicCountFromLastInventory } from "../../supplierGoods/utils/u
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
+import { handleApiError } from "@/app/utils/handleApiError";
 
 // @desc    Get inventory by ID
 // @route   GET /inventories/:inventoryId
 // @access  Private
-export const GET = async (context: { params: any }) => {
+export const GET = async (context: {
+  params: { inventoryId: Types.ObjectId };
+}) => {
   try {
-    // connect before first call to DB
-    await connectDB();
-
     const inventoryId = context.params.inventoryId;
     // check if the inventoryId is valid
     if (!Types.ObjectId.isValid(inventoryId)) {
@@ -25,6 +25,9 @@ export const GET = async (context: { params: any }) => {
         { status: 400 }
       );
     }
+
+    // connect before first call to DB
+    await connectDB();
 
     const inventory = await Inventory.findById(inventoryId)
       .populate(
@@ -37,25 +40,26 @@ export const GET = async (context: { params: any }) => {
       ? new NextResponse(JSON.stringify({ message: "Inventory not found" }), {
           status: 404,
         })
-      : new NextResponse(JSON.stringify(inventory), { status: 200 });
-  } catch (error: any) {
-    return new NextResponse(JSON.stringify({ message: error.message }), {
-      status: 500,
-    });
+      : new NextResponse(JSON.stringify(inventory), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+  } catch (error) {
+    return handleApiError("Get inventorie failed!", error);
   }
 };
 
 // @desc    Update inventory by ID
 // @route   PATCH /inventories/:inventoryId
 // @access  Private
-export const PATCH = async (req: Request, context: { params: any }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { inventoryId: Types.ObjectId } }
+) => {
   try {
-    // connect before first call to DB
-    await connectDB();
-
     // when UPDATE of the inventory, systemCountQuantity will be the supplierGood.dynamicCountFromLastInventory, currentCountQuantity will be the real count, deviationPercent will be calculated as ((systemCountQuantity - currentCountQuantity) / supplierGood.parLevel) * 100, quantityNeeded will be calculated as supplierGood.parLevel - currentCountQuantity. You can update many times needed once mistakes can be done.
 
-    // UPDATE final inventory, once the inventory is marked as setFinalCount. The supplierGood.dynamicCountFromLastInventory will be updated to the currentCountQuantity
+    // UPDATE final inventory, once the inventory is marked as setFinalCount. The supplierGood.dynamicCountFromLastInventory will be updated to the currentCountQuantity and supplierGood.lastInventoryCountDate will be updated to the current date as coutedDate
 
     const inventoryId = context.params.inventoryId;
     // check if the inventoryId is valid
@@ -66,22 +70,38 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       );
     }
 
-    const { inventoryGoods, doneBy, setFinalCount } =
-      req.body as unknown as IInventory;
+    // example of supplierGoodsObj coming fron the front
+    // supplierGoodsObj = {
+    //   supplierGood: "5f9d1f3b4f3c4b001f3b4f3c4b001f3b",
+    //   currentCountQuantity: 20
+    // }
+    const { supplierGoodsObj, setFinalCount, comments, doneBy } =
+      (await req.json()) as {
+        supplierGoodsObj: {
+          supplierGood: Types.ObjectId;
+          currentCountQuantity: number;
+        }[];
+        setFinalCount?: boolean;
+        comments?: string;
+        doneBy: Types.ObjectId[];
+      };
 
     // check required fields
-    if (!doneBy || setFinalCount !== undefined || !inventoryGoods) {
+    if (!supplierGoodsObj || !doneBy || setFinalCount === undefined) {
       return new NextResponse(
         JSON.stringify({
-          message: "Doneby, setFinalCout and inventoryGoods are required!",
+          message: "SupplierGoodsObj, doneby and setFinalCout are required!",
         }),
         { status: 400 }
       );
     }
 
+    // connect before first call to DB
+    await connectDB();
+
     // check if inventory exists
     const inventory: IInventory | null = await Inventory.findById(inventoryId)
-      .select("setFinalCount currentCountScheduleDate")
+      .select("setFinalCount inventoryGoods comments")
       .lean();
 
     if (!inventory) {
@@ -100,77 +120,48 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       );
     }
 
-    // check if inventory goods is an array of objects
-    if (!Array.isArray(inventoryGoods) || inventoryGoods.length === 0) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "Inventory goods must be an array of supplier goods IDs and current count!",
-        }),
-        { status: 400 }
-      );
-    } else if (
-      inventoryGoods.some(
-        (good) => !good.supplierGood || !good.currentCountQuantity
-      )
-    ) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "Inventory goods must have supplierGood and currentCountQuantity!",
-        }),
-        { status: 400 }
-      );
-    }
-
     // Fetch all supplierGoods at once
+    const supplierGoodIds = supplierGoodsObj.map((good) => good.supplierGood);
     const supplierGoodsDocs: ISupplierGood[] = await SupplierGood.find({
-      _id: { $in: inventoryGoods.map((good) => good.supplierGood) },
+      _id: { $in: supplierGoodIds },
     })
       .select("dynamicCountFromLastInventory parLevel")
       .lean();
 
     // create a array with the update supplierGoods objects
-    let updateInventorySupplierGoodsArray: IInventoryGood[] =
-      supplierGoodsDocs.map((good) => {
-        const foundGood = inventoryGoods.find(
-          (invGood) => invGood.supplierGood === good._id
+    const updateInventorySupplierGoodsArray = supplierGoodsDocs.map((good) => {
+      const foundGood = supplierGoodsObj.find(
+        (invGood) => invGood.supplierGood.toString() === good._id?.toString()
+      );
+      if (!foundGood) {
+        throw new Error(
+          `Inventory good not found for supplierGood ID: ${good._id}`
         );
+      }
 
-        if (!foundGood) {
-          throw new Error(
-            `Inventory good not found for supplierGood ID: ${good._id}`
-          );
-        }
+      const { currentCountQuantity } = foundGood;
+      const systemCountQuantity = good.dynamicCountFromLastInventory;
+      const deviationPercent = (((good.dynamicCountFromLastInventory ?? 0) - currentCountQuantity) / (good.parLevel || 1)) * 100;
+      const quantityNeeded = (good.parLevel || 0) - currentCountQuantity;
 
-        const currentCountQuantity = foundGood.currentCountQuantity ?? 0;
-        const deviationPercent =
-          ((good.dynamicCountFromLastInventory - currentCountQuantity) /
-            (good.parLevel ?? 0)) *
-          100;
-        const quantityNeeded = good.parLevel ?? 0 - currentCountQuantity;
+      return {
+        supplierGood: good._id,
+        systemCountQuantity,
+        currentCountQuantity,
+        deviationPercent,
+        quantityNeeded,
+      };
+    });
 
-        return {
-          supplierGood: good._id,
-          systemCountQuantity: good.dynamicCountFromLastInventory,
-          currentCountQuantity,
-          deviationPercent,
-          quantityNeeded,
-        };
-      });
-
-    if (setFinalCount === true) {
+    if (setFinalCount) {
       const updatePromises = updateInventorySupplierGoodsArray.map((good) =>
-        updateDynamicCountFromLastInventory(
-          good.supplierGood,
-          good.currentCountQuantity ?? 0
-        )
+        SupplierGood.findByIdAndUpdate(good.supplierGood, {
+          dynamicCountFromLastInventory: good.currentCountQuantity,
+          lastInventoryCountDate: new Date(),
+        })
       );
       await Promise.all(updatePromises);
     }
-
-    // TO BE DONE
-    // if currentCountScheduleDate is passed from the current date, NOTIFY the responables that the inventory is not being counted on the right date
 
     // create inventory object
     const updateObj = {
@@ -178,32 +169,23 @@ export const PATCH = async (req: Request, context: { params: any }) => {
       inventoryGoods: updateInventorySupplierGoodsArray,
       countedDate: new Date(),
       doneBy,
+      comments: comments || inventory.comments,
     };
 
     // update inventory
-    const updatedInventory = await Inventory.findByIdAndUpdate(
-      { _id: inventoryId },
-      updateObj,
-      { new: true, usefindAndModify: false }
-    );
-
-    return updatedInventory
-      ? new NextResponse(
-          JSON.stringify({
-            message: `Inventory done at ${inventory.currentCountScheduleDate} updated!`,
-          }),
-          { status: 200 }
-        )
-      : new NextResponse(
-          JSON.stringify({ message: "Inventory not updated!" }),
-          {
-            status: 400,
-          }
-        );
-  } catch (error: any) {
-    return new NextResponse(JSON.stringify({ message: error.message }), {
-      status: 500,
+    await Inventory.findByIdAndUpdate({ _id: inventoryId }, updateObj, {
+      new: true,
+      usefindAndModify: false,
     });
+
+    return new NextResponse(
+      JSON.stringify({
+        message: `Inventory updated!`,
+      }),
+      { status: 200 }
+    );
+  } catch (error) {
+    return handleApiError("Updated inventory failed!", error);
   }
 };
 
@@ -212,11 +194,10 @@ export const PATCH = async (req: Request, context: { params: any }) => {
 // @access  Private
 // delete an inventory shouldnt be allowed for data integrity, historical purposes and analytics
 // the only case where an inventory should be deleted is if the business itself is deleted
-export const DELETE = async (context: { params: any }) => {
+export const DELETE = async (context: {
+  params: { inventoryId: Types.ObjectId };
+}) => {
   try {
-    // connect before first call to DB
-    await connectDB();
-
     const inventoryId = context.params.inventoryId;
     // check if the inventoryId is valid
     if (!Types.ObjectId.isValid(inventoryId)) {
@@ -225,6 +206,9 @@ export const DELETE = async (context: { params: any }) => {
         { status: 400 }
       );
     }
+
+    // connect before first call to DB
+    await connectDB();
 
     // delete inventory and check if it existed
     const result = await Inventory.deleteOne({ _id: inventoryId });
@@ -240,8 +224,6 @@ export const DELETE = async (context: { params: any }) => {
       { status: 200 }
     );
   } catch (error: any) {
-    return new NextResponse(JSON.stringify({ message: error.message }), {
-      status: 500,
-    });
+    return handleApiError("Delete inventory failed!", error);
   }
 };
