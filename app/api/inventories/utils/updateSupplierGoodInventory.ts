@@ -5,6 +5,7 @@ import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
 
+// this function will set the count quantity of a individual supplier good in an inventory
 export const updateSupplierGoodInventory = async (
   inventoryId: Types.ObjectId,
   supplierGoodId: Types.ObjectId,
@@ -12,7 +13,7 @@ export const updateSupplierGoodInventory = async (
 ) => {
   try {
     // check required fields
-    if (!inventoryId || !supplierGoodId || currentCountQuantity) {
+    if (!inventoryId || !supplierGoodId || !currentCountQuantity) {
       return "InventoryId, supplierGoodId and currentCountQuantity are required!";
     }
 
@@ -55,37 +56,21 @@ export const updateSupplierGoodInventory = async (
 
     let updatedSupplierGoodInventoryObj = {
       supplierGood: supplierGood._id,
-      systemCountQuantity: supplierGood.dynamicCountFromLastInventory,
       currentCountQuantity: currentCountQuantity,
-      deviationPercent:
-        (((supplierGood.dynamicCountFromLastInventory ?? 0) -
-          currentCountQuantity) /
-          (supplierGood.parLevel || 1)) *
-        100,
-      quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
-      lastInventoryCountDate: new Date(),
     };
 
-    SupplierGood.findByIdAndUpdate(supplierGood._id, {
-      dynamicCountFromLastInventory: currentCountQuantity,
-      lastInventoryCountDate: new Date(),
-    });
-
     await Inventory.findByIdAndUpdate(
+      inventoryId,
       {
-        _id: inventoryId,
-        "inventoryGoods.supplierGood":
-          updatedSupplierGoodInventoryObj.supplierGood,
+        $set: {
+          "inventoryGoods.$[elem]": updatedSupplierGoodInventoryObj,
+        },
       },
       {
-        $set: { "inventoryGoods.$": updatedSupplierGoodInventoryObj },
-      },
-      {
+        arrayFilters: [{ "elem.supplierGood": supplierGoodId }],
         new: true,
-        useFindAndModify: false,
       }
     );
-
     return "Inventory updated!";
   } catch (error) {
     return "Updated inventory failed!";

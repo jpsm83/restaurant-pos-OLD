@@ -14,7 +14,6 @@ const inventoryGoodsSchema = new Schema({
   currentCountQuantity: { type: Number }, // quantity of the good in the current real count
   deviationPercent: { type: Number }, // differece between the systemCountQuantity and the currentCountQuantity in percentage. For a perfect inventory, this number should be 0
   quantityNeeded: { type: Number }, // quantity needed to reach the parLevel. Difference between the parLevel and the currentCountQuantity
-  lastInventoryCountDate: { type: Date }, // date of the last inventory count
 });
 
 // Then the supplierGood.dynamicCountFromLastInventory will be updated to the currentCountQuantity

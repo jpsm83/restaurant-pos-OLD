@@ -105,6 +105,7 @@ export const closeDailySalesReport = async (
         })
       )
     ).filter(
+      //@ts-ignore
       (userDailySalesReport): userDailySalesReport is IUserDailySalesReport =>
         userDailySalesReport !== null
     );

@@ -6,7 +6,6 @@ export interface IInventoryGood {
     currentCountQuantity?: number;
     deviationPercent?: number;
     quantityNeeded?: number;
-    lastInventoryCountDate?: Date;
 }
 
 export interface IInventory {
