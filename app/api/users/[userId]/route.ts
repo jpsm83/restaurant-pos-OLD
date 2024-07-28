@@ -12,8 +12,8 @@ import { IUser } from "@/app/lib/interface/IUser";
 import Notification from "@/app/lib/models/notification";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { personalDetailsValidation } from "../utils/personalDetailsValidation";
-import { addressValidation } from "@/app/utils/addressValidation";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { addressValidation } from "@/app/lib/utils/addressValidation";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "../utils/calculateVacationProportional";
 
 // @desc    Get user by ID
@@ -27,8 +27,9 @@ export const GET = async (
     const userId = context.params.userId;
 
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid user ID!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -38,8 +39,9 @@ export const GET = async (
     const user = await User.findById(userId).select("-password").lean();
 
     return !user
-      ? new NextResponse("User not found!", {
+      ? new NextResponse(JSON.stringify({ message: "User not found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(user), {
           status: 200,
@@ -64,8 +66,9 @@ export const PATCH = async (
     const userId = context.params.userId;
 
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid user ID!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -98,8 +101,9 @@ export const PATCH = async (
     // check if user exists
     const user = await User.findById(userId);
     if (!user) {
-      return new NextResponse("User not found!", {
+      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
         status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -113,13 +117,19 @@ export const PATCH = async (
     if (duplicateUser) {
       if (duplicateUser.active === true) {
         return new NextResponse(
-          "Username, email, taxNumber or idNumber already exists in an active user!",
-          { status: 409 }
+          JSON.stringify({
+            message:
+              "Username, email, taxNumber or idNumber already exists in an active user!",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } }
         );
       } else {
         return new NextResponse(
-          "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          { status: 409 }
+          JSON.stringify({
+            message:
+              "Username, email, taxNumber or idNumber already exists in an unactive user!",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } }
         );
       }
     }
@@ -151,8 +161,9 @@ export const PATCH = async (
     if (address) {
       const validAddress = addressValidation(updatedAddress);
       if (validAddress !== true) {
-        return new NextResponse(validAddress, {
+        return new NextResponse(JSON.stringify({ message: validAddress }), {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -174,29 +185,38 @@ export const PATCH = async (
       updatedPersonalDetails
     );
     if (checkPersonalDetailsValidation !== true) {
-      return new NextResponse(checkPersonalDetailsValidation, {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: checkPersonalDetailsValidation }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // calculate vacation days if joinDate or vacationDaysPerYear are updated
     let calculateVacationDaysPerYear: number | undefined;
-    if ((joinDate !== user.joinDate) || (vacationDaysPerYear !== user.vacationDaysPerYear)) {
+    if (
+      joinDate !== user.joinDate ||
+      vacationDaysPerYear !== user.vacationDaysPerYear
+    ) {
       calculateVacationDaysPerYear = calculateVacationProportional(
         new Date(joinDate),
-        vacationDaysPerYear);
+        vacationDaysPerYear
+      );
     }
 
     let grossHourlySalaryCalculation: number | undefined;
     if (
-     typeof grossMonthlySalary === "number" &&
-     typeof contractHoursWeek === "number" 
+      typeof grossMonthlySalary === "number" &&
+      typeof contractHoursWeek === "number"
     ) {
-      grossHourlySalaryCalculation = grossMonthlySalary / (contractHoursWeek * 4);
+      grossHourlySalaryCalculation =
+        grossMonthlySalary / (contractHoursWeek * 4);
     } else {
       grossHourlySalaryCalculation = undefined;
     }
-    
+
     // prepare update object
     const updatedUser = {
       username: username || user.username,
@@ -211,7 +231,9 @@ export const PATCH = async (
       active: active !== undefined ? active : user.active,
       onDuty: onDuty !== undefined ? onDuty : user.onDuty,
       vacationDaysPerYear: vacationDaysPerYear || user.vacationDaysPerYear,
-      vacationDaysLeft: calculateVacationDaysPerYear ? calculateVacationDaysPerYear : user.vacationDaysLeft,
+      vacationDaysLeft: calculateVacationDaysPerYear
+        ? calculateVacationDaysPerYear
+        : user.vacationDaysLeft,
       currentShiftRole: currentShiftRole || user.currentShiftRole,
       address: updatedAddress,
       photo: photo || user.photo,
@@ -229,8 +251,10 @@ export const PATCH = async (
     });
 
     return new NextResponse(
-      `User ${updatedUser.username} updated successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `User ${updatedUser.username} updated successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Update user failed!", error);
@@ -250,8 +274,9 @@ export const DELETE = async (
     const userId = context.params.userId;
 
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid user ID!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -262,8 +287,9 @@ export const DELETE = async (
     const result = await User.deleteOne({ _id: userId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("User not found!", {
+      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
         status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     } else {
       // Delete all related data in parallel
@@ -309,9 +335,13 @@ export const DELETE = async (
       ]);
     }
 
-    return new NextResponse(`User id ${userId} deleted successfully`, {
-      status: 200,
-    });
+    return new NextResponse(
+      JSON.stringify({ message: `User id ${userId} deleted successfully` }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Delete user failed!", error);
   }

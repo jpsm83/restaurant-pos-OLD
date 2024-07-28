@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // imported models
 import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc   Get user by bussiness ID
 // @route  GET /users/business/:businessId
@@ -19,9 +19,13 @@ export const GET = async (
     const businessId = context.params.businessId;
 
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid business ID!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid business ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -32,9 +36,13 @@ export const GET = async (
       .lean();
 
     return !users.length
-      ? new NextResponse("No users found within the business id!", {
-          status: 404,
-        })
+      ? new NextResponse(
+          JSON.stringify({ message: "No users found within the business id!" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       : new NextResponse(JSON.stringify(users), {
           status: 200,
           headers: {

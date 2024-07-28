@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 // import models
 import Order from "@/app/lib/models/order";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get orders table ID
 // @route   GET /orders/table/:tableId
@@ -19,8 +19,9 @@ export const GET = async (
     const tableId = context.params.tableId;
     // check if tableId is valid
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse("Invalid tableId", {
+      return new NextResponse(JSON.stringify({ message: "Invalid tableId" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -37,8 +38,9 @@ export const GET = async (
       .lean();
 
     return !orders.length
-      ? new NextResponse("No orders found!", {
+      ? new NextResponse(JSON.stringify({ message: "No orders found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(orders), {
           status: 200,

@@ -6,11 +6,9 @@ import { hash } from "bcrypt";
 import User from "@/app/lib/models/user";
 import { IUser } from "@/app/lib/interface/IUser";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
-import { addressValidation } from "@/app/utils/addressValidation";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { addressValidation } from "@/app/lib/utils/addressValidation";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "./utils/calculateVacationProportional";
-import { updateReadFlag } from "./utils/updateReadFlag";
-import { removeUserFromNotification } from "../notifications/utils/removeUserFromNotification";
 
 // @desc    Get all users
 // @route   GET /users
@@ -23,8 +21,9 @@ export const GET = async () => {
     const users = await User.find().select("-password").lean();
 
     return !users?.length
-      ? new NextResponse("No users found", {
+      ? new NextResponse(JSON.stringify({ message: "No users found" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(users), {
           status: 200,
@@ -80,15 +79,19 @@ export const POST = async (req: Request) => {
       !vacationDaysPerYear ||
       !business
     ) {
-      return new NextResponse("Missing required fields!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Missing required fields!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // check address validation
     if (address) {
       const validAddress = addressValidation(address);
       if (validAddress !== true) {
-        return new NextResponse(validAddress, {
+        return new NextResponse(JSON.stringify({ message: validAddress }), {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -97,9 +100,13 @@ export const POST = async (req: Request) => {
     const checkPersonalDetailsValidation =
       personalDetailsValidation(personalDetails);
     if (checkPersonalDetailsValidation !== true) {
-      return new NextResponse(checkPersonalDetailsValidation, {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: checkPersonalDetailsValidation }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -114,23 +121,30 @@ export const POST = async (req: Request) => {
     if (duplicateUser) {
       if (duplicateUser.active === true) {
         return new NextResponse(
-          "Username, email, taxNumber or idNumber already exists in an active user!",
-          { status: 409 }
+          JSON.stringify({
+            message:
+              "Username, email, taxNumber or idNumber already exists in an active user!",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } }
         );
       } else {
         return new NextResponse(
-          "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          { status: 409 }
+          JSON.stringify({
+            message:
+              "Username, email, taxNumber or idNumber already exists in an unactive user!",
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } }
         );
       }
     }
 
     let grossHourlySalaryCalculation: number | undefined;
     if (
-     typeof grossMonthlySalary === "number" &&
-     typeof contractHoursWeek === "number"
+      typeof grossMonthlySalary === "number" &&
+      typeof contractHoursWeek === "number"
     ) {
-      grossHourlySalaryCalculation = grossMonthlySalary / (contractHoursWeek * 4);
+      grossHourlySalaryCalculation =
+        grossMonthlySalary / (contractHoursWeek * 4);
     } else {
       grossHourlySalaryCalculation = undefined;
     }
@@ -166,26 +180,14 @@ export const POST = async (req: Request) => {
     // create user
     await User.create(newUser);
 
-    return new NextResponse(`New user ${username} created successfully!`, {
-      status: 201,
-    });
+    return new NextResponse(
+      JSON.stringify({ message: `New user ${username} created successfully!` }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Create user failed!", error);
   }
 };
-
-// export const POST = async (req: Request) => {
-//   try {
-//     const userId = "667412df373ad7f1a285534e";
-//     const notificationId = "6675476e3bfefbb6373c715c";
-
-//     // @ts-ignore
-//     const result = await updateReadFlag(userId, notificationId);
-
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 200,
-//     });
-//   } catch (error) {
-//     return handleApiError("Helper user function failed!", error);
-//   }
-// };

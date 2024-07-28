@@ -12,7 +12,7 @@ import {
   IUserDailySalesReport,
 } from "@/app/lib/interface/IDailySalesReport";
 import { updateUserDailySalesReportGeneric } from "../utils/updateUserDailySalesReportGeneric";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get daily report by ID
 // @route   GET /dailySalesReports/:dailySalesReportId

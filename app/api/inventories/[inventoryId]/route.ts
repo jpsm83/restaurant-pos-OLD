@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { IInventory, IInventoryGood } from "@/app/lib/interface/IInventory";
-import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import { IInventory } from "@/app/lib/interface/IInventory";
 import connectDB from "@/app/lib/db";
 
 // import models
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get inventory by ID
 // @route   GET /inventories/:inventoryId
@@ -24,7 +23,7 @@ export const GET = async (
     if (!Types.ObjectId.isValid(inventoryId)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid inventory ID" }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -43,6 +42,7 @@ export const GET = async (
         JSON.stringify({ message: "Inventory not found" }),
         {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         }
       );
     }
@@ -70,7 +70,7 @@ export const PATCH = async (
     if (!Types.ObjectId.isValid(inventoryId)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid inventory ID" }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -97,7 +97,7 @@ export const PATCH = async (
     if (!inventory) {
       return new NextResponse(
         JSON.stringify({ message: "Inventory not found!" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -106,7 +106,7 @@ export const PATCH = async (
         JSON.stringify({
           message: "Inventory already set as final count! Cannot update!",
         }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -198,7 +198,7 @@ export const PATCH = async (
       JSON.stringify({
         message: `Inventory updated!`,
       }),
-      { status: 200 }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Updated inventory failed!", error);
@@ -222,7 +222,7 @@ export const DELETE = async (
     if (!Types.ObjectId.isValid(inventoryId)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid notification ID" }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -235,14 +235,14 @@ export const DELETE = async (
     if (result.deletedCount === 0) {
       return new NextResponse(
         JSON.stringify({ message: "Inventory not found" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
     return new NextResponse(
       JSON.stringify({ message: `Inventory ${inventoryId} deleted!` }),
-      { status: 200 }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError("Delete inventory failed!", error);
   }
 };

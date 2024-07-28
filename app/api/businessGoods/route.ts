@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 // import models
 import BusinessGood from "@/app/lib/models/businessGood";
 import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validateIngredients } from "./utils/validateIngredients";
-import { calculateIngredientsCostPriceAndAllery } from "./utils/calculateIngredientsCostPriceAndAllery";
-import { calculateSetMenuCostPriceAndAllery } from "./utils/calculateSetMenuCostPriceAndAllery";
+import { calculateIngredientsCostPriceAndAllergies } from "./utils/calculateIngredientsCostPriceAndAllergies";
+import { calculateSetMenuCostPriceAndAllergies } from "./utils/calculateSetMenuCostPriceAndAllergies";
 
 // @desc    Get all business goods
 // @route   GET /businessGoods
@@ -21,7 +21,10 @@ export const GET = async () => {
       .populate("setMenu", "name category sellingPrice")
       .lean();
     return !businessGoods.length
-      ? new NextResponse("No business goods found!", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "No business goods found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(businessGoods), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -64,16 +67,21 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        "Name, keyword, category, subcategory, onMenu, available, sellingPrice and business are required!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "Name, keyword, category, subcategory, onMenu, available, sellingPrice and business are required!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // one of the two fields should be present (ingredients or setMenu)
     if (ingredients && setMenu) {
       return new NextResponse(
-        "Only one of ingredients or setMenu can be asigned!",
-        { status: 400 }
+        JSON.stringify({
+          message: "Only one of ingredients or setMenu can be asigned!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -87,9 +95,15 @@ export const POST = async (req: Request) => {
     });
 
     if (duplicateBusinessGood) {
-      return new NextResponse(`${name} already exists on business goods!`, {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({
+          message: `${name} already exists on business goods!`,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // create a business good object
@@ -135,17 +149,26 @@ export const POST = async (req: Request) => {
     if (ingredients) {
       const validateIngredientsResult = validateIngredients(ingredients);
       if (validateIngredientsResult !== true) {
-        return new NextResponse(validateIngredientsResult, { status: 400 });
+        return new NextResponse(
+          JSON.stringify({ message: validateIngredientsResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
-      const calculateIngredientsCostPriceAndAlleryResult =
-        await calculateIngredientsCostPriceAndAllery(ingredients);
-      if (typeof calculateIngredientsCostPriceAndAlleryResult !== "object") {
-        return new NextResponse(calculateIngredientsCostPriceAndAlleryResult, {
-          status: 400,
-        });
+      const calculateIngredientsCostPriceAndAllergiesResult =
+        await calculateIngredientsCostPriceAndAllergies(ingredients);
+      if (typeof calculateIngredientsCostPriceAndAllergiesResult !== "object") {
+        return new NextResponse(
+          JSON.stringify({
+            message: calculateIngredientsCostPriceAndAllergiesResult,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       } else {
         newBusinessGood.ingredients =
-          calculateIngredientsCostPriceAndAlleryResult.map((ing) => {
+          calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
               ingredient: ing.ingredient,
               measurementUnit: ing.measurementUnit,
@@ -155,12 +178,12 @@ export const POST = async (req: Request) => {
           });
         newBusinessGood.setMenu = undefined;
         newBusinessGood.costPrice =
-          calculateIngredientsCostPriceAndAlleryResult.reduce(
+          calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc, curr) => acc + curr.costOfRequiredQuantity,
             0
           );
         const reducedAllergens =
-          calculateIngredientsCostPriceAndAlleryResult.reduce(
+          calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc: string[], curr) => {
               if (curr.allergens) {
                 curr.allergens.forEach((allergen) => {
@@ -173,34 +196,52 @@ export const POST = async (req: Request) => {
             },
             []
           );
-          newBusinessGood.allergens = reducedAllergens && reducedAllergens.length > 0 ? reducedAllergens : undefined;
+        newBusinessGood.allergens =
+          reducedAllergens && reducedAllergens.length > 0
+            ? reducedAllergens
+            : undefined;
       }
     }
 
     // calculate the cost price and allergens for the setMenu if they exist
     if (setMenu) {
-      const calculateSetMenuCostPriceAndAlleryResult =
-        await calculateSetMenuCostPriceAndAllery(setMenu);
-      if (typeof calculateSetMenuCostPriceAndAlleryResult !== "object") {
-        return new NextResponse(calculateSetMenuCostPriceAndAlleryResult, {
-          status: 400,
-        });
+      const calculateSetMenuCostPriceAndAllergiesResult =
+        await calculateSetMenuCostPriceAndAllergies(setMenu);
+      if (typeof calculateSetMenuCostPriceAndAllergiesResult !== "object") {
+        return new NextResponse(
+          JSON.stringify({
+            message: calculateSetMenuCostPriceAndAllergiesResult,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       } else {
         newBusinessGood.ingredients = undefined;
         newBusinessGood.setMenu = setMenu;
         newBusinessGood.costPrice =
-          calculateSetMenuCostPriceAndAlleryResult.costPrice;
+          calculateSetMenuCostPriceAndAllergiesResult.costPrice;
         newBusinessGood.allergens =
-          calculateSetMenuCostPriceAndAlleryResult.allergens && calculateSetMenuCostPriceAndAlleryResult.allergens.length > 0 ? calculateSetMenuCostPriceAndAlleryResult.allergens : undefined;
+          calculateSetMenuCostPriceAndAllergiesResult.allergens &&
+          calculateSetMenuCostPriceAndAllergiesResult.allergens.length > 0
+            ? calculateSetMenuCostPriceAndAllergiesResult.allergens
+            : undefined;
       }
     }
 
     // create the new business good
     await BusinessGood.create(newBusinessGood);
 
-    return new NextResponse(`Business good ${name} created successfully!`, {
-      status: 201,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Business good ${name} created successfully!`,
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Create business good failed!", error);
   }
@@ -247,7 +288,7 @@ export const POST = async (req: Request) => {
 //     await connectDB();
 
 //     // // @ts-ignore
-//     // const ingredients = await calculateIngredientsCostPriceAndAllery(
+//     // const ingredients = await calculateIngredientsCostPriceAndAllergies(
 //     //   ingredientsArr
 //     // );
 //     // return new NextResponse(JSON.stringify(ingredients), {
@@ -256,7 +297,7 @@ export const POST = async (req: Request) => {
 //     // });
 
 //     // @ts-ignore
-//     const setMenu = await calculateSetMenuCostPriceAndAllery(setMenuArr);
+//     const setMenu = await calculateSetMenuCostPriceAndAllergies(setMenuArr);
 //     return new NextResponse(JSON.stringify(setMenu), {
 //       status: 201,
 //       headers: { "Content-Type": "application/json" },

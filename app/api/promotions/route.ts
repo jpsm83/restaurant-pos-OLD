@@ -6,7 +6,7 @@ import Promotion from "@/app/lib/models/promotion";
 import { IPromotion } from "@/app/lib/interface/IPromotion";
 import { validateDateAndTime } from "./utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "./utils/validateDaysOfTheWeek";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validatePromotionType } from "./utils/validatePromotionType";
 import { Types } from "mongoose";
 
@@ -26,8 +26,9 @@ export const GET = async () => {
       .lean();
 
     return !promotion.length
-      ? new NextResponse("No promotion  found!", {
+      ? new NextResponse(JSON.stringify({ message: "No promotion  found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(promotion), {
           status: 200,
@@ -66,8 +67,11 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        "PromotionName, promotionPeriod, weekDays, activePromotion promotionType and business are required fields!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "PromotionName, promotionPeriod, weekDays, activePromotion promotionType and business are required fields!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -75,15 +79,22 @@ export const POST = async (req: Request) => {
     if (businessGoodsToApply) {
       if (!Array.isArray(businessGoodsToApply)) {
         return new NextResponse(
-          "BusinessGoodsToApply should be an array of business goods IDs!",
-          { status: 400 }
+          JSON.stringify({
+            message:
+              "BusinessGoodsToApply should be an array of business goods IDs!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
       businessGoodsToApply.forEach((businessGoodId) => {
         if (!Types.ObjectId.isValid(businessGoodId)) {
-          return new NextResponse("BusinessGoodsToApply IDs not valid!", {
-            status: 400,
-          });
+          return new NextResponse(
+            JSON.stringify({ message: "BusinessGoodsToApply IDs not valid!" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
         }
       });
     }
@@ -92,20 +103,29 @@ export const POST = async (req: Request) => {
     const validateDateAndTimeResult = validateDateAndTime(promotionPeriod);
 
     if (validateDateAndTimeResult !== true) {
-      return new NextResponse(validateDateAndTimeResult, { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: validateDateAndTimeResult }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // validate weekDays
     const validateDaysOfTheWeekResult = validateDaysOfTheWeek(weekDays);
 
     if (validateDaysOfTheWeekResult !== true) {
-      return new NextResponse(validateDaysOfTheWeekResult, { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: validateDaysOfTheWeekResult }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // validate promotionType
     const validatePromotionTypeResult = validatePromotionType(promotionType);
     if (validatePromotionTypeResult !== true) {
-      return new NextResponse(validatePromotionTypeResult, { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: validatePromotionTypeResult }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -118,9 +138,15 @@ export const POST = async (req: Request) => {
     }).lean();
 
     if (duplicatePromotion) {
-      return new NextResponse(`Promotion ${promotionName} already exists!`, {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({
+          message: `Promotion ${promotionName} already exists!`,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // create promotion object
@@ -139,8 +165,10 @@ export const POST = async (req: Request) => {
     await Promotion.create(newPromotion);
 
     return new NextResponse(
-      `Promotion ${promotionName} created successfully!`,
-      { status: 201 }
+      JSON.stringify({
+        message: `Promotion ${promotionName} created successfully!`,
+      }),
+      { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Create promotion failed!", error);

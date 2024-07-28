@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 // import models
 import Supplier from "@/app/lib/models/supplier";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc   Get supplier by business ID
 // @route  GET /supplier/business/:businessId
@@ -19,7 +19,10 @@ export const GET = async (
     const businessId = context.params.businessId;
     // validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -30,8 +33,9 @@ export const GET = async (
       .lean();
 
     return !suppliers.length
-      ? new NextResponse("No suppliers found!", {
+      ? new NextResponse(JSON.stringify({ message: "No suppliers found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(suppliers), {
           status: 200,
@@ -39,7 +43,7 @@ export const GET = async (
             "Content-Type": "application/json",
           },
         });
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError("Get suppliers by business id failed!", error);
   }
 };

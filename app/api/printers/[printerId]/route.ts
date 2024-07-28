@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import Printer from "@/app/lib/models/printer";
 import { IPrinter } from "@/app/lib/interface/IPrinter";
 import { checkPrinterConnection } from "../utils/checkPrinterConnection";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { printForValidation } from "../utils/printForValidation";
 
 // @desc    Get printer by ID
@@ -20,9 +20,13 @@ export const GET = async (
     const printerId = context.params.printerId;
     // check if printerId is valid
     if (!printerId || !Types.ObjectId.isValid(printerId)) {
-      return new NextResponse("Invalid printerId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid printerId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
     // connect before first call to DB
     await connectDB();
@@ -32,8 +36,9 @@ export const GET = async (
       .lean();
 
     return !printer
-      ? new NextResponse("Printer not found!", {
+      ? new NextResponse(JSON.stringify({ message: "Printer not found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(printer), {
           status: 200,
@@ -49,14 +54,21 @@ export const GET = async (
 // @desc    Update printer by ID
 // @route   PATCH /printers/:printerId
 // @access  Private
-export const PATCH = async (req: Request, context: { params: { printerId: Types.ObjectId } }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { printerId: Types.ObjectId } }
+) => {
   try {
     const printerId = context.params.printerId;
     // check if printerId is valid
     if (!printerId || !Types.ObjectId.isValid(printerId)) {
-      return new NextResponse("Invalid printerId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid printerId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const { printerName, ipAddress, port, printFor, location, description } =
@@ -66,8 +78,9 @@ export const PATCH = async (req: Request, context: { params: { printerId: Types.
     if (printFor) {
       const validPrintFor = printForValidation(printFor);
       if (validPrintFor !== true) {
-        return new NextResponse(validPrintFor, {
+        return new NextResponse(JSON.stringify({ message: validPrintFor }), {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -80,7 +93,7 @@ export const PATCH = async (req: Request, context: { params: { printerId: Types.
     if (!printer) {
       return new NextResponse(
         JSON.stringify({ message: "Printer not found!" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -91,7 +104,10 @@ export const PATCH = async (req: Request, context: { params: { printerId: Types.
       $or: [{ printerName }, { ipAddress }],
     });
     if (duplicatePrinter) {
-      return new NextResponse(`Printer already exists!`, { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: `Printer already exists!` }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // check printer connection
@@ -117,9 +133,12 @@ export const PATCH = async (req: Request, context: { params: { printerId: Types.
     });
 
     return new NextResponse(
-      `Printer ${updatedPrinter.printerName} updated successfully`,
+      JSON.stringify({
+        message: `Printer ${updatedPrinter.printerName} updated successfully`,
+      }),
       {
         status: 200,
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
@@ -138,9 +157,13 @@ export const DELETE = async (
     const printerId = context.params.printerId;
     // check if printerId is valid
     if (!printerId || !Types.ObjectId.isValid(printerId)) {
-      return new NextResponse("Invalid printerId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid printerId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -150,10 +173,16 @@ export const DELETE = async (
     const result = await Printer.deleteOne({ _id: printerId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("Printer not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Printer not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    return new NextResponse(`Printer ${printerId} deleted!`, { status: 200 });
+    return new NextResponse(
+      JSON.stringify({ message: `Printer ${printerId} deleted!` }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return handleApiError("Delete printer failed!", error);
   }

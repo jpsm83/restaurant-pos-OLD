@@ -5,13 +5,12 @@ import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // import functions
 import { createDailySalesReport } from "../dailySalesReports/utils/createDailySalesReport";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { createTable } from "./utils/createTable";
 
 // import models
 import Table from "@/app/lib/models/table";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { closeTable } from "./utils/closeTable";
 
 // @desc    Get all tables
 // @route   GET /tables
@@ -37,8 +36,9 @@ export const GET = async () => {
       .lean();
 
     return !tables?.length
-      ? new NextResponse("No tables found!", {
+      ? new NextResponse(JSON.stringify({ message: "No tables found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(tables), {
           status: 200,
@@ -77,8 +77,11 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        "TableReference, guest, status, openedBy, responsibleBy and business are required!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "TableReference, guest, status, openedBy, responsibleBy and business are required!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -110,8 +113,10 @@ export const POST = async (req: Request) => {
 
     if (duplicateTable) {
       return new NextResponse(
-        `Table ${tableReference} already exists and it is not closed!`,
-        { status: 409 }
+        JSON.stringify({
+          message: `Table ${tableReference} already exists and it is not closed!`,
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -127,9 +132,15 @@ export const POST = async (req: Request) => {
       dayReferenceNumber as number
     );
 
-    return new NextResponse(`Table ${tableReference} created successfully!`, {
-      status: 201,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Table ${tableReference} created successfully!`,
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Create table failed!", error);
   }
@@ -156,10 +167,6 @@ export const POST = async (req: Request) => {
 //     //   clientName,
 //     //   dayReferenceNumber
 //     // );
-
-//     // delete table
-//     // @ts-ignore
-//     const result = await closeTable(tableId, openedBy);
 
 //     return new NextResponse(JSON.stringify(result), {
 //       status: 201,

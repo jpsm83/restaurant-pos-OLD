@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 // import models
 import BusinessGood from "@/app/lib/models/businessGood";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get business goods by business ID
 // @route   GET /businessGoods/business/:businessId
@@ -19,9 +19,13 @@ export const GET = async (
     const businessId = context.params.businessId; // Corrected to use route parameter
 
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -32,7 +36,10 @@ export const GET = async (
       .lean();
 
     return !businessGoods.length
-      ? new NextResponse("No business goods found!", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "No business goods found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(businessGoods), {
           status: 200,
           headers: { "Content-Type": "application/json" },

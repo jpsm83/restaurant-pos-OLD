@@ -4,18 +4,22 @@ import { Types } from "mongoose";
 
 // import models
 import Table from "@/app/lib/models/table";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc   Get tables by bussiness ID
 // @route  GET /tables/business/:businessId
 // @access Private
-export const GET = async (req: Request, context: { params: { businessId: Types.ObjectId } }) => {
+export const GET = async (
+  req: Request,
+  context: { params: { businessId: Types.ObjectId } }
+) => {
   try {
     const businessId = context.params.businessId;
     // validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId",
-        { status: 400 }
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -38,10 +42,14 @@ export const GET = async (req: Request, context: { params: { businessId: Types.O
       .lean();
 
     return !tables.length
-      ? new NextResponse("No tables found!", {
+      ? new NextResponse(JSON.stringify({ message: "No tables found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
-      : new NextResponse(JSON.stringify(tables), { status: 200, headers: { "Content-Type": "application/json" } });
+      : new NextResponse(JSON.stringify(tables), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
   } catch (error) {
     return handleApiError("Fail to get all tables by business ID!", error);
   }

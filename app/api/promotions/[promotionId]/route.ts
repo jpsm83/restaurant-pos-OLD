@@ -7,7 +7,7 @@ import { Types } from "mongoose";
 import { IPromotion } from "@/app/lib/interface/IPromotion";
 import { validateDateAndTime } from "../utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "../utils/validateDaysOfTheWeek";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validatePromotionType } from "../utils/validatePromotionType";
 
 // when bill is printed, check if orders have a promotion base on their order time
@@ -24,9 +24,13 @@ export const GET = async (
     const promotionId = context.params.promotionId;
     // check if the promotionId is valid
     if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
-      return new NextResponse("Invalid promotionId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid promotionId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -37,8 +41,9 @@ export const GET = async (
       .lean();
 
     return !promotion
-      ? new NextResponse("Promotion  not found!", {
+      ? new NextResponse(JSON.stringify({ message: "Promotion  not found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(promotion), {
           status: 200,
@@ -60,9 +65,13 @@ export const PATCH = async (
     const promotionId = context.params.promotionId;
     // check if the promotionId is valid
     if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
-      return new NextResponse("Invalid promotionId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid promotionId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const {
@@ -79,15 +88,22 @@ export const PATCH = async (
     if (businessGoodsToApply) {
       if (!Array.isArray(businessGoodsToApply)) {
         return new NextResponse(
-          "BusinessGoodsToApply should be an array of business goods IDs!",
-          { status: 400 }
+          JSON.stringify({
+            message:
+              "BusinessGoodsToApply should be an array of business goods IDs!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
       businessGoodsToApply.forEach((businessGoodId) => {
         if (!Types.ObjectId.isValid(businessGoodId)) {
-          return new NextResponse("BusinessGoodsToApply IDs not valid!", {
-            status: 400,
-          });
+          return new NextResponse(
+            JSON.stringify({ message: "BusinessGoodsToApply IDs not valid!" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
         }
       });
     }
@@ -97,7 +113,10 @@ export const PATCH = async (
       const validateDateAndTimeResult = validateDateAndTime(promotionPeriod);
 
       if (validateDateAndTimeResult !== true) {
-        return new NextResponse(validateDateAndTimeResult, { status: 400 });
+        return new NextResponse(
+          JSON.stringify({ message: validateDateAndTimeResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
     }
 
@@ -106,7 +125,10 @@ export const PATCH = async (
       const validateDaysOfTheWeekResult = validateDaysOfTheWeek(weekDays);
 
       if (validateDaysOfTheWeekResult !== true) {
-        return new NextResponse(validateDaysOfTheWeekResult, { status: 400 });
+        return new NextResponse(
+          JSON.stringify({ message: validateDaysOfTheWeekResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
     }
 
@@ -114,7 +136,10 @@ export const PATCH = async (
     if (promotionType) {
       const validatePromotionTypeResult = validatePromotionType(promotionType);
       if (validatePromotionTypeResult !== true) {
-        return new NextResponse(validatePromotionTypeResult, { status: 400 });
+        return new NextResponse(
+          JSON.stringify({ message: validatePromotionTypeResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
     }
 
@@ -127,7 +152,10 @@ export const PATCH = async (
     ).lean();
 
     if (!promotion) {
-      return new NextResponse("Promotion not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Promotion not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // check duplicate promotion
@@ -138,9 +166,15 @@ export const PATCH = async (
     }).lean();
 
     if (duplicatePromotion) {
-      return new NextResponse(`Promotion ${promotionName} already exists!`, {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({
+          message: `Promotion ${promotionName} already exists!`,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // prepare update object
@@ -159,8 +193,10 @@ export const PATCH = async (
     });
 
     return new NextResponse(
-      `Promotion ${updatedPromotion.promotionName} updated successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `Promotion ${updatedPromotion.promotionName} updated successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Update promotion failed!", error);
@@ -178,9 +214,13 @@ export const DELETE = async (
     const promotionId = context.params.promotionId;
     // check if the promotionId is valid
     if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
-      return new NextResponse("Invalid promotionId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid promotionId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -190,12 +230,19 @@ export const DELETE = async (
     const result = await Promotion.deleteOne({ _id: promotionId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("Promotion not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Promotion not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    return new NextResponse(`Promotion ${promotionId} deleted!`, {
-      status: 200,
-    });
+    return new NextResponse(
+      JSON.stringify({ message: `Promotion ${promotionId} deleted!` }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Delete promotion failed!", error);
   }

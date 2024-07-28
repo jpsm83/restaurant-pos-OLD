@@ -5,12 +5,9 @@ import { IOrder } from "@/app/lib/interface/IOrder";
 // import models
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
-import { cancelOrderAndUpdateDynamicCount } from "./utils/cancelOrderAndUpdateDynamicCount";
 import { ITable } from "@/app/lib/interface/ITable";
-import { transferOrderBetweenTables } from "./utils/transferOrderBetweenTables";
-import { closeOrders } from "./utils/closeOrders";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -30,8 +27,9 @@ export const GET = async () => {
       .lean();
 
     return !orders.length
-      ? new NextResponse("No orders found!", {
+      ? new NextResponse(JSON.stringify({ message: "No orders found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(orders), {
           status: 200,
@@ -111,8 +109,11 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        "DayReferenceNumber, orderPrice, orderNetPrice, user, userRole, table, businessGoods, businessGoodsCategory and business are required fields!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "DayReferenceNumber, orderPrice, orderNetPrice, user, userRole, table, businessGoods, businessGoodsCategory and business are required fields!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -121,7 +122,10 @@ export const POST = async (req: Request) => {
       .select("status")
       .lean();
     if (!tableExists || tableExists.status === "Closed") {
-      return new NextResponse("Table not found or closed!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Table not found or closed!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // ***********************************************
@@ -169,8 +173,11 @@ export const POST = async (req: Request) => {
     // if promotion applyed, discountPercentage cannot be applyed
     if (promotionApplyed && discountPercentage) {
       return new NextResponse(
-        "You cannot apply discount to an order that has a promotion already!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "You cannot apply discount to an order that has a promotion already!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -194,52 +201,11 @@ export const POST = async (req: Request) => {
       );
     }
 
-    return new NextResponse("Order created successfully!", { status: 201 });
+    return new NextResponse(
+      JSON.stringify({ message: "Order created successfully!" }),
+      { status: 201, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return handleApiError("Create order failed!", error);
   }
 };
-
-// // @desc    Create new order
-// // @route   POST /orders
-// // @access  Private
-// export const POST = async (req: Request) => {
-//   try {
-//     const orderId = "669642706e92805872dbfb3e";
-//     const orderIds = ["66803987d9aaa4219f274618", "6693c0fd0693ec3374a899b5", "669642706e92805872dbfb3e"];
-//     const userId = "667412df373ad7f1a285534e";
-//     const businessId = "6673fed98c45d0a0ca5f34c1";
-//     const paymentMethod = [
-//       {
-//           "method": "Card",
-//           "card": "Visa",
-//           "paymentMethodAmount": 23,
-//       },
-//       {
-//           "method": "Cash",
-//           "paymentMethodAmount": 15,
-//       },
-//       {
-//           "method": "Crypto",
-//           "crypto": "Bitcoin",
-//           "paymentMethodAmount": 100,
-//       },
-//       {
-//           "method": "Other",
-//           "other": "Voucher",
-//           "paymentMethodAmount": 63,
-//       }
-//   ]
-
-//     // @ts-ignore
-//     // const result = await cancelOrderAndUpdateDynamicCount(orderId);
-//     // const result = await transferOrderBetweenTables(orderIds, "business1table3", 5, userId, "cliente one", businessId, 1720908000000);
-//     const result = await closeOrders(orderIds, paymentMethod);
-
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 200
-//     });
-//   } catch (error) {
-//     return handleApiError("Cancel order failed!", error);
-//   }
-// };

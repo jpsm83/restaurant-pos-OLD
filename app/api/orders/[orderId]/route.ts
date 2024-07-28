@@ -5,10 +5,8 @@ import { IOrder } from "@/app/lib/interface/IOrder";
 
 // import models
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/table";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { cancelOrderAndUpdateDynamicCount } from "../utils/cancelOrderAndUpdateDynamicCount";
-import { create } from "domain";
 
 // @desc    Get order by ID
 // @route   GET /orders/:orderId
@@ -21,8 +19,9 @@ export const GET = async (
     const orderId = context.params.orderId;
     // check if orderId is valid
     if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse("Invalid orderId!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid orderId!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -39,8 +38,9 @@ export const GET = async (
       .lean();
 
     return !order
-      ? new NextResponse("Order not found!", {
+      ? new NextResponse(JSON.stringify({ message: "Order not found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(order), {
           status: 200,
@@ -63,8 +63,9 @@ export const PATCH = async (
     const orderId = context.params.orderId;
     // check if orderId is valid
     if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse("Invalid orderId!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid orderId!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -87,8 +88,9 @@ export const PATCH = async (
       .lean();
 
     if (!order) {
-      return new NextResponse("Order not found!", {
+      return new NextResponse(JSON.stringify({ message: "Order not found!" }), {
         status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -108,17 +110,24 @@ export const PATCH = async (
       case "Invitation":
         if (!comments) {
           return new NextResponse(
-            "Comments are required for Void and Invitation billing status!",
-            { status: 400 }
+            JSON.stringify({
+              message:
+                "Comments are required for Void and Invitation billing status!",
+            }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
           );
         }
         updatedOrder.orderNetPrice = 0;
         break;
       case "Cancel":
         await cancelOrderAndUpdateDynamicCount(orderId);
-        return new NextResponse("Order cancel and deleted successfully!", {
-          status: 200,
-        });
+        return new NextResponse(
+          JSON.stringify({ message: "Order cancel and deleted successfully!" }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       default:
         break;
     }
@@ -129,20 +138,32 @@ export const PATCH = async (
     if (discountPercentage) {
       if (order.promotionApplyed) {
         return new NextResponse(
-          "You cannot add discount to an order that has a promotion already!",
-          { status: 400 }
+          JSON.stringify({
+            message:
+              "You cannot add discount to an order that has a promotion already!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
       if (!comments) {
-        return new NextResponse("Comments are required if promotion applied!", {
-          status: 400,
-        });
+        return new NextResponse(
+          JSON.stringify({
+            message: "Comments are required if promotion applied!",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
       if (discountPercentage > 100 || discountPercentage < 0) {
         return new NextResponse(
-          "Discount value has to be a number between 0 and 100!",
+          JSON.stringify({
+            message: "Discount value has to be a number between 0 and 100!",
+          }),
           {
             status: 400,
+            headers: { "Content-Type": "application/json" },
           }
         );
       }
@@ -150,13 +171,15 @@ export const PATCH = async (
     }
 
     // updatedOrder the order
-    await Order.findOneAndUpdate({ _id: orderId}, updatedOrder, {
+    await Order.findOneAndUpdate({ _id: orderId }, updatedOrder, {
       new: true,
     });
 
     return new NextResponse(
-      `Order from table ${order.table} updated successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `Order from table ${order.table} updated successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Update order failed!", error);
@@ -179,10 +202,16 @@ export const DELETE = async (
     const result = await cancelOrderAndUpdateDynamicCount(orderId);
 
     if (result !== "Cancel order and update dynamic count success") {
-      return new NextResponse(result, { status: 400 });
+      return new NextResponse(JSON.stringify({ message: result }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    return new NextResponse("Order deleted successfully!", { status: 200 });
+    return new NextResponse(
+      JSON.stringify({ message: "Order deleted successfully!" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return handleApiError("Delete order failed!", error);
   }

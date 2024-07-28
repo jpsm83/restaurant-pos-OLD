@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";
 import { ISchedule } from "@/app/lib/interface/ISchedule";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get schedule by ID
 // @route   GET /schedules/:scheduleId
@@ -18,9 +18,13 @@ export const GET = async (
     const scheduleId = context.params.scheduleId;
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return new NextResponse("Invalid schedule ID!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid schedule ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -31,8 +35,9 @@ export const GET = async (
       .lean();
 
     return !schedule
-      ? new NextResponse("No schedule found!", {
+      ? new NextResponse(JSON.stringify({ message: "No schedule found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(schedule), {
           status: 200,
@@ -54,9 +59,13 @@ export const PATCH = async (
     const scheduleId = context.params.scheduleId;
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return new NextResponse("Invalid schedule ID!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid schedule ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const { comments } = (await req.json()) as ISchedule;
@@ -70,9 +79,13 @@ export const PATCH = async (
       .lean();
 
     if (!schedule) {
-      return new NextResponse("Schedule not found!", {
-        status: 404,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Schedule not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // prepare update object
@@ -83,9 +96,13 @@ export const PATCH = async (
     await Schedule.findByIdAndUpdate(scheduleId, updatedSchedule, {
       new: true,
     });
-    return new NextResponse(`Schedule ${schedule.date} updated`, {
-      status: 200,
-    });
+    return new NextResponse(
+      JSON.stringify({ message: `Schedule ${schedule.date} updated` }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Update schedule failed!", error);
   }
@@ -102,9 +119,13 @@ export const DELETE = async (
     const scheduleId = context.params.scheduleId;
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return new NextResponse("Invalid schedule ID!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid schedule ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -114,10 +135,16 @@ export const DELETE = async (
     const result = await Schedule.deleteOne({ _id: scheduleId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("Schedule not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Schedule not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    return new NextResponse(`Schedule ${scheduleId} deleted`, { status: 200 });
+    return new NextResponse(
+      JSON.stringify({ message: `Schedule ${scheduleId} deleted` }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return handleApiError("Delete schedule failed!", error);
   }

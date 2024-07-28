@@ -4,8 +4,8 @@ import connectDB from "@/app/lib/db";
 // import models
 import Supplier from "@/app/lib/models/supplier";
 import { ISupplier } from "@/app/lib/interface/ISupplier";
-import { addressValidation } from "@/app/utils/addressValidation";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { addressValidation } from "@/app/lib/utils/addressValidation";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all suppliers
 // @route   GET /supplier
@@ -20,13 +20,16 @@ export const GET = async () => {
       .lean();
 
     return !suppliers.length
-      ? new NextResponse("No suppliers found!", {
+      ? new NextResponse(JSON.stringify({ message: "No suppliers found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
-      : new NextResponse(JSON.stringify(suppliers), { status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        }, });
+      : new NextResponse(JSON.stringify(suppliers), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
   } catch (error) {
     return handleApiError("Get all suppliers failed!", error);
   }
@@ -49,7 +52,7 @@ export const POST = async (req: Request) => {
       business,
       address,
       contactPerson,
-    } = await req.json() as ISupplier;
+    } = (await req.json()) as ISupplier;
 
     // check required fields
     if (
@@ -61,22 +64,27 @@ export const POST = async (req: Request) => {
       currentlyInUse === undefined ||
       !business
     ) {
-      return new NextResponse("TradeName, legalName, email, phoneNumber, taxNumber, currentlyInUse and business are required!",
-        { status: 400 }
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "TradeName, legalName, email, phoneNumber, taxNumber, currentlyInUse and business are required!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
-    
+
     // validate address fields
     // check address validation
     if (address) {
       const validAddress = addressValidation(address);
       if (validAddress !== true) {
-        return new NextResponse(validAddress, {
+        return new NextResponse(JSON.stringify({ message: validAddress }), {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
-    
+
     // connect before first call to DB
     await connectDB();
 
@@ -87,8 +95,11 @@ export const POST = async (req: Request) => {
     });
 
     if (duplicateSupplier) {
-      return new NextResponse(`Supplier ${legalName}, ${email} or ${taxNumber} already exists!`,
-        { status: 409 }
+      return new NextResponse(
+        JSON.stringify({
+          message: `Supplier ${legalName}, ${email} or ${taxNumber} already exists!`,
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -109,8 +120,11 @@ export const POST = async (req: Request) => {
     await Supplier.create(newSupplier);
 
     // confirm supplier was created
-    return new NextResponse(`Supplier ${legalName} created successfully!`,
-      { status: 201 }
+    return new NextResponse(
+      JSON.stringify({
+        message: `Supplier ${legalName} created successfully!`,
+      }),
+      { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Create supplier failed!", error);

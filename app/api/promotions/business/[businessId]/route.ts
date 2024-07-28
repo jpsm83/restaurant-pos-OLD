@@ -4,7 +4,7 @@ import connectDB from "@/app/lib/db";
 // imported models
 import Promotion from "@/app/lib/models/promotion";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
@@ -22,9 +22,13 @@ export const GET = async (
     const businessId = context.params.businessId;
     // Validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // date and time will como from the front as ex: "2023-04-01T15:00:00", you can create a Date object from it with new Date(startDate). This will create a Date object representing midnight on the given date in the LOCAL TIME ZONE OF THE SERVER.
@@ -43,10 +47,16 @@ export const GET = async (
     } = { business: businessId };
 
     if (startDate && endDate) {
-      if(startDate > endDate){
-        return new NextResponse("Invalid date range, start date must be before end date!", {
-          status: 400,
-        });
+      if (startDate > endDate) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Invalid date range, start date must be before end date!",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
       query["promotionPeriod.start"] = { $gte: new Date(startDate) };
       query["promotionPeriod.end"] = { $lte: new Date(endDate) };
@@ -60,8 +70,9 @@ export const GET = async (
       .lean();
 
     return !promotion.length
-      ? new NextResponse("No promotion found!", {
+      ? new NextResponse(JSON.stringify({ message: "No promotion found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(promotion), {
           status: 200,

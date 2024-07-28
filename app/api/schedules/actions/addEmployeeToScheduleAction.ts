@@ -4,16 +4,28 @@ import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
 import User from "@/app/lib/models/user";
-import { employeesValidation } from "./employeesValidation";
+import { employeesValidation } from "../utils/employeesValidation";
+import { NextResponse } from "next/server";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
-export const addEmployeeToSchedule = async (
-  scheduleId: Types.ObjectId,
-  employeeSchedule: IEmployee
-) => {
+// @desc    Create new schedules
+// @route   POST /schedules/actions
+// @access  Private
+export const POST = async (req: Request) => {
   try {
+    const { scheduleId, employeeSchedule } = (await req.json()) as {
+      scheduleId: Types.ObjectId;
+      employeeSchedule: IEmployee;
+    };
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return "Invalid schedule Id!";
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid schedule Id!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // validate employee object
@@ -33,9 +45,12 @@ export const addEmployeeToSchedule = async (
       .lean();
 
     if (!schedule) {
-      return "Schedule not found!";
+      return new NextResponse(
+        JSON.stringify({ message: "Schedule not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
-    
+
     const { userId, role, vacation } = employeeSchedule;
     const startTime = new Date(employeeSchedule.timeRange.startTime);
     const endTime = new Date(employeeSchedule.timeRange.endTime);
@@ -121,8 +136,8 @@ export const addEmployeeToSchedule = async (
     };
 
     let countsOfUserId = 0;
-    schedule.employees.forEach(employee => {
-      if(employee.userId == userId) {
+    schedule.employees.forEach((employee) => {
+      if (employee.userId == userId) {
         countsOfUserId += 1;
       }
     });
@@ -138,8 +153,11 @@ export const addEmployeeToSchedule = async (
       },
       { new: true, useFindAndModify: false }
     );
-    return "Employee added to schedule!";
+    return new NextResponse(
+      JSON.stringify({ message: "Employee added to schedule!" }),
+      { status: 201, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
-    return "Adding employee to schedule failed! " + error;
+    return handleApiError("Adding employee to schedule failed!", error);
   }
 };

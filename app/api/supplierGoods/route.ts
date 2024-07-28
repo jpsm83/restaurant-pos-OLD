@@ -4,7 +4,7 @@ import connectDB from "@/app/lib/db";
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods
@@ -19,7 +19,10 @@ export const GET = async () => {
       .lean();
 
     return !supplierGoods.length
-      ? new NextResponse("No supplier goods found!!", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "No supplier goods found!!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(supplierGoods), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -67,8 +70,11 @@ export const POST = async (req: Request) => {
       !business
     ) {
       return new NextResponse(
-        "Name, keyword, category, subCategory, currentlyInUse, supplier and business are required!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "Name, keyword, category, subCategory, currentlyInUse, supplier and business are required!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -82,9 +88,15 @@ export const POST = async (req: Request) => {
     });
 
     if (duplicateSupplierGood) {
-      return new NextResponse(`${name} already exists on supplier goods!`, {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({
+          message: `${name} already exists on supplier goods!`,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Create a supplier good object with required fields
@@ -169,9 +181,15 @@ export const POST = async (req: Request) => {
     await SupplierGood.create(supplierGoodObj);
 
     // confirm supplier good was created
-    return new NextResponse(`Supplier good ${name} created successfully!`, {
-      status: 201,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Supplier good ${name} created successfully!`,
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Create supplier good failed!", error);
   }

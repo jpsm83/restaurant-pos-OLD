@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 // import models
 import Table from "@/app/lib/models/table";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc   Get tables by user ID
 // @route  GET /tables/user/:userId
@@ -17,8 +17,9 @@ export const GET = async (
     const userId = context.params.userId;
     // validate userId
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid userId", {
+      return new NextResponse(JSON.stringify({ message: "Invalid userId" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -40,8 +41,9 @@ export const GET = async (
       .lean();
 
     return !tables.length
-      ? new NextResponse("No tables found!", {
+      ? new NextResponse(JSON.stringify({ message: "No tables found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(tables), {
           status: 200,

@@ -2,23 +2,46 @@ import { IOrder } from "@/app/lib/interface/IOrder";
 import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
-import mongoose, { Types } from "mongoose";
+import { Types } from "mongoose";
 import { createTable } from "../../tables/utils/createTable";
+import { NextResponse } from "next/server";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
-export const transferOrderBetweenTables = async (
-  ordersArray: [Types.ObjectId],
-  tableReference: string,
-  guests: number,
-  user: Types.ObjectId,
-  clientName: string | undefined | null,
-  business: Types.ObjectId,
-  dayReferenceNumber: number
-) => {
-  // validate array of orders IDs
-  if (Array.isArray(ordersArray) && ordersArray.length > 0) {
+// @desc    Create new orders
+// @route   POST /orders/actions
+// @access  Private
+export const POST = async (req: Request) => {
+  try {
+    const {
+      ordersArray,
+      tableReference,
+      guests,
+      user,
+      clientName,
+      business,
+      dayReferenceNumber,
+    } = (await req.json()) as {
+      ordersArray: Types.ObjectId[];
+      tableReference: string;
+      guests: number;
+      user: Types.ObjectId;
+      clientName: string | undefined | null;
+      business: Types.ObjectId;
+      dayReferenceNumber: number;
+    };
+    // validate array of orders IDs
+    if (!Array.isArray(ordersArray) || ordersArray.length === 0) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid array of orders!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
     for (let order of ordersArray) {
       if (!Types.ObjectId.isValid(order)) {
-        return "Invalid order ID!";
+        new NextResponse(JSON.stringify({ message: "Invalid order ID!" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
       }
     }
 
@@ -54,7 +77,10 @@ export const transferOrderBetweenTables = async (
         dayReferenceNumber
       );
       if (!newTable) {
-        return "Table creation for transfer failed!";
+        return new NextResponse(
+          JSON.stringify({ message: "Table creation for transfer failed!" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
       } else {
         tableToTransferId = newTable._id;
       }
@@ -84,8 +110,11 @@ export const transferOrderBetweenTables = async (
       { new: true }
     );
 
-    return "Orders transferred successfully!";
-  } else {
-    return "Invalid array of orders!";
+    return new NextResponse(
+      JSON.stringify({ message: "Orders transferred successfully!" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    return handleApiError("Transfer orders between tables failed!", error);
   }
 };

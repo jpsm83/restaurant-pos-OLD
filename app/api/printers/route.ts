@@ -6,7 +6,7 @@ import Printer from "@/app/lib/models/printer";
 import { IPrinter } from "@/app/lib/interface/IPrinter";
 import { printForValidation } from "./utils/printForValidation";
 import { checkPrinterConnection } from "./utils/checkPrinterConnection";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all printers
 // @route   GET /printers
@@ -21,8 +21,9 @@ export const GET = async () => {
       .lean();
 
     return !printers.length
-      ? new NextResponse("No printers found!", {
+      ? new NextResponse(JSON.stringify({ message: "No printers found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(printers), {
           status: 200,
@@ -53,8 +54,11 @@ export const POST = async (req: Request) => {
     // check required fields
     if (!printerName || !ipAddress || !port || !business) {
       return new NextResponse(
-        "printerName, ipAddress, port and business are required fields!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "printerName, ipAddress, port and business are required fields!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -62,8 +66,9 @@ export const POST = async (req: Request) => {
     if (printFor) {
       const validPrintFor = printForValidation(printFor);
       if (validPrintFor !== true) {
-        return new NextResponse(validPrintFor, {
+        return new NextResponse(JSON.stringify({ message: validPrintFor }), {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -79,8 +84,10 @@ export const POST = async (req: Request) => {
 
     if (duplicatePrinter) {
       return new NextResponse(
-        `Printer already exists with same name or ip address!`,
-        { status: 400 }
+        JSON.stringify({
+          message: `Printer already exists with same name or ip address!`,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -106,9 +113,15 @@ export const POST = async (req: Request) => {
     await Printer.create(newPrinter);
 
     // confirm printer was created
-    return new NextResponse(`Printer ${printerName} created successfully`, {
-      status: 201,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Printer ${printerName} created successfully`,
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Create printer failed!", error);
   }

@@ -5,12 +5,10 @@ import { ITable } from "@/app/lib/interface/ITable";
 
 // import functions
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import models
-import Business from "@/app/lib/models/business";
 import Table from "@/app/lib/models/table";
-import Order from "@/app/lib/models/order";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // @desc    Get tables by ID
@@ -24,8 +22,9 @@ export const GET = async (
     const tableId = context.params.tableId;
     // validate tableId
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse("Invalid tableId!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid tableId!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -48,8 +47,9 @@ export const GET = async (
       .lean();
 
     return !tables
-      ? new NextResponse("Table not found!", {
+      ? new NextResponse(JSON.stringify({ message: "Table not found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(tables), {
           status: 200,
@@ -71,14 +71,24 @@ export const PATCH = async (
     const tableId = context.params.tableId;
     // validate tableId
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse("Invalid tableId!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid tableId!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so user can see the total price, net price, net paid and tips in real time
-    const { guests, status, responsibleBy, clientName, tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips, closedBy } =
-      (await req.json()) as ITable;
+    const {
+      guests,
+      status,
+      responsibleBy,
+      clientName,
+      tableTotalPrice,
+      tableTotalNetPrice,
+      tableTotalNetPaid,
+      tableTotalTips,
+      closedBy,
+    } = (await req.json()) as ITable;
 
     // connect before first call to DB
     await connectDB();
@@ -86,8 +96,9 @@ export const PATCH = async (
     // check if table exists
     const table: ITable | null = await Table.findById(tableId).lean();
     if (!table) {
-      return new NextResponse("Table not found!", {
+      return new NextResponse(JSON.stringify({ message: "Table not found!" }), {
         status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -106,7 +117,7 @@ export const PATCH = async (
     // The order controller would handle the creation of orders and updating the relevant table's order array. The table controller would then only be responsible for reading and managing table data, not order data. This separation of concerns makes the code easier to maintain and understand.
 
     // function closeOrders will automaticaly close the table once all OPEN orders are closed
-    
+
     // if table is transferred to another user, and that is the first table from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
     if (responsibleBy && responsibleBy !== table.openedBy) {
       // check if user exists in the dailySalesReport
@@ -128,9 +139,15 @@ export const PATCH = async (
       (!table.orders || table.orders.length === 0)
     ) {
       await Table.deleteOne({ _id: tableId });
-      return new NextResponse("Occupied table with no orders been deleted!", {
-        status: 200,
-      });
+      return new NextResponse(
+        JSON.stringify({
+          message: "Occupied table with no orders been deleted!",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // save the updated table
@@ -139,8 +156,10 @@ export const PATCH = async (
     });
 
     return new NextResponse(
-      `Table ${table.tableReference} updated successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `Table ${table.tableReference} updated successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Update table failed!", error);
@@ -161,8 +180,9 @@ export const DELETE = async (
     const tableId = context.params.tableId;
     // validate tableId
     if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse("Invalid tableId", {
+      return new NextResponse(JSON.stringify({ message: "Invalid tableId" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -172,24 +192,31 @@ export const DELETE = async (
     const table: ITable | null = await Table.findById(tableId).lean();
 
     if (!table) {
-      return new NextResponse("Table not found!", {
+      return new NextResponse(JSON.stringify({ message: "Table not found!" }), {
         status: 404,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
     // do not allow delete if table has orders
     if ((table?.orders ?? []).length > 0) {
-      return new NextResponse("Cannot delete TABLE with orders!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Cannot delete TABLE with orders!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // delete the table
     await Table.deleteOne({ _id: tableId });
 
     return new NextResponse(
-      `Table ${table.tableReference} deleted successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `Table ${table.tableReference} deleted successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Fail to delete table", error);

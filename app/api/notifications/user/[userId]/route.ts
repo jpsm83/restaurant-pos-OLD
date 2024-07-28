@@ -3,9 +3,8 @@ import { NextResponse } from "next/server";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all notifications by user ID
 // @route   GET /notifications/user/:userId
@@ -20,9 +19,13 @@ export const GET = async (
     const userId = context.params.userId;
 
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid business ID!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid business ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -31,9 +34,12 @@ export const GET = async (
     const notifications = await Notification.find({
       recipients: { $in: userId },
     });
-    
+
     return !notifications.length
-      ? new NextResponse("No notifications found!", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "No notifications found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(notifications), {
           status: 200,
           headers: {

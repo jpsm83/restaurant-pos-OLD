@@ -1,34 +1,49 @@
 import { Types } from "mongoose";
-import { validatePaymentMethodArray } from "./validatePaymentMethodArray";
+import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
 import connectDB from "@/app/lib/db";
 import Order from "@/app/lib/models/order";
-import { createPaymentMethodObject } from "./createPaymentMethodObject";
-import { updateMultipleOrders } from "./updateMultipleOrders";
+import { createPaymentMethodObject } from "../utils/createPaymentMethodObject";
+import { updateMultipleOrders } from "../utils/updateMultipleOrders";
 import Table from "@/app/lib/models/table";
 import { IOrder, IPaymentMethod } from "@/app/lib/interface/IOrder";
 import { ITable } from "@/app/lib/interface/ITable";
+import { NextResponse } from "next/server";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
-export const closeOrders = async (
-  ordersIdArr: Types.ObjectId[],
-  paymentMethod: IPaymentMethod[]
-) => {
+// @desc    Create new orders
+// @route   POST /orders/actions
+// @access  Private
+export const POST = async (req: Request) => {
   try {
+    const { ordersIdArr, paymentMethod } = (await req.json()) as {
+      ordersIdArr: Types.ObjectId[];
+      paymentMethod: IPaymentMethod[];
+    };
     // Validate order IDs
     if (
       !Array.isArray(ordersIdArr) ||
       !ordersIdArr.every(Types.ObjectId.isValid)
     ) {
-      throw new Error("Invalid ordersIdArr!");
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid ordersIdArr!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     if (!Array.isArray(paymentMethod) || !paymentMethod) {
-      throw new Error("Invalid payment method array!");
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid payment method array!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Validate payment methods
     const validPaymentMethods = validatePaymentMethodArray(paymentMethod);
     if (typeof validPaymentMethods === "string") {
-      throw new Error(validPaymentMethods);
+      return new NextResponse(
+        JSON.stringify({ message: validPaymentMethods }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Connect to DB
@@ -43,7 +58,10 @@ export const closeOrders = async (
       .lean();
 
     if (orders && orders.length === 0) {
-      throw new Error("No open orders found!");
+      return new NextResponse(
+        JSON.stringify({ message: "No open orders found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const totalOrderNetPrice = orders
@@ -55,8 +73,12 @@ export const closeOrders = async (
     );
 
     if (totalPaid < totalOrderNetPrice) {
-      throw new Error(
-        "Total amount paid is lower than the total price of the orders!"
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "Total amount paid is lower than the total price of the orders!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -93,7 +115,12 @@ export const closeOrders = async (
         };
         if (order._id) {
           const updatedOrder = await updateMultipleOrders(order._id, update);
-          if (!updatedOrder) throw new Error("Order update failed!");
+          if (!updatedOrder) {
+            return new NextResponse(
+              JSON.stringify({ message: "Failed to update order!" }),
+              { status: 500, headers: { "Content-Type": "application/json" } }
+            );
+          }
         }
         firstOrder = false;
       }
@@ -110,7 +137,12 @@ export const closeOrders = async (
       const table: ITable | null = await Table.findById(tableId)
         .select("responsibleBy")
         .lean();
-      if (!table) throw new Error("Table not found!");
+      if (!table) {
+        return new NextResponse(
+          JSON.stringify({ message: "Table not found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        );
+      }
 
       await Table.findByIdAndUpdate(
         tableId,
@@ -123,8 +155,11 @@ export const closeOrders = async (
       );
     }
 
-    return "Orders updated successfully!";
+    return new NextResponse(
+      JSON.stringify({ message: "Orders updated successfully!" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
-    return "Close orders failed! " + error;
+    return handleApiError("Close orders failed!", error);
   }
 };

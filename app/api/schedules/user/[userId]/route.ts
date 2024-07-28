@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // imported models
 import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all schedules by user ID
 // @route   GET /schedules/user/:userId
@@ -19,8 +19,9 @@ export const GET = async (
     const userId = context.params.userId;
     // check if the user ID is valid
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid user ID!", {
+      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -32,8 +33,9 @@ export const GET = async (
       .lean();
 
     return !schedules.length
-      ? new NextResponse("No schedules found!", {
+      ? new NextResponse(JSON.stringify({ message: "No schedules found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(schedules), {
           status: 200,

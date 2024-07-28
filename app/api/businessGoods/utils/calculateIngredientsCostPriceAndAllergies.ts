@@ -4,7 +4,7 @@ import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import convert, { Unit } from "convert-units";
 
 // helper function to set ingredients
-export const calculateIngredientsCostPriceAndAllery = async (
+export const calculateIngredientsCostPriceAndAllergies = async (
   ingredients: IIngredients[]
 ) => {
   try {

@@ -2,28 +2,43 @@ import connectDB from "@/app/lib/db";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
+import { NextResponse } from "next/server";
 
-// delete employee from schedule
-export const deleteEmployeeFromSchedule = async (
-  scheduleId: Types.ObjectId,
-  userId: Types.ObjectId,
-  userScheduleId: Types.ObjectId
-) => {
+// @desc    Create new schedules
+// @route   POST /schedules/actions
+// @access  Private
+export const POST = async (req: Request) => {
+  // delete employee from schedule
   try {
+    const { scheduleId, userId, userScheduleId } = (await req.json()) as {
+      scheduleId: Types.ObjectId;
+      userId: Types.ObjectId;
+      userScheduleId: Types.ObjectId;
+    };
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
-      return "Invalid schedule Id!";
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid schedule Id!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // check if the user ID is valid
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return "Invalid user Id!";
+      return new NextResponse(JSON.stringify({ message: "Invalid user Id!" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // check if the userScheduleId is valid
     if (!userScheduleId || !Types.ObjectId.isValid(userScheduleId)) {
-      return "Invalid userScheduleId!";
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid userScheduleId!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -37,7 +52,10 @@ export const deleteEmployeeFromSchedule = async (
       .lean();
 
     if (!schedule) {
-      return "Schedule not found!";
+      return new NextResponse(
+        JSON.stringify({ message: "Schedule not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const employeeSchedule: IEmployee | null =
@@ -47,7 +65,10 @@ export const deleteEmployeeFromSchedule = async (
 
     // check if the employee is in the schedule
     if (!employeeSchedule) {
-      return "Employee not found in schedule!";
+      return new NextResponse(
+        JSON.stringify({ message: "Employee not found in schedule!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const weekNumber = schedule.weekNumber;
@@ -87,8 +108,8 @@ export const deleteEmployeeFromSchedule = async (
     }
 
     let countsOfUserId = 0;
-    schedule.employees.forEach(employee => {
-      if(employee.userId == userId) {
+    schedule.employees.forEach((employee) => {
+      if (employee.userId == userId) {
         countsOfUserId += 1;
       }
     });
@@ -99,7 +120,7 @@ export const deleteEmployeeFromSchedule = async (
       {
         $pull: { employees: { _id: userScheduleId } },
         $inc: {
-          totalEmployeesScheduled: - (countsOfUserId >= 2 ? 0 : 1),
+          totalEmployeesScheduled: -(countsOfUserId >= 2 ? 0 : 1),
           totalDayEmployeesCost: -(employeeSchedule?.employeeCost ?? 0),
         },
       },
@@ -114,8 +135,11 @@ export const deleteEmployeeFromSchedule = async (
         { new: true, useFindAndModify: false }
       );
     }
-    return "Employee deleted from schedule!";
+    return new NextResponse(
+      JSON.stringify({ message: "Employee deleted from schedule!" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
-    return "Delete employee from schedule failed! " + error;
+    return handleApiError("Delete employee from schedule failed!", error);
   }
 };

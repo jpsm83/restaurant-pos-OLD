@@ -6,8 +6,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 // imported models
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
-import { handleApiError } from "@/app/utils/handleApiError";
-import { removeUserFromNotification } from "./utils/removeUserFromNotification";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all notifications
 // @route   GET /notifications
@@ -22,14 +21,17 @@ export const GET = async () => {
       .lean();
 
     return !notifications.length
-      ? new NextResponse("No notifications found", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "No notifications found" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(notifications), {
           status: 200,
           headers: {
             "Content-Type": "application/json",
           },
         });
-  } catch (error: any) {
+  } catch (error) {
     return handleApiError("Get all notifications failed!", error);
   }
 };
@@ -40,33 +42,29 @@ export const GET = async () => {
 export const POST = async (req: Request) => {
   try {
     // recipients have to be an array of user IDs coming from the front end
-    const {
-      notificationType,
-      message,
-      recipients,
-      business,
-      sender,
-    } = (await req.json()) as INotification;
+    const { notificationType, message, recipients, business, sender } =
+      (await req.json()) as INotification;
 
     // check required fields
-    if (
-      !notificationType ||
-      !message ||
-      !recipients ||
-      !business
-    ) {
+    if (!notificationType || !message || !recipients || !business) {
       return new NextResponse(
-        "NotificationType, message, recipients and business are required!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "NotificationType, message, recipients and business are required!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // validate recipients
     if (!Array.isArray(recipients)) {
       return new NextResponse(
-        "Recipients must be an array of user IDs or empty!",
+        JSON.stringify({
+          message: "Recipients must be an array of user IDs or empty!",
+        }),
         {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         }
       );
     }
@@ -103,38 +101,32 @@ export const POST = async (req: Request) => {
       // check if the notification was added to the users
       if (!sendNotifications) {
         return new NextResponse(
-          "Notification could not be add on user but has been created!",
-          { status: 400 }
+          JSON.stringify({
+            message:
+              "Notification could not be add on user but has been created!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
       return new NextResponse(
-        `Notification message created and sent to users`,
+        JSON.stringify({
+          message: `Notification message created and sent to users`,
+        }),
         {
           status: 201,
+          headers: { "Content-Type": "application/json" },
         }
       );
     } else {
-      return new NextResponse("Notification could not be created!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Notification could not be created!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
   } catch (error) {
     return handleApiError("Create notification failed!", error);
   }
 };
-
-// export const POST = async (req: Request) => {
-//   try {
-//     const userId = "66741dbbdf254a9fd7e3af59";
-//     const notificationId = "6675475e3bfefbb6373c7158";
-
-//     // @ts-ignore
-//     const result = await removeUserFromNotification(userId, notificationId);
-
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 200,
-//     });
-//   } catch (error) {
-//     return handleApiError("Helper user function failed!", error);
-//   }
-// };

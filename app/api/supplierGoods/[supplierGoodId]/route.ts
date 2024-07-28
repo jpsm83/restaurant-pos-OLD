@@ -6,7 +6,7 @@ import SupplierGood from "@/app/lib/models/supplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
 import { Types } from "mongoose";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get supplier good by ID
 // @route   GET /supplierGoods/:supplierGoodId
@@ -19,7 +19,10 @@ export const GET = async (
     const supplierGoodId = context.params.supplierGoodId;
     // check if the supplier good is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse("Invalid supplierGoodId!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid supplierGoodId!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -30,7 +33,10 @@ export const GET = async (
       .lean();
 
     return !supplierGood
-      ? new NextResponse("Supplier good not found!", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "Supplier good not found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(supplierGood), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -51,7 +57,10 @@ export const PATCH = async (
     const supplierGoodId = context.params.supplierGoodId;
     // check if supplierGoodId is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse("Invalid supplierGoodId!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid supplierGoodId!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const {
@@ -83,7 +92,10 @@ export const PATCH = async (
       supplierGoodId
     ).lean();
     if (!supplierGood) {
-      return new NextResponse("Supplier good not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Supplier good not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // check for duplicates supplier good name
@@ -96,8 +108,10 @@ export const PATCH = async (
 
     if (duplicateSupplierGood) {
       return new NextResponse(
-        `Supplier good ${name} already exists on this supplier!`,
-        { status: 409 }
+        JSON.stringify({
+          message: `Supplier good ${name} already exists on this supplier!`,
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -194,9 +208,15 @@ export const PATCH = async (
       new: true,
     });
 
-    return new NextResponse(`Supplier good ${name} updated successfully!`, {
-      status: 200,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Supplier good ${name} updated successfully!`,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Update supplier good failed!", error);
   }
@@ -217,7 +237,10 @@ export const DELETE = async (
     const supplierGoodId = context.params.supplierGoodId;
     // check if the supplier good is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse("Invalid supplierGoodId!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid supplierGoodId!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -228,9 +251,11 @@ export const DELETE = async (
     ).lean();
 
     if (!supplierGood) {
-      return new NextResponse("Supplier good not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Supplier good not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
-
 
     // give it a warning on the front application
     // make user delete the supplier good from all business goods before deleting it
@@ -251,15 +276,20 @@ export const DELETE = async (
       )}. Please remove it from the business goods before deleting it!`;
 
     if (businessGoodsUsingSupplierGood.length) {
-      return new NextResponse(supplierGoodBeenUsedMessage, { status: 409 });
+      return new NextResponse(
+        JSON.stringify({ message: supplierGoodBeenUsedMessage }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // delete the supplier good
     await SupplierGood.deleteOne({ _id: supplierGoodId });
 
     return new NextResponse(
-      `Supplier good ${supplierGood.name} deleted successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `Supplier good ${supplierGood.name} deleted successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Delete supplier good failed!", error);

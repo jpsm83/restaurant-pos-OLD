@@ -7,7 +7,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get notification by ID
 // @route   GET /notifications/:notificationId
@@ -23,7 +23,10 @@ export const GET = async (
     const notificationId = context.params.notificationId;
     // check if the notificationId is valid
     if (!Types.ObjectId.isValid(notificationId)) {
-      return new NextResponse("Invalid notification ID", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const notification = await Notification.findById(notificationId)
@@ -31,7 +34,10 @@ export const GET = async (
       .lean();
 
     return !notification
-      ? new NextResponse("Notification not found", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "Notification not found" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(notification), {
           status: 200,
           headers: {
@@ -54,7 +60,10 @@ export const PATCH = async (
     const notificationId = context.params.notificationId;
     // check if the notificationId is valid
     if (!Types.ObjectId.isValid(notificationId)) {
-      return new NextResponse("Invalid notification ID!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const { notificationType, message, recipients, sender } =
@@ -71,7 +80,7 @@ export const PATCH = async (
     if (!notification) {
       return new NextResponse(
         JSON.stringify({ message: "Notification not found" }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -131,18 +140,31 @@ export const PATCH = async (
       // check if users were updated
       if (!updateUserNotifications) {
         return new NextResponse(
-          "Notification could not be updated on users but the notification has been updated!",
-          { status: 400 }
+          JSON.stringify({
+            message:
+              "Notification could not be updated on users but the notification has been updated!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
 
-      return new NextResponse(`${updateObj.message} notification updated`, {
-        status: 200,
-      });
+      return new NextResponse(
+        JSON.stringify({
+          message: `${updateObj.message} notification updated`,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     } else {
-      return new NextResponse("Notification could not be updated!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Notification could not be updated!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
   } catch (error) {
     return handleApiError("Update notification failed!", error);
@@ -160,7 +182,10 @@ export const DELETE = async (
     const notificationId = context.params.notificationId;
     // check if the notificationId is valid
     if (!Types.ObjectId.isValid(notificationId)) {
-      return new NextResponse("Invalid notification ID!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid notification ID!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -169,7 +194,10 @@ export const DELETE = async (
     // Fetch the notification
     const notification = await Notification.findById(notificationId);
     if (!notification) {
-      return new NextResponse("Notification not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Notification not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Remove the notification from each recipients user
@@ -179,11 +207,14 @@ export const DELETE = async (
       },
       { $pull: { notifications: { notification: notificationId } } }
     );
-    
+
     // Delete the notification
     await Notification.deleteOne({ _id: notificationId });
 
-    return new NextResponse("Notification deleted", { status: 200 });
+    return new NextResponse(
+      JSON.stringify({ message: "Notification deleted" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
     return handleApiError("Delete notification failed!", error);
   }

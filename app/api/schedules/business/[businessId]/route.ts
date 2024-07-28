@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 // imported models
 import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all schedules by business ID
 // @route   GET /schedules/business/:businessId
@@ -19,9 +19,13 @@ export const GET = async (
     const businessId = context.params.businessId;
     // check if the business ID is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid business ID!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid business ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -32,8 +36,9 @@ export const GET = async (
       .lean();
 
     return !schedules.length
-      ? new NextResponse("No schedules found!", {
+      ? new NextResponse(JSON.stringify({ message: "No schedules found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(schedules), {
           status: 200,

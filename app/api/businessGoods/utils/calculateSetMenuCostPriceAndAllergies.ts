@@ -2,7 +2,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import { Types, set } from "mongoose";
 
 // helper function to set setMenu
-export const calculateSetMenuCostPriceAndAllery = async (
+export const calculateSetMenuCostPriceAndAllergies = async (
   setMenu: Types.ObjectId[]
 ) => {
   try {

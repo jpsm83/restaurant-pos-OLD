@@ -7,10 +7,10 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import Promotion from "@/app/lib/models/promotion";
 import Order from "@/app/lib/models/order";
 import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validateIngredients } from "../utils/validateIngredients";
-import { calculateIngredientsCostPriceAndAllery } from "../utils/calculateIngredientsCostPriceAndAllery";
-import { calculateSetMenuCostPriceAndAllery } from "../utils/calculateSetMenuCostPriceAndAllery";
+import { calculateIngredientsCostPriceAndAllergies } from "../utils/calculateIngredientsCostPriceAndAllergies";
+import { calculateSetMenuCostPriceAndAllergies } from "../utils/calculateSetMenuCostPriceAndAllergies";
 
 // @desc    Get business good by ID
 // @route   GET /businessGoods/:businessGoodId
@@ -23,9 +23,13 @@ export const GET = async (
     const businessGoodId = context.params.businessGoodId;
 
     if (!businessGoodId || !Types.ObjectId.isValid(businessGoodId)) {
-      return new NextResponse("Invalid businessGoodId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessGoodId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -36,7 +40,10 @@ export const GET = async (
       .lean();
 
     return !businessGood
-      ? new NextResponse("No business good found!", { status: 404 })
+      ? new NextResponse(
+          JSON.stringify({ message: "No business good found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(businessGood), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -72,16 +79,22 @@ export const PATCH = async (
 
     // check if businessGoodId is valid
     if (!businessGoodId || !Types.ObjectId.isValid(businessGoodId)) {
-      return new NextResponse("Invalid businessGoodId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessGoodId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // one of the two fields should be present (ingredients or setMenu)
     if (ingredients && setMenu) {
       return new NextResponse(
-        "Only one of ingredients or setMenu can be asigned!",
-        { status: 400 }
+        JSON.stringify({
+          message: "Only one of ingredients or setMenu can be asigned!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -94,7 +107,10 @@ export const PATCH = async (
     ).lean()) as IBusinessGood;
 
     if (!businessGood) {
-      return new NextResponse("Business good not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Business good not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // check for duplicate names
@@ -105,9 +121,13 @@ export const PATCH = async (
     });
 
     if (duplicateBusinessGood) {
-      return new NextResponse(`Business good ${name} already exists!`, {
-        status: 409,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: `Business good ${name} already exists!` }),
+        {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // prepare the update object
@@ -152,17 +172,26 @@ export const PATCH = async (
     if (ingredients) {
       const validateIngredientsResult = validateIngredients(ingredients);
       if (validateIngredientsResult !== true) {
-        return new NextResponse(validateIngredientsResult, { status: 400 });
+        return new NextResponse(
+          JSON.stringify({ message: validateIngredientsResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       }
-      const calculateIngredientsCostPriceAndAlleryResult =
-        await calculateIngredientsCostPriceAndAllery(ingredients);
-      if (typeof calculateIngredientsCostPriceAndAlleryResult !== "object") {
-        return new NextResponse(calculateIngredientsCostPriceAndAlleryResult, {
-          status: 400,
-        });
+      const calculateIngredientsCostPriceAndAllergiesResult =
+        await calculateIngredientsCostPriceAndAllergies(ingredients);
+      if (typeof calculateIngredientsCostPriceAndAllergiesResult !== "object") {
+        return new NextResponse(
+          JSON.stringify({
+            message: calculateIngredientsCostPriceAndAllergiesResult,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       } else {
         updatedBusinessGood.ingredients =
-          calculateIngredientsCostPriceAndAlleryResult.map((ing) => {
+          calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
               ingredient: ing.ingredient,
               measurementUnit: ing.measurementUnit,
@@ -171,12 +200,12 @@ export const PATCH = async (
             };
           });
         updatedBusinessGood.costPrice =
-          calculateIngredientsCostPriceAndAlleryResult.reduce(
+          calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc, curr) => acc + curr.costOfRequiredQuantity,
             0
           );
         const reducedAllergens =
-          calculateIngredientsCostPriceAndAlleryResult.reduce(
+          calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc: string[], curr) => {
               if (curr.allergens) {
                 curr.allergens.forEach((allergen) => {
@@ -200,20 +229,26 @@ export const PATCH = async (
 
     // calculate the cost price and allergens for the setMenu if they exist
     if (setMenu) {
-      const calculateSetMenuCostPriceAndAlleryResult =
-        await calculateSetMenuCostPriceAndAllery(setMenu);
-      if (typeof calculateSetMenuCostPriceAndAlleryResult !== "object") {
-        return new NextResponse(calculateSetMenuCostPriceAndAlleryResult, {
-          status: 400,
-        });
+      const calculateSetMenuCostPriceAndAllergiesResult =
+        await calculateSetMenuCostPriceAndAllergies(setMenu);
+      if (typeof calculateSetMenuCostPriceAndAllergiesResult !== "object") {
+        return new NextResponse(
+          JSON.stringify({
+            message: calculateSetMenuCostPriceAndAllergiesResult,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       } else {
         updatedBusinessGood.setMenu = setMenu;
         updatedBusinessGood.costPrice =
-          calculateSetMenuCostPriceAndAlleryResult.costPrice;
+          calculateSetMenuCostPriceAndAllergiesResult.costPrice;
         updatedBusinessGood.allergens =
-          calculateSetMenuCostPriceAndAlleryResult.allergens &&
-          calculateSetMenuCostPriceAndAlleryResult.allergens.length > 0
-            ? calculateSetMenuCostPriceAndAlleryResult.allergens
+          calculateSetMenuCostPriceAndAllergiesResult.allergens &&
+          calculateSetMenuCostPriceAndAllergiesResult.allergens.length > 0
+            ? calculateSetMenuCostPriceAndAllergiesResult.allergens
             : [];
       }
       // @ts-ignore
@@ -228,9 +263,12 @@ export const PATCH = async (
     );
 
     return new NextResponse(
-      `Business good ${updatedBusinessGood.name} updated successfully!`,
+      JSON.stringify({
+        message: `Business good ${updatedBusinessGood.name} updated successfully!`,
+      }),
       {
         status: 200,
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
@@ -253,9 +291,13 @@ export const DELETE = async (
 
     // check if businessGoodId is valid
     if (!businessGoodId || !Types.ObjectId.isValid(businessGoodId)) {
-      return new NextResponse("Invalid businessGoodId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessGoodId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -268,8 +310,10 @@ export const DELETE = async (
     }).lean();
     if (businessGoodInOrders.length > 0) {
       return new NextResponse(
-        "Cannot delete Business good because it is in some orders!",
-        { status: 400 }
+        JSON.stringify({
+          message: "Cannot delete Business good because it is in some orders!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -279,8 +323,11 @@ export const DELETE = async (
     }).lean();
     if (businessGoodInSetMenu.length > 0) {
       return new NextResponse(
-        "Cannot delete Business good because it is in some set menu!",
-        { status: 400 }
+        JSON.stringify({
+          message:
+            "Cannot delete Business good because it is in some set menu!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -288,7 +335,10 @@ export const DELETE = async (
     const result = await BusinessGood.deleteOne({ _id: businessGoodId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("Business good not found!", { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ message: "Business good not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // delete the business good id reference from promotions
@@ -298,8 +348,10 @@ export const DELETE = async (
     );
 
     return new NextResponse(
-      `Business good ${businessGoodId} deleted successfully!`,
-      { status: 200 }
+      JSON.stringify({
+        message: `Business good ${businessGoodId} deleted successfully!`,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Delete business good failed!", error);

@@ -4,7 +4,7 @@ import connectDB from "@/app/lib/db";
 // import models
 import Inventory from "@/app/lib/models/inventory";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get inventories by business ID and range of dates
 // @route   GET /inventories/business/:businessId?startDate=<date>&endDate=<date>
@@ -19,7 +19,7 @@ export const GET = async (
     if (!Types.ObjectId.isValid(businessId)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid inventory ID" }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -52,6 +52,7 @@ export const GET = async (
           "Invalid date range, start date must be before end date!",
           {
             status: 400,
+            headers: { "Content-Type": "application/json" },
           }
         );
       }
@@ -70,14 +71,10 @@ export const GET = async (
       .select("title countedDate doneBy comments")
       .lean();
 
-    return !inventories.length
-      ? new NextResponse(JSON.stringify({ message: "No inventories found" }), {
-          status: 404,
-        })
-      : new NextResponse(JSON.stringify(inventories), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+    return new NextResponse(JSON.stringify(inventories), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     return handleApiError("Get inventories by business id failed!", error);
   }

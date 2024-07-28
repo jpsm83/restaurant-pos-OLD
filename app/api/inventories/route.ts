@@ -6,9 +6,7 @@ import connectDB from "@/app/lib/db";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
-import { handleApiError } from "@/app/utils/handleApiError";
-import { updateSupplierGoodInventory } from "./utils/updateSupplierGoodInventory";
-import { deleteSupplierGoodFromInventory } from "./utils/deleteSupplierGoodFromInventory";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get all inventories
 // @route   GET /inventories
@@ -30,6 +28,7 @@ export const GET = async () => {
     return !inventories.length
       ? new NextResponse(JSON.stringify({ message: "No inventories found" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(inventories), {
           status: 200,
@@ -64,7 +63,7 @@ export const POST = async (req: Request) => {
         JSON.stringify({
           message: "Title, business and supplierGoodsIdsArr are required!",
         }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -72,7 +71,7 @@ export const POST = async (req: Request) => {
     if (!Types.ObjectId.isValid(business)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid business ID" }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -87,7 +86,7 @@ export const POST = async (req: Request) => {
           message:
             "SupplierGoodsIdsArr must be an array of valid supplier goods IDs!",
         }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -122,7 +121,7 @@ export const POST = async (req: Request) => {
           message:
             "One or more supplier goods are already in use in another pending inventory.",
         }),
-        { status: 400 }
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -154,37 +153,9 @@ export const POST = async (req: Request) => {
       JSON.stringify({
         message: "Inventory created successfully",
       }),
-      { status: 201 }
+      { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Create inventory failed!", error);
   }
 };
-
-// export const POST = async (req: Request) => {
-//   try {
-//     const inventory = "669cc76e9876c117994d0a4c";
-//     const supplierGood = "667bfac8d28a7ee19d9be443";
-//     const currentCountQuantity = 50;
-
-//     // const result = await updateSupplierGoodInventory(
-//     //   // @ts-ignore
-//     //   inventory,
-//     //   supplierGood,
-//     //   currentCountQuantity
-//     // );
-
-//     const result = await deleteSupplierGoodFromInventory(
-//       // @ts-ignore
-//       supplierGood,
-//       inventory,
-//     );
-
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 200,
-//       headers: { "Content-Type": "application/json" },
-//     });
-//   } catch (error) {
-//     return handleApiError("Error: ", error);
-//   }
-// };

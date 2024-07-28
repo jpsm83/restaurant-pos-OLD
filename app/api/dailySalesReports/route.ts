@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 // import models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addUserToDailySalesReport } from "./utils/addUserToDailySalesReport";
 import { createDailySalesReport } from "./utils/createDailySalesReport";
 import { updateUserDailySalesReportGeneric } from "./utils/updateUserDailySalesReportGeneric";

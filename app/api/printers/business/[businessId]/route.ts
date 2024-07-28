@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get printers by business ID
 // @route   GET /printers/business/:businessId
@@ -19,9 +19,13 @@ export const GET = async (
     const businessId = context.params.businessId;
     // check if businessId is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -33,8 +37,9 @@ export const GET = async (
       .lean();
 
     return !printers.length
-      ? new NextResponse("No printers found!", {
+      ? new NextResponse(JSON.stringify({ message: "No printers found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(printers), {
           status: 200,

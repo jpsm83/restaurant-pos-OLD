@@ -5,12 +5,11 @@ import { Types } from "mongoose";
 import { IBusiness } from "@/app/lib/interface/IBusiness";
 
 // import functions
-import { handleApiError } from "@/app/utils/handleApiError";
-import { addressValidation } from "@/app/utils/addressValidation";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { addressValidation } from "@/app/lib/utils/addressValidation";
 
 // imported models
 import Business from "@/app/lib/models/business";
-import BusinessGood from "@/app/lib/models/businessGood";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import Inventory from "@/app/lib/models/inventory";
 import Notification from "@/app/lib/models/notification";
@@ -19,7 +18,6 @@ import Printer from "@/app/lib/models/printer";
 import Promotion from "@/app/lib/models/promotion";
 import Schedule from "@/app/lib/models/schedule";
 import Supplier from "@/app/lib/models/supplier";
-import SupplierGood from "@/app/lib/models/supplierGood";
 import Table from "@/app/lib/models/table";
 import User from "@/app/lib/models/user";
 
@@ -38,9 +36,13 @@ export const GET = async (
     const businessId = context.params.businessId;
 
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -50,14 +52,13 @@ export const GET = async (
       .select("-password")
       .lean();
     return !business
-      ? new NextResponse("No business found!", {
+      ? new NextResponse(JSON.stringify({ message: "No business found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(business), {
           status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
   } catch (error) {
     return handleApiError("Get business by its id failed!", error);
@@ -77,9 +78,13 @@ export const PATCH = async (
     const businessId = context.params.businessId;
 
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     const {
@@ -94,11 +99,14 @@ export const PATCH = async (
       address,
       contactPerson,
       businessTables,
-    } = await req.json() as IBusiness;
+    } = (await req.json()) as IBusiness;
 
     // check email format
     if (email && !emailRegex.test(email)) {
-      return new NextResponse("Invalid email format!", { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid email format!" }),
+        { status: 400 }
+      );
     }
 
     // connect before first call to DB
@@ -110,9 +118,13 @@ export const PATCH = async (
     ).lean();
 
     if (!business) {
-      return new NextResponse("Business not found!", {
-        status: 404,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Business not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // check for duplicate legalName, email or taxNumber
@@ -123,7 +135,9 @@ export const PATCH = async (
 
     if (duplicateBusiness) {
       return new NextResponse(
-        `Business legalname, email or taxNumber already exists!`,
+        JSON.stringify({
+          message: `Business legalname, email or taxNumber already exists!`,
+        }),
         { status: 409 }
       );
     }
@@ -149,6 +163,7 @@ export const PATCH = async (
       if (validAddress !== true) {
         return new NextResponse(validAddress, {
           status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -173,9 +188,15 @@ export const PATCH = async (
       new: true,
     });
 
-    return new NextResponse(`Business ${updatedBusiness.legalName} updated`, {
-      status: 200,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Business ${updatedBusiness.legalName} updated`,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Update business failed!", error);
   }
@@ -195,9 +216,13 @@ export const DELETE = async (
 
     // validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid businessId!", {
-        status: 400,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
@@ -207,9 +232,13 @@ export const DELETE = async (
     const result = await Business.deleteOne({ _id: businessId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("Business not found!", {
-        status: 404,
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Business not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     } else {
       // Delete all related data in parallel
       await Promise.all([
@@ -228,9 +257,15 @@ export const DELETE = async (
       ]);
     }
 
-    return new NextResponse(`Business ${businessId} deleted successfully`, {
-      status: 200,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        message: `Business ${businessId} deleted successfully`,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return handleApiError("Delete business failed!", error);
   }

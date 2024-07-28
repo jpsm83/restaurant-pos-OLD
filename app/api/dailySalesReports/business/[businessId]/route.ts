@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 // import models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get daily reports by business ID, startDate and endDate
 // @route   GET /dailySalesReports/business/:businessId?startDate=<date>&endDate=<date>

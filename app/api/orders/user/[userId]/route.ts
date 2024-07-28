@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 // import models
 import Order from "@/app/lib/models/order";
-import { handleApiError } from "@/app/utils/handleApiError";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get orders user ID
 // @route   GET /orders/user/:userId
@@ -19,8 +19,9 @@ export const GET = async (
     const userId = context.params.userId;
     // check if userId is valid
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse("Invalid userId", {
+      return new NextResponse(JSON.stringify({ message: "Invalid userId" }), {
         status: 400,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -37,8 +38,9 @@ export const GET = async (
       .lean();
 
     return !orders.length
-      ? new NextResponse("No orders found!", {
+      ? new NextResponse(JSON.stringify({ message: "No orders found!" }), {
           status: 404,
+          headers: { "Content-Type": "application/json" },
         })
       : new NextResponse(JSON.stringify(orders), {
           status: 200,
