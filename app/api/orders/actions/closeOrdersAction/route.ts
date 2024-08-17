@@ -1,11 +1,11 @@
 import { Types } from "mongoose";
-import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
+import { validatePaymentMethodArray } from "../../utils/validatePaymentMethodArray";
 import connectDB from "@/app/lib/db";
 import Order from "@/app/lib/models/order";
-import { createPaymentMethodObject } from "../utils/createPaymentMethodObject";
-import { updateMultipleOrders } from "../utils/updateMultipleOrders";
+import { updateMultipleOrders } from "../../utils/updateMultipleOrders";
 import Table from "@/app/lib/models/table";
-import { IOrder, IPaymentMethod } from "@/app/lib/interface/IOrder";
+import { IOrder } from "@/app/lib/interface/IOrder";
+import { IPayment } from "@/app/lib/interface/IPayment";
 import { ITable } from "@/app/lib/interface/ITable";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
@@ -17,8 +17,9 @@ export const POST = async (req: Request) => {
   try {
     const { ordersIdArr, paymentMethod } = (await req.json()) as {
       ordersIdArr: Types.ObjectId[];
-      paymentMethod: IPaymentMethod[];
+      paymentMethod: IPayment[];
     };
+
     // Validate order IDs
     if (
       !Array.isArray(ordersIdArr) ||
@@ -68,7 +69,7 @@ export const POST = async (req: Request) => {
       ? orders.reduce((acc, order) => acc + order.orderNetPrice, 0)
       : 0;
     const totalPaid = paymentMethod.reduce(
-      (acc, payment) => acc + (payment.paymentMethodAmount || 0),
+      (acc, payment) => acc + (payment.methodSalesTotal || 0),
       0
     );
 
@@ -92,17 +93,21 @@ export const POST = async (req: Request) => {
         const orderPaymentMethods = [];
 
         for (const payment of validPaymentMethods) {
-          if (payment.paymentMethodAmount <= 0) continue;
+          if (payment.methodSalesTotal <= 0) continue;
 
           const amountToUse = Math.min(
-            payment.paymentMethodAmount,
+            payment.methodSalesTotal,
             remainingOrderPrice
           );
-          orderPaymentMethods.push(
-            createPaymentMethodObject(payment, amountToUse)
-          );
 
-          payment.paymentMethodAmount -= amountToUse;
+          // Create payment method object with the new structure
+          orderPaymentMethods.push({
+            paymentMethodType: payment.paymentMethodType,
+            methodBranch: payment.methodBranch,
+            methodSalesTotal: amountToUse,
+          });
+
+          payment.methodSalesTotal -= amountToUse;
           remainingOrderPrice -= amountToUse;
 
           if (remainingOrderPrice === 0) break;

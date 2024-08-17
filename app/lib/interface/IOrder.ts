@@ -1,12 +1,5 @@
 import { Types } from "mongoose";
-
-export interface IPaymentMethod {
-  method: string;
-  card?: string;
-  crypto?: string;
-  other?: string;
-  paymentMethodAmount: number;
-}
+import { IPaymentMethod } from "./IPayment";
 
 export interface IOrder {
     _id?: Types.ObjectId;

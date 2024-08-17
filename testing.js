@@ -1,127 +1,252 @@
-// Servicio para justificar la ultima parada de posible averia
-// "Averia NO detectada, ajuste de maquina executado", "Averia detectada, OT de mantenimiento en creacion"
-// ***** si es una "Averia NO detectada, ajuste de maquina executado", cual sera el concpeto / status?????
+import { IUserDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
+import Order from "@/app/lib/models/order";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Table from "@/app/lib/models/table";
 
-try {
-	if (resource && dropdown && username) {
-		const dateNow = new Date();
-		let dateNowFormatted = dateFormat(dateNow, "yyyy-MM-dd hh:mm:ss");
+import mongoose, { model, Types } from "mongoose";
+import connectDB from "@/app/lib/db";
 
-		// get the resource periode where end_period is null
-		let periodToUpdate = Things["CIP.Database.Postgresql"].Query({
-			query: "SELECT * FROM cip_periods WHERE END_PERIOD IS NULL AND RESOURCE = '" + resource + "'" /* STRING */ ,
-		});
+// this function will update individual user daily sales report
+// it is used ONLY when managers close the day sales report CLOSEDAILYSALESREPORT route
+export const updateUserDailySalesReportGeneric = async (
+  userId: Types.ObjectId,
+  dayReferenceNumber: number
+) => {
+  try {
+    // check required fields
+    if (!userId || !dayReferenceNumber)
+      return "UserId and dayReferenceNumber are required!";
 
-		if (periodToUpdate) {
-			// calculate the hours from last period
-			let calculatePeriodHours = me.CalculatePeriodHours({
-				start_period: periodToUpdate.start_period.getTime() /* NUMBER */ ,
-			});
+    // connect before first call to DB
+    await connectDB();
 
-			let newPeriodParams = {
-				reason: undefined /* STRING */ ,
-				status: undefined /* STRING */ ,
-				concept: undefined /* STRING */ ,
-			};
+    // get all tables closed by the user at the given dayReferenceNumber
+    const tableDocument = await Table.find({
+      closedBy: userId,
+      dayReferenceNumber: dayReferenceNumber,
+    })
+      .populate({
+        path: "orders",
+        model: Order,
+        populate: {
+          path: "businessGoods",
+          model: BusinessGood,
+          populate: {
+            path: "setMenu",
+            select: "_id name mainCategory subCategory",
+          },
+          select: "_id name mainCategory subCategory",
+        },
+        select:
+          "user paymentMethod billingStatus orderPrice orderNetPrice orderTips",
+      })
+      .select(
+        "dayReferenceNumber status business tableTotalPrice tableTotalNetPaid tableTotalTips guests closedBy"
+      )
+      .lean();
 
-			let commentValue = comment ? comment : null;
-			let usernameValue = periodToUpdate.username;
-			let statusValue = periodToUpdate.status;
-			let timeDescriptionValue = periodToUpdate.time_description;
-			let conceptValue = periodToUpdate.concept;
-			let timeOeeValue = periodToUpdate.time_oee;
-			let reasonValue = periodToUpdate.reason;
+    // prepare the update object
+    let userDailySalesReportObj: IUserDailySalesReport = {
+      user: userId,
+      hasOpenTables: false,
+    };
 
-			if (dropdown === "Averia NO detectada, ajuste de maquina executado") {
-				Things["CIP.Resource." + resource].Now_Reason = "Falta: OT";
-				Things["CIP.Resource." + resource].Now_State = "Parada";
-				Things["CIP.Resource." + resource].Aux_JustifyTimeNeeded = false;
-				Things["CIP.Resource." + resource].Aux_TimeCounterEnabled = true;
+    // Generic payment method object
+    // let userPayments = [
+    //   {
+    //     paymentMethodType: "Cash",
+    //     methdBranch: "Cash",
+    //     methodSalesTotal: 100,
+    //   },
+    //   {
+    //     paymentMethodType: "Card",
+    //     methdBranch: "Visa",
+    //     methodSalesTotal: 150,
+    //   },
+    //   {
+    //     paymentMethodType: "Crypto",
+    //     methdBranch: "Bitcoin",
+    //     methodSalesTotal: 200,
+    //   },
+    //   {
+    //     paymentMethodType: "Other",
+    //     methdBranch: "Voucher",
+    //     methodSalesTotal: 50,
+    //   },
+    // ];
 
-				// // update cip_periods with the end time, total hours, reason and justified where period id null
-				// Things["CIP.Database.Postgresql"].Command({
-				// 	command: "UPDATE CIP_PERIODS SET comment = '" + commentValue + "', END_PERIOD = '" + dateNowFormatted + "', HOURS = " + calculatePeriodHours + ", USERNAME = '" + username + "', STATUS = 'Parada', JUSTIFIED = true, REASON = 'Preparacion previa a OT', concept = 'Limpieza y preparacion', time_oee = 'tON' WHERE END_PERIOD IS NULL AND RESOURCE = '" + resource + "'" /* STRING */ ,
-				// });
+    // go through all the tables closed by the user
+    if (tableDocument && tableDocument.length > 0) {
+      tableDocument.forEach((documentItem) => {
+        userDailySalesReportObj.hasOpenTables =
+          documentItem.status !== "Closed"
+            ? true
+            : userDailySalesReportObj.hasOpenTables;
+        // update all the user sales
+        if (documentItem.orders && documentItem.orders.length > 0) {
+          documentItem.orders.forEach((order: any) => {
+            order.forEach((payment: any) => {
+              const { method, card, crypto, other } = payment.paymentMethod;
+              const amount = payment.paymentMethodAmount;
 
-				usernameValue = username;
-				statusValue = "Parada";
-				timeDescriptionValue = "Perdidas velocidad";
-				conceptValue = "Limpieza y preparacion";
-				timeOeeValue = "tON";
-				reasonValue = "Preparacion previa a OT";
+              if (method === "Cash") {
+                userDailySalesReportObj.userCashSales += amount;
+              } else {
+                let salesObj: {
+                  [x: string]: any;
+                  cardBranch?: any;
+                  cardSales?: any;
+                  cryptoType?: any;
+                  cryptoSales?: any;
+                  otherType?: any;
+                  otherSales?: any;
+                } = {};
+                let salesType: string = "";
+                let salesArray;
+                let sumSales: string = "";
 
-				newPeriodParams.reason = "Falta: OT";
-				newPeriodParams.status = "Parada";
-				newPeriodParams.concept = "Falta";
-			} else if (
-				dropdown === "Averia detectada, OT de mantenimiento en creacion"
-			) {
-				Things["CIP.Resource." + resource].Now_Reason =
-					"Esperando mantenimiento correctivo";
-				Things["CIP.Resource." + resource].Now_State = "Averia";
+                switch (method) {
+                  case "Card":
+                    salesObj = { cardBranch: card, cardSales: amount };
+                    salesType = "cardBranch";
+                    salesArray =
+                      userDailySalesReportObj.userCardsSales?.cardDetails;
+                    sumSales = "sumCardsSales";
+                    break;
+                  case "Crypto":
+                    salesObj = { cryptoType: crypto, cryptoSales: amount };
+                    salesType = "cryptoType";
+                    salesArray =
+                      userDailySalesReportObj.userCryptosSales?.cryptoDetails;
+                    sumSales = "sumCryptosSales";
+                    break;
+                  case "Other":
+                    salesObj = { otherType: other, otherSales: amount };
+                    salesType = "otherType";
+                    salesArray =
+                      userDailySalesReportObj.userOthersSales?.otherDetails;
+                    sumSales = "sumOthersSales";
+                    break;
+                }
 
-				// // update cip_periods with the end time, total hours, reason and justified where period id null
-				// Things["CIP.Database.Postgresql"].Command({
-				// 	command: "UPDATE CIP_PERIODS SET comment = '" + commentValue + "', END_PERIOD = '" + dateNowFormatted + "', HOURS = " + calculatePeriodHours + ", JUSTIFIED = true WHERE END_PERIOD IS NULL AND RESOURCE = '" + resource + "'" /* STRING */ ,
-				// });
+                let sale = salesArray?.find(
+                  (sale) => sale[salesType] === salesObj[salesType]
+                );
+                if (sale) {
+                  sale[salesType.replace("Type", "Sales")] += amount;
+                } else {
+                  // @ts-ignore
+                  salesArray.push(salesObj);
+                }
+                userDailySalesReportObj[method.toLowerCase() + "Sales"][
+                  sumSales
+                ] += amount;
+              }
+            });
 
-				newPeriodParams.reason = "Esperando mantenimiento correctivo";
-				newPeriodParams.status = "Averia";
-				newPeriodParams.concept = "Mantenimiento";
-			}
+            userDailySalesReportObj.userTotalNetPaid +=
+              documentItem.tableTotalNetPaid;
+            userDailySalesReportObj.userTotalTips +=
+              documentItem.tableTotalTips;
+            userDailySalesReportObj.userCustomersServed += documentItem.guests;
+          });
 
-			// update cip_periods with the end period, total hours, reason and justified where period id null
-			Things["CIP.Database.Postgresql"].UpdatePeriods({
-				SUBPROCESS: periodToUpdate.subprocess /* STRING */ ,
-				START_PERIOD: periodToUpdate.start_period /* DATETIME */ ,
-				TIME_DESCRIPTION: timeDescriptionValue /* STRING */ ,
-				ELEC: periodToUpdate.elec /* NUMBER */ ,
-				COMMENT: commentValue /* STRING */ ,
-				UID: periodToUpdate.uid /* INTEGER */ ,
-				JUSTIFIED: true /* BOOLEAN */ ,
-				STATUS: statusValue /* STRING */ ,
-				CONCEPT: conceptValue /* STRING */ ,
-				HOURS: calculatePeriodHours /* NUMBER */ ,
-				ORNUME: periodToUpdate.ornume /* STRING */ ,
-				USERNAME: usernameValue /* STRING */ ,
-				TIME_OEE: timeOeeValue /* STRING */ ,
-				REASON: reasonValue /* STRING */ ,
-				UNITS_PRODUCED: periodToUpdate.units_produced /* NUMBER */ ,
-				END_PERIOD: new Date() /* DATETIME */ ,
-				RESOURCE: periodToUpdate.resource /* STRING */
-			});
+          // Assuming all properties are possibly undefined, use nullish coalescing to provide a default value of 0
+          userDailySalesReportObj.userTotalSales =
+            (userDailySalesReportObj.userCashSales ?? 0) +
+            (userDailySalesReportObj.userCardsSales?.sumCardsSales ?? 0) +
+            (userDailySalesReportObj.userCryptosSales?.sumCryptosSales ?? 0) +
+            (userDailySalesReportObj.userOthersSales?.sumOthersSales ?? 0);
 
-			// // create new period
-			// me.InsertNewPeriod(newPeriodParams);
+          // Ensure userCustomersServed is not zero to avoid division by zero error
+          userDailySalesReportObj.userAverageCustomersExpended =
+            userDailySalesReportObj.userCustomersServed &&
+            userDailySalesReportObj.userCustomersServed > 0
+              ? userDailySalesReportObj.userTotalSales /
+                userDailySalesReportObj.userCustomersServed
+              : 0;
+        } else {
+          userDailySalesReportObj.hasOpenTables = false;
+        }
+      });
+    }
 
-// create new period
-			Things["CIP.Database.Postgresql"].InsertPeriods({
-				resource: resource /* STRING */ ,
-				username: username /* STRING */ ,
-				justified: true /* BOOLEAN */ ,
-				startPeriod: new Date() /* DATETIME */ ,
-				reason: newPeriodParams.reason /* STRING */ ,
-				status: newPeriodParams.status /* STRING */,
-				concept: newPeriodParams.concept /* STRING */ ,
-				timeOee: "tO" /* STRING */ ,
-				timeDescription: "Tiempo muerto" /* STRING */ ,
-			});
-            
-			result = "ok";
-		} else {
-			result = "Cip_periods not found!";
-		}
-	} else {
-		result = "Razon es necesaria!";
-	}
-} catch (error) {
-	result = "ERROR: " + error;
-	Things["CIP.WorkOrders.Controller"].ErrorLog.AddRow({
-		entity: "CIP.ResourcesManager.Services",
-		resource: resource,
-		service: "JustifyFaultStop",
-		error: error,
-		date: Date.now(),
-		inputs: "comment:" + comment + ", dropdown:" + dropdown + ", resource:" + resource + ", username:" + username,
-	});
-}
+    // get all the orders from the user
+    const userDayOrders = await Order.find({
+      user: userId,
+      dayReferenceNumber: dayReferenceNumber,
+    })
+      .select("_id orderPrice")
+      .lean();
+
+    // create a userGoodsSoldMap, userGoodsVoidMap, and userGoodsInvitedMap to update
+    let userGoodsSoldMap = new Map();
+    let userGoodsVoidMap = new Map();
+    let userGoodsInvitedMap = new Map();
+
+    // go through all the orders to populate the userGoodsSoldMap, userGoodsVoidMap, and userGoodsInvitedMap
+    if (userDayOrders && userDayOrders.length > 0) {
+      userDayOrders.forEach((order) => {
+        let orderMap = null;
+
+        if (order.billingStatus === "Paid" || order.billingStatus === "Open") {
+          orderMap = userGoodsSoldMap;
+        } else if (order.billingStatus === "Void") {
+          orderMap = userGoodsVoidMap;
+        } else if (order.billingStatus === "Invited") {
+          orderMap = userGoodsInvitedMap;
+        }
+
+        if (orderMap) {
+          if (orderMap.has(order._id)) {
+            // if the order is found, update the quantity and totalPrice
+            let orderData = orderMap.get(order._id);
+            orderData.quantity += 1;
+            orderData.totalPrice += order.orderPrice;
+            orderData.totalCostPrice += order.orderCostPrice;
+          } else {
+            // if the order is not found, add a new object to the map
+            orderMap.set(order._id, {
+              good: order._id,
+              quantity: 1,
+              totalPrice: order.orderPrice,
+              totalCostPrice: order.orderCostPrice,
+            });
+          }
+        }
+      });
+    }
+
+    // convert the maps back to arrays
+    let userGoodsSoldArr = Array.from(userGoodsSoldMap.values());
+    let userGoodsVoidArr = Array.from(userGoodsVoidMap.values());
+    let userGoodsInvitedArr = Array.from(userGoodsInvitedMap.values());
+
+    userDailySalesReportObj.userGoodsSoldArray = userGoodsSoldArr;
+    userDailySalesReportObj.userGoodsVoidArray = userGoodsVoidArr;
+    userDailySalesReportObj.userGoodsInvitedArray = userGoodsInvitedArr;
+    userDailySalesReportObj.userTotalVoid = userGoodsVoidArr.reduce(
+      (acc, curr) => acc + curr.totalPrice,
+      0
+    );
+    userDailySalesReportObj.userTotalInvited = userGoodsInvitedArr.reduce(
+      (acc, curr) => acc + curr.totalPrice,
+      0
+    );
+
+    // update the document in the database
+    await DailySalesReport.findOneAndUpdate(
+      {
+        dayReferenceNumber: dayReferenceNumber,
+        "usersDailySalesReport.user": userId,
+      },
+      { $set: { "usersDailySalesReport.$": userDailySalesReportObj } },
+      { new: true }
+    );
+
+    return "User daily sales report updated";
+  } catch (error) {
+    return "Failed to update user daily sales report! " + error;
+  }
+};

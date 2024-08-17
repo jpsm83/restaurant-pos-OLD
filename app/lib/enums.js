@@ -12,6 +12,14 @@ export const mainCategories = [
   "Other",
 ];
 
+export const paymentMethods = ['Cash', 'Card', 'Crypto', 'Other'];
+
+export const cardTypes = ['Visa', 'Mastercard', 'American Express', 'Discover', 'Diners Club', 'Maestro'];
+
+export const cryptoTypes = ['Bitcoin', 'Ethereum', 'Litecoin', 'Ripple', 'Cardano', 'Polkadot', 'Dogecoin'];
+
+export const otherPaymentTypes = ['Voucher', 'Paypal', 'Venmo', 'Apple Pay', 'Google Pay', 'Samsung Pay'];
+
 export const saleUnit = [
   "Unit",
   "Dozen",

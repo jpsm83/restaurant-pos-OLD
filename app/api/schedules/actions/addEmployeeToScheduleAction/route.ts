@@ -4,7 +4,7 @@ import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
 import User from "@/app/lib/models/user";
-import { employeesValidation } from "../utils/employeesValidation";
+import { employeesValidation } from "../../utils/employeesValidation";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 

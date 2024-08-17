@@ -1,50 +1,81 @@
-import { IPaymentMethod } from "@/app/lib/interface/IOrder";
+import { IPayment } from "@/app/lib/interface/IPayment";
+import {
+  paymentMethods,
+  cardTypes,
+  cryptoTypes,
+  otherPaymentTypes,
+} from "@/app/lib/enums";
 
-export const validatePaymentMethodArray = (paymentMethod: IPaymentMethod[]) => {
+export const validatePaymentMethodArray = (paymentMethod: IPayment[]) => {
   // example of a payment method object
   // paymentMethod = [
   //   {
-  //     method: "Card",
-  //     card: "Visa",
-  //     paymentMethodAmount: 40,
+  //     paymentMethodType: "Cash",
+  //     methodBranch: "Cash",
+  //     methodSalesTotal: 100,
   //   },
   //   {
-  //     method: "Cash",
-  //     paymentMethodAmount: 60,
+  //     paymentMethodType: "Card",
+  //     methodBranch: "Visa",
+  //     methodSalesTotal: 150,
+  //   },
+  //   {
+  //     paymentMethodType: "Crypto",
+  //     methodBranch: "Bitcoin",
+  //     methodSalesTotal: 200,
+  //   },
+  //   {
+  //     paymentMethodType: "Other",
+  //     methodBranch: "Paypal",
+  //     methodSalesTotal: 50,
   //   },
   // ];
 
-  if (!Array.isArray(paymentMethod)) {
-    return "Invalid paymentMethod array!";
-  }
-
   for (let payment of paymentMethod) {
-    if (!payment.method || !payment.paymentMethodAmount) {
-      return "Payment has no method or paymentMethodAmount!";
+    if (
+      !payment.paymentMethodType ||
+      !payment.methodBranch ||
+      payment.methodSalesTotal === undefined
+    ) {
+      return "Payment is missing method type, branch, or sales total!";
     }
-    switch (payment.method) {
+
+    if (!paymentMethods.includes(payment.paymentMethodType)) {
+      return `Invalid payment method type: ${payment.paymentMethodType}`;
+    }
+
+    switch (payment.paymentMethodType) {
       case "Card":
-        if (!payment.card) {
-          return "Card payment method provided without card details";
+        if (!cardTypes.includes(payment.methodBranch)) {
+          return `Invalid card type: ${payment.methodBranch}`;
         }
         break;
       case "Crypto":
-        if (!payment.crypto) {
-          return "Crypto payment method provided without crypto details";
+        if (!cryptoTypes.includes(payment.methodBranch)) {
+          return `Invalid crypto type: ${payment.methodBranch}`;
         }
         break;
       case "Other":
-        if (!payment.other) {
-          return "'Others' payment method provided without 'other' details";
+        if (!otherPaymentTypes.includes(payment.methodBranch)) {
+          return `Invalid other payment type: ${payment.methodBranch}`;
         }
         break;
       case "Cash":
-        // No additional validation needed for cash payments
+        if (payment.methodBranch !== "Cash") {
+          return "Invalid cash branch!";
+        }
         break;
       default:
-        // No additional validation needed for cash payments
-        break;
+        return `Unknown payment method type: ${payment.paymentMethodType}`;
+    }
+
+    if (
+      typeof payment.methodSalesTotal !== "number" ||
+      payment.methodSalesTotal < 0
+    ) {
+      return "Invalid sales total!";
     }
   }
+
   return paymentMethod;
 };

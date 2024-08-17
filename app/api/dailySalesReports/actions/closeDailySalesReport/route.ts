@@ -10,7 +10,7 @@ import { IUser } from "@/app/lib/interface/IUser";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
-import { updateUserDailySalesReportGeneric } from "../utils/updateUserDailySalesReportGeneric";
+import { updateUserDailySalesReportGeneric } from "../../utils/updateUserDailySalesReportGeneric";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 

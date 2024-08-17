@@ -1,4 +1,5 @@
 import { Schema, model, models } from "mongoose";
+import { paymentMethodSchema } from "./paymentMethod";
 
 const userGoodsSchema = new Schema({
   good: {
@@ -14,27 +15,6 @@ const userGoodsSchema = new Schema({
   totalCostPrice: { type: Number, required: true }, // total cost price of the good sold or void
 });
 
-const cardSalesArraySchema = new Schema({
-  cardBranch: {
-    type: String,
-    required: true,
-  }, // types of credit/debit cards accepted
-  cardSales: { type: Number, required: true }, // sum of sales in the card by its branch
-}); // array of cards
-
-const criptoSalesArraySchema = new Schema({
-  cryptoType: {
-    type: String,
-    required: true,
-  }, // types of cryptocurrencies accepted
-  cryptoSales: { type: Number, required: true }, // sum of sales in the crypto by its type
-}); // array of cryptocurrencies
-
-const otherSalesArraySchema = new Schema({
-  otherType: { type: String, required: true }, // types of other payments accepted (food vauchers, checks, etc.)
-  otherSales: { type: Number, required: true }, // sum of sales in the other payment by its type
-}); // array of other payments
-
 const userDailySalesReportArraySchema = new Schema({
   // required fields
   user: {
@@ -48,19 +28,7 @@ const userDailySalesReportArraySchema = new Schema({
   // those "SALES" refer table sales closed by the user (table.responsibleBy)
   // not "SALES" made by the user, the user can close the table of another user if shifts are passed and the previous user has opened the tables
   // when a table is closed, the sales from the previews user is pass to the new one because the new user is responsible for the table and will handle the payment in the end
-  userCashSales: { type: Number }, // sum of sales in cash
-  userCardsSales: {
-    cardDetails: [cardSalesArraySchema],
-    sumCardsSales: { type: Number },
-  }, // array with all card sales by branch and sum of all cards sales
-  userCryptosSales: {
-    cryptoDetails: [criptoSalesArraySchema],
-    sunCryptosSales: { type: Number },
-  }, // array with all cripto sales by type and sum of all crypto sales
-  userOthersSales: {
-    otherDetails: [otherSalesArraySchema],
-    sunOthersSales: { type: Number },
-  }, // array with all other sales by type and sum of all other sales
+  userPayments: [paymentMethodSchema], // array of payment methods used by the user
   userTotalSales: { type: Number }, // sum of all orders made by the table.closedBy regardless of promotions, discounts, voids, or cancellations
   userTotalNetPaid: { type: Number }, // sum of all orders after adjustments have been made to the final price, vois, invitations, discounts, and promotions
   userTotalTips: { type: Number }, // sum of all tips
@@ -101,19 +69,7 @@ const dailySalesReportSchema = new Schema(
     },
 
     // optional fields for creation, required for update
-    totalCashSales: { type: Number }, // sum of all users cash sales
-    totalCardsSales: {
-      cardDetails: [cardSalesArraySchema],
-      sunCardsSales: { type: Number },
-    }, // array with all card sales by branch and sum of all users cards sales
-    totalCryptosSales: {
-      criptoDetails: [criptoSalesArraySchema],
-      sunCryptosSales: { type: Number },
-    }, // array with all cripto sales by type and sum of all users crypto sales
-    totalOthersSales: {
-      otherDetails: [otherSalesArraySchema],
-      sunOthersSales: { type: Number },
-    }, // array with all other sales by type and sum of all users other sales
+    totalPayments: [paymentMethodSchema], // array of all payment methods and its total sales
     totalSales: { type: Number }, // sum of all users sales
     totalNetPaid: { type: Number }, // sum of all users netPaid
     totaltips: { type: Number }, // sum of all users tips

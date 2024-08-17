@@ -1,53 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import { allergens, billingStatus, orderStatus } from "../enums.js";
-
-// example of a payment method object
-// paymentMethod = [
-//   {
-//     method: "Card",
-//     card: "Visa",
-//     paymentMethodAmount: 40,
-//   },
-//   {
-//     method: "Cash",
-//     paymentMethodAmount: 60,
-//   },
-// ];
-
-const paymentMethodSchema = new Schema({
-  method: {
-    type: String,
-    enum: ["Cash", "Card", "Crypto", "Other"],
-    required: true,
-  }, // payment method used by the client
-  card: {
-    type: String,
-    enum: ["Visa", "MasterCard", "Dinners", "American Express", "Others"],
-    required: function () {
-      // @ts-ignore
-      return this.method === "Card";
-    },
-  }, // card used by the client
-  crypto: {
-    type: String,
-    enum: ["Bitcoin", "Ethereum"],
-    required: function () {
-      // @ts-ignore
-      return this.method === "Crypto";
-    },
-  }, // crypto used by the client
-  other: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.method === "Other";
-    },
-  }, // other payment method used by the client
-  paymentMethodAmount: {
-    type: Number,
-    required: true,
-  }, // amount paid by the client
-});
+import { paymentMethod } from "./paymentMethod";
 
 const orderSchema = new Schema(
   {
@@ -94,7 +47,7 @@ const orderSchema = new Schema(
     // non required fields
     orderTips: { type: Number }, // tips given or amount left by the client
     paymentMethod: {
-      type: [paymentMethodSchema],
+      type: [paymentMethod],
       default: undefined,
     },
     allergens: { type: [String], enum: allergens, default: undefined }, // this property is manualy added by the user, the pos will filter all the business goods allergens that applyed and dont offer them to be purchased, this value will go to the kitcken

@@ -3,8 +3,8 @@ import connectDB from "@/app/lib/db";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
-import { employeesValidation } from "../utils/employeesValidation";
-import { getWeekNumber } from "../utils/getWeekNumber";
+import { employeesValidation } from "../../utils/employeesValidation";
+import { getWeekNumber } from "../../utils/getWeekNumber";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 

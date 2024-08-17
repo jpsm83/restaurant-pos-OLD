@@ -3,7 +3,7 @@ import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
 import { Types } from "mongoose";
-import { createTable } from "../../tables/utils/createTable";
+import { createTable } from "../../../tables/utils/createTable";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
