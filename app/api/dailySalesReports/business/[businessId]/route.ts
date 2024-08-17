@@ -20,7 +20,7 @@ export const GET = async (
 
     // check if the ID is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse("Invalid business ID!", { status: 400 });
+      return new NextResponse(JSON.stringify({ message: "Invalid business ID!"}), { status: 400, headers: { "Content-Type": "application/json" }});
     }
 
     // date and time will como from the front as ex: "2023-04-01T15:00:00", you can create a Date object from it with new Date(startDate). This will create a Date object representing midnight on the given date in the LOCAL TIME ZONE OF THE SERVER.
@@ -39,8 +39,8 @@ export const GET = async (
 
     if (startDate && endDate) {
       if(startDate > endDate){
-        return new NextResponse("Invalid date range, start date must be before end date!", {
-          status: 400,
+        return new NextResponse(JSON.stringify({ message: "Invalid date range, start date must be before end date!"}), {
+          status: 400, headers: { "Content-Type": "application/json" }
         });
       }
       query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
@@ -55,8 +55,8 @@ export const GET = async (
       .lean();
 
     return !dailySalesReports.length
-      ? new NextResponse("No daily reports found!",
-          { status: 404 }
+      ? new NextResponse(JSON.stringify({ message: "No daily reports found!"}),
+          { status: 404, headers: { "Content-Type": "application/json" } }
         )
       : new NextResponse(JSON.stringify(dailySalesReports), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (error) {

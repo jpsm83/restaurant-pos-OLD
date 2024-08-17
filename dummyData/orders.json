@@ -16,11 +16,8 @@
             {
                 "_id": "667c0761b1f9de2be3a80e17",
                 "name": "Cheeseburger with Fries",
-                "category": {
-                    "mainCategory": "Food",
-                    "foodSubCategory": "Burger set",
-                    "_id": "667c0761b1f9de2be3a80e18"
-                },
+                "mainCategory": "Food",
+                "subCategory": "Burger set",
                 "sellingPrice": 12.5,
                 "allergens": [
                     "Gluten",
@@ -53,11 +50,8 @@
             {
                 "_id": "667bfc0c5d50be40f0c7b065",
                 "name": "Cheeseburger",
-                "category": {
-                    "mainCategory": "Beverage",
-                    "beverageSubCategory": "Drinks",
-                    "_id": "667c13f2f22bdc543f105884"
-                },
+                "mainCategory": "Beverage",
+                "subCategory": "Drinks",
                 "sellingPrice": 16.45,
                 "allergens": [
                     "Gluten",

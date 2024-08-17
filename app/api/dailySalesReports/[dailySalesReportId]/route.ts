@@ -11,7 +11,6 @@ import {
   IOtherSales,
   IUserDailySalesReport,
 } from "@/app/lib/interface/IDailySalesReport";
-import { updateUserDailySalesReportGeneric } from "../utils/updateUserDailySalesReportGeneric";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get daily report by ID
@@ -26,7 +25,7 @@ export const GET = async (
 
     // check if the ID is valid
     if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
-      return new NextResponse("Invalid daily report ID!", { status: 400 });
+      return new NextResponse(JSON.stringify({ message: "Invalid daily report ID!"}), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
     // connect before first call to DB
@@ -37,7 +36,7 @@ export const GET = async (
       .lean();
 
     return !dailySalesReport
-      ? new NextResponse("Daily report not found!", { status: 404 })
+      ? new NextResponse(JSON.stringify({ message: "Daily report not found!"}), { status: 404, headers: { "Content-Type": "application/json" } })
       : new NextResponse(JSON.stringify(dailySalesReport), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -61,7 +60,7 @@ export const DELETE = async (
 
     // check if the ID is valid
     if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
-      return new NextResponse("Invalid daily report ID!", { status: 400 });
+      return new NextResponse(JSON.stringify({ message: "Invalid daily report ID!"}), { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
     // connect before first call to DB
@@ -73,7 +72,7 @@ export const DELETE = async (
     });
 
     if (result.deletedCount === 0) {
-      return new NextResponse("Daily report not found!", { status: 404 });
+      return new NextResponse(JSON.stringify({ message: "Daily report not found!"}), { status: 404, headers: { "Content-Type": "application/json" }}); 
     }
 
     return new NextResponse(`Daily report ${dailySalesReportId} deleted`, {

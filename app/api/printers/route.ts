@@ -17,20 +17,30 @@ export const GET = async () => {
     await connectDB();
 
     const printers = await Printer.find()
-      // .populate("printFor.users", "username")
-      .lean();
+      // .populate({
+      //   path: 'printFor.users', // Correct path to populate nested array
+      //   select: 'username' // Fields to select from the populated documents
+      // })
+      .lean(); // Converts Mongoose document to plain JavaScript object
 
-    return !printers.length
-      ? new NextResponse(JSON.stringify({ message: "No printers found!" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        })
-      : new NextResponse(JSON.stringify(printers), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+      if (!printers.length) {
+        return new NextResponse(
+          JSON.stringify({ message: 'No printers found!' }),
+          {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+    // Return the populated printers data
+    return new NextResponse(JSON.stringify(printers), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
   } catch (error) {
     return handleApiError("Get all printers failed!", error);
   }

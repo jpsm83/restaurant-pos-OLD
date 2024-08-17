@@ -1,17 +1,26 @@
 [
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be443"
+        },
         "name": "Bun bread",
         "keyword": "Bun bread",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Bread"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Bread",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
-        "allergens": ["Glutem", "Eggs", "Milk"],
-        "dynamicCountFromLastInventory": 120,
+        "allergens": [
+            "Gluten",
+            "Eggs",
+            "Milk"
+        ],
+        "dynamicCountFromLastInventory": 50,
         "budgetImpact": "Mediun",
         "description": "Burger bread",
         "inventorySchedule": "weekly",
@@ -23,22 +32,30 @@
         "pricePerUnit": 1,
         "saleUnit": "Packet",
         "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
+        "updatedAt": "2024-07-21T11:01:54.619Z",
+        "__v": 0,
+        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be444"
+        },
         "name": "Cheddar cheese",
         "keyword": "Cheese",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Dairy"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Dairy",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
-        "allergens": ["Milk"],
-        "dynamicCountFromLastInventory": 9,
+        "allergens": [
+            "Milk"
+        ],
+        "dynamicCountFromLastInventory": 2,
         "budgetImpact": "Mediun",
         "description": "Cheese for burger",
         "inventorySchedule": "weekly",
@@ -50,20 +67,25 @@
         "pricePerUnit": 13.5,
         "saleUnit": "Block",
         "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
+        "updatedAt": "2024-07-21T11:01:54.619Z",
+        "__v": 0,
+        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
     },
-
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be445"
+        },
         "name": "Hamburger patty 400g",
         "keyword": "Hamburger",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Bread"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Bread",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 120,
         "budgetImpact": "High",
@@ -81,15 +103,20 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be446"
+        },
         "name": "Tomato",
         "keyword": "Tomato",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Fuit"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Fuit",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 10,
         "budgetImpact": "Low",
@@ -107,15 +134,20 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be447"
+        },
         "name": "Onions",
         "keyword": "Onions",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Vegetable"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Vegetable",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 12,
         "budgetImpact": "Low",
@@ -133,17 +165,22 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be448"
+        },
         "name": "Frozen French Fries",
         "keyword": "Fries",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Frozen food"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Frozen food",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 60,
+        "dynamicCountFromLastInventory": 59.49999999999999,
         "budgetImpact": "Low",
         "description": "French fries",
         "inventorySchedule": "weekly",
@@ -155,21 +192,28 @@
         "pricePerUnit": 2.8,
         "saleUnit": "Bag",
         "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-29T16:42:47.400Z",
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be449"
+        },
         "name": "Coca Cola small bottle",
         "keyword": "Coca Cola",
-        "category": {
-            "mainCategory": "Beverage",
-            "beverageSubCategory": "Soft Drink"
-        },
+        "mainCategory": "Beverage",
+        "subCategory": "Soft Drink",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
-        "allergens": ["Sulphur dioxide"],
+        "allergens": [
+            "Sulphur dioxide"
+        ],
         "dynamicCountFromLastInventory": 140,
         "budgetImpact": "Mediun",
         "description": "Small bottle of coca cola",
@@ -186,15 +230,20 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be44a"
+        },
         "name": "Beef Steak",
         "keyword": "Beef Steak",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Meat"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Meat",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 10,
         "budgetImpact": "Hight",
@@ -212,15 +261,20 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be44b"
+        },
         "name": "Brocolly",
         "keyword": "Brocolly",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Vegetable"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Vegetable",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 6,
         "budgetImpact": "Low",
@@ -238,15 +292,20 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be44c"
+        },
         "name": "Lettuce",
         "keyword": "Lettuce",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Vegetable"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Vegetable",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 5,
         "budgetImpact": "Low",
@@ -264,17 +323,26 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be44d"
+        },
         "name": "Hummus",
         "keyword": "Hummus",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Prepared Food"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Prepared Food",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
-        "allergens": ["Gluten", "Peanuts", "Nuts"],
+        "allergens": [
+            "Gluten",
+            "Peanuts",
+            "Nuts"
+        ],
         "dynamicCountFromLastInventory": 4,
         "budgetImpact": "Mediun",
         "description": "Hummus already prepared",
@@ -291,15 +359,20 @@
         "__v": 0
     },
     {
+        "_id": {
+            "$oid": "667bfac8d28a7ee19d9be44e"
+        },
         "name": "Water small bottle",
         "keyword": "Water",
-        "category": {
-            "mainCategory": "Beverage",
-            "beverageSubCategory": "Non-Alcoholic"
-        },
+        "mainCategory": "Beverage",
+        "subCategory": "Non-Alcoholic",
         "currentlyInUse": true,
-        "supplier": "6674414e36e26dff0dc4ee8f",
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "supplier": {
+            "$oid": "6674414e36e26dff0dc4ee8f"
+        },
+        "business": {
+            "$oid": "6673fed98c45d0a0ca5f34c1"
+        },
         "image": "../public/images/default_img.png",
         "dynamicCountFromLastInventory": 240,
         "budgetImpact": "Small",

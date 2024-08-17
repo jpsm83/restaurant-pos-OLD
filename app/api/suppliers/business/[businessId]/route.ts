@@ -29,7 +29,7 @@ export const GET = async (
     await connectDB();
 
     const suppliers = await Supplier.find({ business: businessId })
-      .populate("supplierGoods", "name category currentlyInUse")
+      .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
       .lean();
 
     return !suppliers.length

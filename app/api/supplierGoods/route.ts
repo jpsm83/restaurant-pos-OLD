@@ -40,7 +40,7 @@ export const POST = async (req: Request) => {
     const {
       name,
       keyword,
-      category,
+      mainCategory,
       subCategory,
       currentlyInUse,
       supplier,
@@ -63,7 +63,7 @@ export const POST = async (req: Request) => {
     if (
       !name ||
       !keyword ||
-      !category ||
+      !mainCategory ||
       !subCategory ||
       currentlyInUse === undefined ||
       !supplier ||
@@ -72,7 +72,7 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Name, keyword, category, subCategory, currentlyInUse, supplier and business are required!",
+            "Name, keyword, mainCategory, subCategory, currentlyInUse, supplier and business are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -103,19 +103,8 @@ export const POST = async (req: Request) => {
     const supplierGoodObj: ISupplierGood = {
       name,
       keyword,
-      category: {
-        mainCategory: category as unknown as string,
-        foodSubCategory: undefined,
-        beverageSubCategory: undefined,
-        merchandiseSubCategory: undefined,
-        cleaningSubCategory: undefined,
-        officeSubCategory: undefined,
-        furnitureSubCategory: undefined,
-        disposableSubCategory: undefined,
-        servicesSubCategory: undefined,
-        equipmentSubCategory: undefined,
-        othersSubCategory: undefined,
-      },
+      mainCategory,
+      subCategory,
       currentlyInUse,
       supplier,
       business,
@@ -139,43 +128,6 @@ export const POST = async (req: Request) => {
       // IMPORTANT *** THAT NUMBER IS THE START POINT FOR THE INVENTORY COUNT
       dynamicCountFromLastInventory: dynamicCountFromLastInventory || undefined,
     };
-
-    // set the category and subcategory
-    switch (category as unknown as string) {
-      case "Food":
-        supplierGoodObj.category.foodSubCategory = subCategory;
-        break;
-      case "Beverage":
-        supplierGoodObj.category.beverageSubCategory = subCategory;
-        break;
-      case "Merchandise":
-        supplierGoodObj.category.merchandiseSubCategory = subCategory;
-        break;
-      case "Cleaning":
-        supplierGoodObj.category.cleaningSubCategory = subCategory;
-        break;
-      case "Office":
-        supplierGoodObj.category.officeSubCategory = subCategory;
-        break;
-      case "Furniture":
-        supplierGoodObj.category.furnitureSubCategory = subCategory;
-        break;
-      case "Disposable":
-        supplierGoodObj.category.disposableSubCategory = subCategory;
-        break;
-      case "Services":
-        supplierGoodObj.category.servicesSubCategory = subCategory;
-        break;
-      case "Equipment":
-        supplierGoodObj.category.equipmentSubCategory = subCategory;
-        break;
-      case "Others":
-        supplierGoodObj.category.othersSubCategory = subCategory;
-        break;
-      default:
-        supplierGoodObj.category.merchandiseSubCategory = "No subcategory";
-        break;
-    }
 
     // create a new supplier good
     await SupplierGood.create(supplierGoodObj);

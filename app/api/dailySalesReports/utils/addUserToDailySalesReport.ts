@@ -29,7 +29,7 @@ export const addUserToDailySalesReport = async (
 
     // check if user already exists in the daily report
     const userExists = dailySalesReport.usersDailySalesReport.find(
-      (user) => user.user == userId
+      (username) => username.user == userId
     );
 
     if (userExists) {

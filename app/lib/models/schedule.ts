@@ -67,5 +67,4 @@ const scheduleSchema = new Schema(
 );
 
 const Schedule = models.Schedule || model("Schedule", scheduleSchema);
-
 export default Schedule;

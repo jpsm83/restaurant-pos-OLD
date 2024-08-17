@@ -36,7 +36,7 @@ export const GET = async (
       //     "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
       //   populate: {
       //     path: "businessGoods",
-      //     select: "name category subCategory allergens sellingPrice",
+      //     select: "name mainCategory subCategory allergens sellingPrice",
       //   },
       // })
       .lean();

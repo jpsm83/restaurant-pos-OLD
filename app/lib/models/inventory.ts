@@ -52,5 +52,4 @@ const inventorySchema = new Schema(
 );
 
 const Inventory = models.Inventory || model("Inventory", inventorySchema);
-
 export default Inventory;

@@ -79,7 +79,7 @@ interface IDailySalesReport {
   async (userId: Types.ObjectId, dayReferenceNumber: number) => {
     // check required fields
     if (!userId || !dayReferenceNumber)
-      return new NextResponse("UserId and dayReferenceNumber are required!", { status: 500 });
+      return new NextResponse(JSON.stringify({ message: "UserId and dayReferenceNumber are required!"}), { status: 500, headers: { "Content-Type": "application/json" } });
   
     // get all tables closed by the user at the given dayReferenceNumber
     const tableDocument = await Table.find({

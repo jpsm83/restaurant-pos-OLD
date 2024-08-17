@@ -17,8 +17,8 @@ export const GET = async () => {
     // connect before first call to DB
     await connectDB();
     const businessGoods = await BusinessGood.find()
-      .populate("ingredients.ingredient", "name category")
-      .populate("setMenu", "name category sellingPrice")
+      .populate("ingredients.ingredient", "name mainCategory subCategory")
+      .populate("setMenu", "name mainCategory subCategory sellingPrice")
       .lean();
     return !businessGoods.length
       ? new NextResponse(
@@ -42,7 +42,7 @@ export const POST = async (req: Request) => {
     const {
       name,
       keyword,
-      category,
+      mainCategory,
       subCategory,
       onMenu,
       available,
@@ -59,7 +59,7 @@ export const POST = async (req: Request) => {
     if (
       !name ||
       !keyword ||
-      !category ||
+      !mainCategory ||
       !subCategory ||
       onMenu === undefined ||
       available === undefined ||
@@ -69,7 +69,7 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Name, keyword, category, subcategory, onMenu, available, sellingPrice and business are required!",
+            "Name, keyword, mainCategory, subcategory, onMenu, available, sellingPrice and business are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -110,13 +110,8 @@ export const POST = async (req: Request) => {
     let newBusinessGood: IBusinessGood = {
       name,
       keyword,
-      category: {
-        mainCategory: category as unknown as string,
-        setMenuSubCategory: undefined,
-        foodSubCategory: undefined,
-        beverageSubCategory: undefined,
-        merchandiseSubCategory: undefined,
-      },
+      mainCategory,
+      subCategory,
       onMenu,
       available,
       sellingPrice,
@@ -125,25 +120,6 @@ export const POST = async (req: Request) => {
       image: image || undefined,
       deliveryTime: deliveryTime || undefined,
     };
-
-    // set the category and subcategory
-    switch (category as unknown as string) {
-      case "Set Menu":
-        newBusinessGood.category.setMenuSubCategory = subCategory;
-        break;
-      case "Food":
-        newBusinessGood.category.foodSubCategory = subCategory;
-        break;
-      case "Beverage":
-        newBusinessGood.category.beverageSubCategory = subCategory;
-        break;
-      case "Merchandise":
-        newBusinessGood.category.merchandiseSubCategory = subCategory;
-        break;
-      default:
-        newBusinessGood.category.merchandiseSubCategory = "No subcategory";
-        break;
-    }
 
     // validate ingredients if they exist and calculate the cost price and allergens
     if (ingredients) {

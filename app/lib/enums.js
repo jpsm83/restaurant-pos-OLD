@@ -1,4 +1,4 @@
-export const category = [
+export const mainCategories = [
   "Food",
   "Set Menu",
   "Beverage",

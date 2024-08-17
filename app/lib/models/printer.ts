@@ -65,5 +65,4 @@ const printerSchema = new Schema(
 );
 
 const Printer = models.Printer || model("Printer", printerSchema);
-
 export default Printer;

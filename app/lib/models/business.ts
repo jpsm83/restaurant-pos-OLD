@@ -31,5 +31,4 @@ const businessSchema = new Schema(
 );
 
 const Business = models.Business || model("Business", businessSchema);
-
 export default Business;

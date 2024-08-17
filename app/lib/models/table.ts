@@ -30,6 +30,7 @@ const tableSchema = new Schema(
     tableTotalNetPrice: { type: Number }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions - sum of all orders orderNetPrice
     tableTotalNetPaid: { type: Number }, // amount of orders already paid  - sum of all orders orderNetPrice with billing status Paid
     tableTotalTips: { type: Number }, // sum of all orders tips
+    // orders: [{ type: Schema.Types.ObjectId, ref: 'Order' }],
     orders: {
       type: [Schema.Types.ObjectId],
       ref: "Order",
@@ -42,5 +43,4 @@ const tableSchema = new Schema(
 );
 
 const Table = models.Table || model("Table", tableSchema);
-
 export default Table;

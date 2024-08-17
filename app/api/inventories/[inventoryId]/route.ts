@@ -33,7 +33,7 @@ export const GET = async (
     const inventory = await Inventory.findById(inventoryId)
       .populate(
         "inventoryGoods.supplierGood",
-        "name category subCategory budgetImpact measurementUnit parLevel inventorySchedule dynamicCountFromLastInventory"
+        "name mainCategory subCategory budgetImpact measurementUnit parLevel inventorySchedule dynamicCountFromLastInventory"
       )
       .lean();
 

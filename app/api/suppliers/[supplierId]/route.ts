@@ -30,7 +30,7 @@ export const GET = async (
     await connectDB();
 
     const supplier = await Supplier.findById(supplierId)
-      .populate("supplierGoods", "name category currentlyInUse")
+      .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
       .lean();
 
     return !supplier

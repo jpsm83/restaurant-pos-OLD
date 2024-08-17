@@ -10,24 +10,33 @@ import { IUser } from "@/app/lib/interface/IUser";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
-import { updateUserDailySalesReportGeneric } from "./updateUserDailySalesReportGeneric";
+import { updateUserDailySalesReportGeneric } from "../utils/updateUserDailySalesReportGeneric";
+import { NextResponse } from "next/server";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // this function will call the updateUserDailySalesReportGeneric function to update the user daily sales report
 // them it will update the whole business daily sales report
 // this is called by mananger or admin
-export const closeDailySalesReport = async (
-  userId: Types.ObjectId,
-  dailySalesReportId: Types.ObjectId
-) => {
+export const POST = async (req: Request) => {
   try {
+    const { userId, dailySalesReportId } = (await req.json()) as {
+      userId: Types.ObjectId;
+      dailySalesReportId: Types.ObjectId;
+    };
     // check if the userId is valid
     if (!userId || !Types.ObjectId.isValid(userId)) {
-      return "Invalid userId!";
+      return new NextResponse(JSON.stringify({ message: "Invalid userId!" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // check if the dailySalesReportId is valid
     if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
-      return "Invalid dailySalesReportId!";
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid dailySalesReportId!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -51,7 +60,12 @@ export const closeDailySalesReport = async (
       !allowedRoles.includes(userRole.currentShiftRole ?? "") ||
       !userRole.onDuty
     ) {
-      return "You are not allowed to close the daily sales report!";
+      return new NextResponse(
+        JSON.stringify({
+          message: "You are not allowed to close the daily sales report!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // get the daily report to update
@@ -64,7 +78,10 @@ export const closeDailySalesReport = async (
 
     // check if daily report exists
     if (!dailySalesReport) {
-      return "Daily report not found!";
+      return new NextResponse(
+        JSON.stringify({ message: "Daily report not found!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // prepare dailySalesReportObj to update the daily report
@@ -76,10 +93,14 @@ export const closeDailySalesReport = async (
     );
 
     if (userWithOpenTables) {
-      return (
-        "You cant close the daily sales because user " +
-        userWithOpenTables.user +
-        " has open tables!"
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "You cant close the daily sales because user " +
+            userWithOpenTables.user +
+            " has open tables!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     } else {
       dailySalesReportObj.dailyReportOpen = false;
@@ -96,11 +117,17 @@ export const closeDailySalesReport = async (
                 user.user,
                 dailySalesReport.dayReferenceNumber
               );
-            return userDailySalesReportObj;
+            return new NextResponse(
+              JSON.stringify({ message: userDailySalesReportObj }),
+              { status: 200, headers: { "Content-Type": "application/json" } }
+            );
           } catch (error) {
-            // Handle the error per your application's requirements
-            // For example, you might want to return null or a specific error object for this user
-            return null; // or any other error handling mechanism
+            return new NextResponse(
+              JSON.stringify({
+                message: "Failed to update user daily sales report! " + error,
+              }),
+              { status: 400, headers: { "Content-Type": "application/json" } }
+            );
           }
         })
       )
@@ -285,8 +312,11 @@ export const closeDailySalesReport = async (
       { new: true }
     );
 
-    return "Daily sales report updated";
+    return new NextResponse(
+      JSON.stringify({ message: "Daily sales report updated" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
-    return "Failed to update daily sales report! " + error;
+    return handleApiError("Failed to update daily sales report! ", error);
   }
 };

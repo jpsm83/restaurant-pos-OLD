@@ -56,5 +56,4 @@ const promotionSchema = new Schema(
 );
 
 const Promotion = models.Promotion || model("Promotion", promotionSchema);
-
 export default Promotion;

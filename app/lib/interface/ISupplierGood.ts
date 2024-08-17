@@ -4,19 +4,7 @@ export interface ISupplierGood {
   _id?: Types.ObjectId;
   name: string;
   keyword: string;
-  category: {
-    mainCategory: string;
-    foodSubCategory?: string;
-    beverageSubCategory?: string;
-    merchandiseSubCategory?: string;
-    cleaningSubCategory?: string;
-    officeSubCategory?: string;
-    furnitureSubCategory?: string;
-    disposableSubCategory?: string;
-    servicesSubCategory?: string;
-    equipmentSubCategory?: string;
-    othersSubCategory?: string;
-  };
+  mainCategory: string;
   subCategory?: string;
   currentlyInUse: boolean;
   supplier: Types.ObjectId;

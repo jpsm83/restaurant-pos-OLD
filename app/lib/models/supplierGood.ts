@@ -1,6 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import {
-  category,
+  mainCategories,
   saleUnit,
   measurementUnit,
   allergens,
@@ -8,95 +8,13 @@ import {
   inventorySchedule,
 } from "../enums.js";
 
-const categorySchema = new Schema({
-  mainCategory: {
-    type: String,
-    enum: category,
-    required: true,
-  }, // main category of the business good
-
-  // required subcategory fields
-  foodSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Food";
-    },
-  }, // subcategory of the good - "Bake"
-  beverageSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Beverage";
-    },
-  }, // subcategory of the good - "Beer"
-  merchandiseSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Merchandise";
-    },
-  }, // subcategory of the good - "Clothing"
-  cleaningSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Cleaning";
-    },
-  }, // subcategory of the good - "Clothing"
-  officeSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Office";
-    },
-  }, // subcategory of the good - "Paper A4"
-  furnitureSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Furniture";
-    },
-  }, // subcategory of the good - "Chair"
-  disposableSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Disposable";
-    },
-  }, // subcategory of the good - "Napkin"
-  servicesSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Services";
-    },
-  }, // subcategory of the good - "Cleaning"
-  equipmentSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Equipment";
-    },
-  }, // subcategory of the good - "Oven"
-  othersSubCategory: {
-    type: String,
-    required: function () {
-      // @ts-ignore
-      return this.category === "Other";
-    },
-  }, // subcategory of the good - "Other"
-});
-
 const supplierGoodSchema = new Schema(
   {
     // required fields
     name: { type: String, required: true }, // name of the good "King Authur all purpose flour"
     keyword: { type: String, required: true }, // keyword of the good "flour"
-    category: {
-      type: categorySchema,
-      required: true,
-    }, // category of the supplier good - "food"
+    mainCategory: { type: String, enum: mainCategories, required: true }, // principal category of the business good
+    subCategory: { type: String, required: true }, // secondary category of the business good
     currentlyInUse: { type: Boolean, required: true, default: true }, // if the good is currently in use base on the business goods
     supplier: {
       type: Schema.Types.ObjectId,
@@ -152,7 +70,5 @@ const supplierGoodSchema = new Schema(
   }
 );
 
-const SupplierGood =
-  models.SupplierGood || model("SupplierGood", supplierGoodSchema);
-
+const SupplierGood = models.SupplierGood || model("SupplierGood", supplierGoodSchema);
 export default SupplierGood;

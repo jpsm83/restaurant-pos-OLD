@@ -1,104 +1,31 @@
 [
     {
-        "_id": "667bfc0c5d50be40f0c7b065",
+        "_id":{"$oid":"667bfc0c5d50be40f0c7b065"},
         "name": "Cheeseburger",
         "keyword": "burger",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Burgers",
-            "_id": "667bfc0c5d50be40f0c7b066"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Burger",
         "onMenu": true,
         "available": true,
-        "sellingPrice": 12.45,
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "sellingPrice": 16.45,
+        "business": {"$oid":"6673fed98c45d0a0ca5f34c1"},
         "ingredients": [
             {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be443",
-                    "name": "Bun bread",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Bread"
-                    }
-                },
+                "ingredient": {"$oid":"667bfac8d28a7ee19d9be443"},
                 "measurementUnit": "unit",
-                "requiredQuantity": 1,
-                "costOfRequiredQuantity": 1,
-                "_id": "667bfc0c5d50be40f0c7b067"
+                "requiredQuantity": 2,
+                "costOfRequiredQuantity": 2,
+                "_id": {"$oid":"667c13f2f22bdc543f105885"}
             },
             {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be444",
-                    "name": "Cheddar cheese",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Dairy"
-                    }
-                },
+                "ingredient": {"$oid":"667bfac8d28a7ee19d9be444"},
                 "measurementUnit": "g",
                 "requiredQuantity": 0.5,
                 "costOfRequiredQuantity": 0.00675,
-                "_id": "667bfc0c5d50be40f0c7b068"
-            },
-            {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be445",
-                    "name": "Hamburger patty 400g",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Bread"
-                    }
-                },
-                "measurementUnit": "unit",
-                "requiredQuantity": 1,
-                "costOfRequiredQuantity": 1.8,
-                "_id": "667bfc0c5d50be40f0c7b069"
-            },
-            {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be446",
-                    "name": "Tomato",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Fuit"
-                    }
-                },
-                "measurementUnit": "g",
-                "requiredQuantity": 20,
-                "costOfRequiredQuantity": 0.02,
-                "_id": "667bfc0c5d50be40f0c7b06a"
-            },
-            {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be447",
-                    "name": "Onions",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Vegetable"
-                    }
-                },
-                "measurementUnit": "g",
-                "requiredQuantity": 10,
-                "costOfRequiredQuantity": 0.012,
-                "_id": "667bfc0c5d50be40f0c7b06b"
-            },
-            {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be44c",
-                    "name": "Lettuce",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Vegetable"
-                    }
-                },
-                "measurementUnit": "g",
-                "requiredQuantity": 15,
-                "costOfRequiredQuantity": 0.027,
-                "_id": "667bfc0c5d50be40f0c7b06c"
+                "_id": {"$oid":"667c13f2f22bdc543f105886"}
             }
         ],
-        "costPrice": 2.8657500000000002,
+        "costPrice": 2.00675,
         "allergens": [
             "Gluten",
             "Eggs",
@@ -106,36 +33,26 @@
         ],
         "image": "../public/images/default_img.png",
         "createdAt": "2024-06-26T11:31:24.946Z",
-        "updatedAt": "2024-06-26T11:31:24.946Z",
+        "updatedAt": "2024-06-26T13:13:22.859Z",
         "__v": 0
     },
     {
-        "_id": "667bfddd5d50be40f0c7b079",
+        "_id": {"$oid":"667bfddd5d50be40f0c7b079"},
         "name": "Fried french fries",
         "keyword": "Fries",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Sides",
-            "_id": "667bfddd5d50be40f0c7b07a"
-        },
+        "mainCategory": "Food",
+        "subCategory": "Sides",
         "onMenu": true,
         "available": true,
         "sellingPrice": 3.5,
-        "business": "6673fed98c45d0a0ca5f34c1",
+        "business": {"$oid":"6673fed98c45d0a0ca5f34c1"},
         "ingredients": [
             {
-                "ingredient": {
-                    "_id": "667bfac8d28a7ee19d9be448",
-                    "name": "Frozen French Fries",
-                    "category": {
-                        "mainCategory": "Food",
-                        "foodSubCategory": "Frozen food"
-                    }
-                },
+                "ingredient": {"$oid":"667bfac8d28a7ee19d9be448"},
                 "measurementUnit": "g",
                 "requiredQuantity": 100,
                 "costOfRequiredQuantity": 0.27999999999999997,
-                "_id": "667bfddd5d50be40f0c7b07b"
+                "_id": {"$oid":"667bfddd5d50be40f0c7b07b"}
             }
         ],
         "costPrice": 0.27999999999999997,
@@ -145,40 +62,16 @@
         "__v": 0
     },
     {
-        "_id": "667c0761b1f9de2be3a80e17",
+        "_id": {"$oid":"667c0761b1f9de2be3a80e17"},
         "name": "Cheeseburger with Fries",
         "keyword": "Burger",
-        "category": {
-            "mainCategory": "Food",
-            "foodSubCategory": "Burger set",
-            "_id": "667c0761b1f9de2be3a80e18"
-        },
+        "mainCategory": "Set Menu",
+        "subCategory": "Burger Menu",
         "onMenu": true,
         "available": true,
         "sellingPrice": 12.5,
-        "business": "6673fed98c45d0a0ca5f34c1",
-        "setMenu": [
-            {
-                "_id": "667bfc0c5d50be40f0c7b065",
-                "name": "Cheeseburger",
-                "category": {
-                    "mainCategory": "Food",
-                    "foodSubCategory": "Burgers",
-                    "_id": "667bfc0c5d50be40f0c7b066"
-                },
-                "sellingPrice": 12.45
-            },
-            {
-                "_id": "667bfddd5d50be40f0c7b079",
-                "name": "Fried french fries",
-                "category": {
-                    "mainCategory": "Food",
-                    "foodSubCategory": "Sides",
-                    "_id": "667bfddd5d50be40f0c7b07a"
-                },
-                "sellingPrice": 3.5
-            }
-        ],
+        "business": {"$oid":"6673fed98c45d0a0ca5f34c1"},
+        "setMenu": [{"$oid":"667bfc0c5d50be40f0c7b065"}, {"$oid":"667bfddd5d50be40f0c7b079"}],
         "costPrice": 3.14575,
         "allergens": [
             "Gluten",

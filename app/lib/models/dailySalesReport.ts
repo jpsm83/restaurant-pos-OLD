@@ -131,7 +131,5 @@ const dailySalesReportSchema = new Schema(
   { timestamps: true, minimize: false }
 );
 
-const DailySalesReport =
-  models.DailySalesReport || model("DailySalesReport", dailySalesReportSchema);
-
+const DailySalesReport = models.DailySalesReport || model("DailySalesReport", dailySalesReportSchema);
 export default DailySalesReport;

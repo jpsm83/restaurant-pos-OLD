@@ -36,7 +36,7 @@ export const GET = async (
     await connectDB();
 
     const businessGood = await BusinessGood.findById(businessGoodId)
-      .populate("ingredients.ingredient", "name category")
+      .populate("ingredients.ingredient", "name mainCategory subCategory")
       .lean();
 
     return !businessGood
@@ -65,7 +65,7 @@ export const PATCH = async (
     const {
       name,
       keyword,
-      category,
+      mainCategory,
       subCategory,
       onMenu,
       available,
@@ -134,13 +134,8 @@ export const PATCH = async (
     const updatedBusinessGood: IBusinessGood = {
       name: name || businessGood.name,
       keyword: keyword || businessGood.keyword,
-      category: {
-        mainCategory: category as unknown as string,
-        setMenuSubCategory: undefined,
-        foodSubCategory: undefined,
-        beverageSubCategory: undefined,
-        merchandiseSubCategory: undefined,
-      },
+      mainCategory: mainCategory || businessGood.mainCategory,
+      subCategory: subCategory || businessGood.subCategory,
       onMenu: onMenu || businessGood.onMenu,
       available: available || businessGood.available,
       sellingPrice: sellingPrice || businessGood.sellingPrice,
@@ -148,25 +143,6 @@ export const PATCH = async (
       image: image || businessGood.image,
       deliveryTime: deliveryTime || businessGood.deliveryTime,
     };
-
-    // set the category and subcategory
-    switch (category as unknown as string) {
-      case "Set Menu":
-        updatedBusinessGood.category.setMenuSubCategory = subCategory;
-        break;
-      case "Food":
-        updatedBusinessGood.category.foodSubCategory = subCategory;
-        break;
-      case "Beverage":
-        updatedBusinessGood.category.beverageSubCategory = subCategory;
-        break;
-      case "Merchandise":
-        updatedBusinessGood.category.merchandiseSubCategory = subCategory;
-        break;
-      default:
-        updatedBusinessGood.category.merchandiseSubCategory = "No subcategory";
-        break;
-    }
 
     // validate ingredients if they exist and calculate the cost price and allergens
     if (ingredients) {

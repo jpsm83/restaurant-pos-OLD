@@ -66,7 +66,7 @@ export const PATCH = async (
     const {
       name,
       keyword,
-      category,
+      mainCategory,
       subCategory,
       currentlyInUse,
       supplier,
@@ -119,19 +119,8 @@ export const PATCH = async (
     const updateObj: ISupplierGood = {
       name: name || supplierGood.name,
       keyword: keyword || supplierGood.keyword,
-      category: {
-        mainCategory: category as unknown as string,
-        foodSubCategory: undefined,
-        beverageSubCategory: undefined,
-        merchandiseSubCategory: undefined,
-        cleaningSubCategory: undefined,
-        officeSubCategory: undefined,
-        furnitureSubCategory: undefined,
-        disposableSubCategory: undefined,
-        servicesSubCategory: undefined,
-        equipmentSubCategory: undefined,
-        othersSubCategory: undefined,
-      },
+      mainCategory: mainCategory || supplierGood.mainCategory,
+      subCategory: subCategory || supplierGood.subCategory,
       currentlyInUse: currentlyInUse || supplierGood.currentlyInUse,
       supplier: supplier || supplierGood.supplier,
       description: description || supplierGood.description,
@@ -165,43 +154,6 @@ export const PATCH = async (
         dynamicCountFromLastInventory ||
         supplierGood.dynamicCountFromLastInventory,
     };
-
-    // set the category and subcategory
-    switch (category as unknown as string) {
-      case "Food":
-        updateObj.category.foodSubCategory = subCategory;
-        break;
-      case "Beverage":
-        updateObj.category.beverageSubCategory = subCategory;
-        break;
-      case "Merchandise":
-        updateObj.category.merchandiseSubCategory = subCategory;
-        break;
-      case "Cleaning":
-        updateObj.category.cleaningSubCategory = subCategory;
-        break;
-      case "Office":
-        updateObj.category.officeSubCategory = subCategory;
-        break;
-      case "Furniture":
-        updateObj.category.furnitureSubCategory = subCategory;
-        break;
-      case "Disposable":
-        updateObj.category.disposableSubCategory = subCategory;
-        break;
-      case "Services":
-        updateObj.category.servicesSubCategory = subCategory;
-        break;
-      case "Equipment":
-        updateObj.category.equipmentSubCategory = subCategory;
-        break;
-      case "Others":
-        updateObj.category.othersSubCategory = subCategory;
-        break;
-      default:
-        updateObj.category.merchandiseSubCategory = "No subcategory";
-        break;
-    }
 
     // updated supplier good
     await SupplierGood.findByIdAndUpdate(supplierGoodId, updateObj, {

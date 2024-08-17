@@ -22,7 +22,7 @@ export const GET = async () => {
       // .populate("user", "username allUserRoles currentShiftRole")
       .populate(
         "businessGoods",
-        "name category subCategory productionTime sellingPrice allergens"
+        "name mainCategory subCategory productionTime sellingPrice allergens"
       )
       .lean();
 

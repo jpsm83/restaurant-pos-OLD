@@ -16,7 +16,7 @@ export const GET = async () => {
     await connectDB();
 
     const suppliers = await Supplier.find()
-      .populate("supplierGoods", "name category currentlyInUse")
+      .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
       .lean();
 
     return !suppliers.length

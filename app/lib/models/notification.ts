@@ -26,7 +26,5 @@ const notificationSchema = new Schema(
   }
 );
 
-const Notification =
-  models.Notification || model("Notification", notificationSchema);
-
+const Notification = models.Notification || model("Notification", notificationSchema);
 export default Notification;

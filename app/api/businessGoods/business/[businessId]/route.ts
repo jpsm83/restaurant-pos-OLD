@@ -32,7 +32,7 @@ export const GET = async (
     await connectDB();
 
     const businessGoods = await BusinessGood.find({ business: businessId })
-      .populate("ingredients.ingredient", "name category")
+      .populate("ingredients.ingredient", "name mainCategory subCategory")
       .lean();
 
     return !businessGoods.length
