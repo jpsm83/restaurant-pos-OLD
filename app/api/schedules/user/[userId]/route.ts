@@ -1,10 +1,13 @@
 import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+// imported utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import { Types } from "mongoose";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import User from "@/app/lib/models/user";
 
 // @desc    Get all schedules by user ID
 // @route   GET /schedules/user/:userId
@@ -29,7 +32,11 @@ export const GET = async (
     await connectDB();
 
     const schedules = await Schedule.find({ "employees.userId": userId })
-      // .populate("employees.employee", "username allUserRoles")
+      .populate({
+        path: "employees.employee",
+        select: "username allUserRoles",
+        model: User,
+      })
       .lean();
 
     return !schedules.length

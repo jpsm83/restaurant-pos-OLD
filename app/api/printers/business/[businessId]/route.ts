@@ -2,9 +2,12 @@ import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
+// imported utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+
 // imported models
 import Printer from "@/app/lib/models/printer";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import User from "@/app/lib/models/user";
 
 // @desc    Get printers by business ID
 // @route   GET /printers/business/:businessId
@@ -33,7 +36,7 @@ export const GET = async (
 
     // fetch printers with the given business ID
     const printers = await Printer.find({ business: businessId })
-      // .populate("printFor.users", "username")
+    .populate({ path: "printFor.users", select: "username", model: User })
       .lean();
 
     return !printers.length

@@ -19,10 +19,12 @@ export const GET = async () => {
     // just get basic information user visualisation, not the whole inventory
     // user will be able to click on the inventory to see the details
     const inventories = await Inventory.find()
-      // .populate(
-      //   "inventoryGoods.supplierGood",
-      //   "name category subCategory budgetImpact measurementUnit parLevel inventorySchedule dynamicCountFromLastInventory"
-      // )
+      .populate({
+        path: "inventoryGoods.supplierGood",
+        select:
+          "name category subCategory budgetImpact measurementUnit parLevel inventorySchedule dynamicCountFromLastInventory",
+        model: SupplierGood,
+      })
       .lean();
 
     return !inventories.length

@@ -2,9 +2,11 @@ import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
-// import models
-import DailySalesReport from "@/app/lib/models/dailySalesReport";
+// imported utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+
+// imported models
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // @desc    Get daily reports by business ID, startDate and endDate
 // @route   GET /dailySalesReports/business/:businessId?startDate=<date>&endDate=<date>

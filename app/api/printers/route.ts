@@ -1,12 +1,17 @@
 import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 
-// imported models
-import Printer from "@/app/lib/models/printer";
+// imported interfaces
 import { IPrinter } from "@/app/lib/interface/IPrinter";
+
+// imported utils
 import { printForValidation } from "./utils/printForValidation";
 import { checkPrinterConnection } from "./utils/checkPrinterConnection";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+
+// import user model
+import User from "@/app/lib/models/user";
+import Printer from "@/app/lib/models/printer";
 
 // @desc    Get all printers
 // @route   GET /printers
@@ -17,30 +22,26 @@ export const GET = async () => {
     await connectDB();
 
     const printers = await Printer.find()
-      // .populate({
-      //   path: 'printFor.users', // Correct path to populate nested array
-      //   select: 'username' // Fields to select from the populated documents
-      // })
+      .populate({ path: "printFor.users", select: "username", model: User })
       .lean(); // Converts Mongoose document to plain JavaScript object
 
-      if (!printers.length) {
-        return new NextResponse(
-          JSON.stringify({ message: 'No printers found!' }),
-          {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
+    if (!printers.length) {
+      return new NextResponse(
+        JSON.stringify({ message: "No printers found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Return the populated printers data
     return new NextResponse(JSON.stringify(printers), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
-
   } catch (error) {
     return handleApiError("Get all printers failed!", error);
   }

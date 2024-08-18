@@ -1,12 +1,19 @@
 import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
+
+// import interfaces
 import { Types } from "mongoose";
 import { IOrder } from "@/app/lib/interface/IOrder";
 
-// import models
-import Order from "@/app/lib/models/order";
+// import utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { cancelOrderAndUpdateDynamicCount } from "../utils/cancelOrderAndUpdateDynamicCount";
+
+// import models
+import Order from "@/app/lib/models/order";
+import User from "@/app/lib/models/user";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Table from "@/app/lib/models/table";
 
 // @desc    Get order by ID
 // @route   GET /orders/:orderId
@@ -29,12 +36,18 @@ export const GET = async (
     await connectDB();
 
     const order = await Order.findById(orderId)
-      .populate("table", "tableReference")
-      // .populate("user", "username allUserRoles currentShiftRole")
-      .populate(
-        "businessGoods",
-        "name mainCategory subCategory productionTime sellingPrice allergens"
-      )
+      .populate({ path: "table", select: "tableReference", model: Table })
+      .populate({
+        path: "user",
+        select: "username allUserRoles currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "businessGoods",
+        select:
+          "name mainCategory subCategory productionTime sellingPrice allergens",
+        model: BusinessGood,
+      })
       .lean();
 
     return !order

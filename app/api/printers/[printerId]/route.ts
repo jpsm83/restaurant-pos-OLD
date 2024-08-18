@@ -2,12 +2,17 @@ import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
-// imported models
-import Printer from "@/app/lib/models/printer";
+// imported interfaces
 import { IPrinter } from "@/app/lib/interface/IPrinter";
+
+// imported utils
 import { checkPrinterConnection } from "../utils/checkPrinterConnection";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { printForValidation } from "../utils/printForValidation";
+
+// imported models
+import Printer from "@/app/lib/models/printer";
+import User from "@/app/lib/models/user";
 
 // @desc    Get printer by ID
 // @route   GET /printers/:printerId
@@ -32,7 +37,7 @@ export const GET = async (
     await connectDB();
 
     const printer = await Printer.findById(printerId)
-      // .populate("printFor.users", "username")
+      .populate({ path: "printFor.users", select: "username", model: User })
       .lean();
 
     return !printer

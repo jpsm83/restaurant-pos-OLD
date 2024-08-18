@@ -3,13 +3,16 @@ import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { ITable } from "@/app/lib/interface/ITable";
 
-// import functions
+// import utils
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import models
 import Table from "@/app/lib/models/table";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import User from "@/app/lib/models/user";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Order from "@/app/lib/models/order";
 
 // @desc    Get tables by ID
 // @route   GET /tables/:tableId
@@ -32,18 +35,32 @@ export const GET = async (
     await connectDB();
 
     const tables = await Table.findById(tableId)
-      // .populate("openedBy", "username currentShiftRole")
-      // .populate("responsibleBy", "username currentShiftRole")
-      // .populate("closedBy", "username currentShiftRole")
-      // .populate({
-      //   path: "orders",
-      //   select:
-      //     "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
-      //   populate: {
-      //     path: "businessGoods",
-      //     select: "name mainCategory subCategory allergens sellingPrice",
-      //   },
-      // })
+      .populate({
+        path: "openedBy",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "responsibleBy",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "closedBy",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "orders",
+        select:
+          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoods",
+        populate: {
+          path: "businessGoods",
+          select: "name mainCategory subCategory allergens sellingPrice",
+          model: BusinessGood,
+        },
+        model: Order,
+      })
       .lean();
 
     return !tables
@@ -83,10 +100,6 @@ export const PATCH = async (
       status,
       responsibleBy,
       clientName,
-      tableTotalPrice,
-      tableTotalNetPrice,
-      tableTotalNetPaid,
-      tableTotalTips,
       closedBy,
     } = (await req.json()) as ITable;
 
@@ -108,10 +121,6 @@ export const PATCH = async (
       status: status || table.status,
       responsibleBy: responsibleBy || table.responsibleBy,
       clientName: clientName || table.clientName,
-      tableTotalPrice: tableTotalPrice || table.tableTotalPrice,
-      tableTotalNetPrice: tableTotalNetPrice || table.tableTotalNetPrice,
-      tableTotalNetPaid: tableTotalNetPaid || table.tableTotalNetPaid,
-      tableTotalTips: tableTotalTips || table.tableTotalTips,
     };
 
     // The order controller would handle the creation of orders and updating the relevant table's order array. The table controller would then only be responsible for reading and managing table data, not order data. This separation of concerns makes the code easier to maintain and understand.

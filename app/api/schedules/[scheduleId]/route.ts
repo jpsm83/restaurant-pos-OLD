@@ -1,11 +1,16 @@
 import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+// imported interfaces
+import { ISchedule } from "@/app/lib/interface/ISchedule";
+
+// imported utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import { Types } from "mongoose";
-import { ISchedule } from "@/app/lib/interface/ISchedule";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import User from "@/app/lib/models/user";
 
 // @desc    Get schedule by ID
 // @route   GET /schedules/:scheduleId
@@ -31,7 +36,11 @@ export const GET = async (
     await connectDB();
 
     const schedule = await Schedule.findById(scheduleId)
-      // .populate("employees.userId", "username allUserRoles")
+      .populate({
+        path: "employees.userId",
+        select: "username allUserRoles",
+        model: User,
+      })
       .lean();
 
     return !schedule

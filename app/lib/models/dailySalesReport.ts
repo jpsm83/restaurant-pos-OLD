@@ -1,5 +1,5 @@
 import { Schema, model, models } from "mongoose";
-import { paymentMethodSchema } from "./paymentMethod";
+import { paymentMethod } from "./paymentMethod";
 
 const userGoodsSchema = new Schema({
   good: {
@@ -28,7 +28,7 @@ const userDailySalesReportArraySchema = new Schema({
   // those "SALES" refer table sales closed by the user (table.responsibleBy)
   // not "SALES" made by the user, the user can close the table of another user if shifts are passed and the previous user has opened the tables
   // when a table is closed, the sales from the previews user is pass to the new one because the new user is responsible for the table and will handle the payment in the end
-  userPayments: [paymentMethodSchema], // array of payment methods used by the user
+  userPayments: [paymentMethod], // array of payment methods used by the user
   userTotalSales: { type: Number }, // sum of all orders made by the table.closedBy regardless of promotions, discounts, voids, or cancellations
   userTotalNetPaid: { type: Number }, // sum of all orders after adjustments have been made to the final price, vois, invitations, discounts, and promotions
   userTotalTips: { type: Number }, // sum of all tips
@@ -69,7 +69,7 @@ const dailySalesReportSchema = new Schema(
     },
 
     // optional fields for creation, required for update
-    totalPayments: [paymentMethodSchema], // array of all payment methods and its total sales
+    totalPayments: [paymentMethod], // array of all payment methods and its total sales
     totalSales: { type: Number }, // sum of all users sales
     totalNetPaid: { type: Number }, // sum of all users netPaid
     totaltips: { type: Number }, // sum of all users tips

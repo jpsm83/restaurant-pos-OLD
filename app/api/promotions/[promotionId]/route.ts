@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/app/lib/db";
-
-// imported models
-import Promotion from "@/app/lib/models/promotion";
 import { Types } from "mongoose";
+
+// imported interfaces
 import { IPromotion } from "@/app/lib/interface/IPromotion";
+
+// import utils
 import { validateDateAndTime } from "../utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "../utils/validateDaysOfTheWeek";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validatePromotionType } from "../utils/validatePromotionType";
+
+// imported models
+import Promotion from "@/app/lib/models/promotion";
+import BusinessGood from "@/app/lib/models/businessGood";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
@@ -37,7 +42,11 @@ export const GET = async (
     await connectDB();
 
     const promotion = await Promotion.findById(promotionId)
-      // .populate("businessGoodsToApply", "name sellingPrice")
+      .populate({
+        path: "businessGoodsToApply",
+        select: "name sellingPrice",
+        model: BusinessGood,
+      })
       .lean();
 
     return !promotion

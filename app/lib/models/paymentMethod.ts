@@ -11,22 +11,22 @@ import {
 // paymentMethod = [
 //   {
 //     paymentMethodType: "Cash",
-//     methdBranch: "Cash",
+//     methodBranch: "Cash",
 //     methodSalesTotal: 100,
 //   },
 //   {
 //     paymentMethodType: "Card",
-//     methdBranch: "Visa",
+//     methodBranch: "Visa",
 //     methodSalesTotal: 150,
 //   },
 //   {
 //     paymentMethodType: "Crypto",
-//     methdBranch: "Bitcoin",
+//     methodBranch: "Bitcoin",
 //     methodSalesTotal: 200,
 //   },
 //   {
 //     paymentMethodType: "Other",
-//     methdBranch: "Voucher",
+//     methodBranch: "Voucher",
 //     methodSalesTotal: 50,
 //   },
 // ];

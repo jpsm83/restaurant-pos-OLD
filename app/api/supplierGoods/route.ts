@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/app/lib/db";
 
+// imported interfaces
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+
+// import utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
-import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import Supplier from "@/app/lib/models/supplier";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods
@@ -15,7 +20,7 @@ export const GET = async () => {
     await connectDB();
 
     const supplierGoods = await SupplierGood.find()
-      // .populate("supplier", "tradeName")
+      .populate({ path: "supplier", select: "tradeName", model: Supplier })
       .lean();
 
     return !supplierGoods.length

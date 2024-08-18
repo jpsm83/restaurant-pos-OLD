@@ -12,6 +12,7 @@ import {
   IUserDailySalesReport,
 } from "@/app/lib/interface/IDailySalesReport";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import User from "@/app/lib/models/user";
 
 // @desc    Get daily report by ID
 // @route   GET /dailySalesReports/:dailySalesReportId
@@ -25,18 +26,28 @@ export const GET = async (
 
     // check if the ID is valid
     if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid daily report ID!"}), { status: 400, headers: { "Content-Type": "application/json" } });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid daily report ID!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
     await connectDB();
 
     const dailySalesReport = await DailySalesReport.findById(dailySalesReportId)
-      // .populate("usersDailySalesReport.user", "username")
+      .populate({
+        path: "usersDailySalesReport.user",
+        select: "username",
+        model: User,
+      })
       .lean();
 
     return !dailySalesReport
-      ? new NextResponse(JSON.stringify({ message: "Daily report not found!"}), { status: 404, headers: { "Content-Type": "application/json" } })
+      ? new NextResponse(
+          JSON.stringify({ message: "Daily report not found!" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        )
       : new NextResponse(JSON.stringify(dailySalesReport), {
           status: 200,
           headers: { "Content-Type": "application/json" },
@@ -60,7 +71,10 @@ export const DELETE = async (
 
     // check if the ID is valid
     if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid daily report ID!"}), { status: 400, headers: { "Content-Type": "application/json" } });
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid daily report ID!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // connect before first call to DB
@@ -72,7 +86,10 @@ export const DELETE = async (
     });
 
     if (result.deletedCount === 0) {
-      return new NextResponse(JSON.stringify({ message: "Daily report not found!"}), { status: 404, headers: { "Content-Type": "application/json" }}); 
+      return new NextResponse(
+        JSON.stringify({ message: "Daily report not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     return new NextResponse(`Daily report ${dailySalesReportId} deleted`, {

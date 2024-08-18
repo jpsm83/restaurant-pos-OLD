@@ -1,13 +1,19 @@
 import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
+
+// import utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
+
+// import interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
+import { ITable } from "@/app/lib/interface/ITable";
 
 // import models
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
-import { ITable } from "@/app/lib/interface/ITable";
+import User from "@/app/lib/models/user";
+import BusinessGood from "@/app/lib/models/businessGood";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -18,12 +24,18 @@ export const GET = async () => {
     await connectDB();
 
     const orders = await Order.find()
-      .populate("table", "tableReference")
-      // .populate("user", "username allUserRoles currentShiftRole")
-      .populate(
-        "businessGoods",
-        "name mainCategory subCategory productionTime sellingPrice allergens"
-      )
+      .populate({ path: "table", select: "tableReference", model: Table })
+      .populate({
+        path: "user",
+        select: "username allUserRoles currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "businessGoods",
+        select:
+          "name mainCategory subCategory productionTime sellingPrice allergens",
+        model: BusinessGood,
+      })
       .lean();
 
     return !orders.length

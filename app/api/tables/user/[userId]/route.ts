@@ -2,9 +2,14 @@ import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
+// import utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+
 // import models
 import Table from "@/app/lib/models/table";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import User from "@/app/lib/models/user";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Order from "@/app/lib/models/order";
 
 // @desc   Get tables by user ID
 // @route  GET /tables/user/:userId
@@ -27,17 +32,27 @@ export const GET = async (
     await connectDB();
 
     const tables = await Table.find({ responsibleBy: userId })
-      // .populate("openedBy", "username currentShiftRole")
-      // .populate("closedBy", "username currentShiftRole")
-      // .populate({
-      //   path: "orders",
-      //   select:
-      //     "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt",
-      //   populate: {
-      //     path: "businessGoods",
-      //     select: "name mainCategory subCategory allergens sellingPrice",
-      //   },
-      // })
+      .populate({
+        path: "openedBy",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "closedBy",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "orders",
+        select:
+          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoods",
+        populate: {
+          path: "businessGoods",
+          select: "name mainCategory subCategory allergens sellingPrice",
+          model: BusinessGood,
+        },
+        model: Order,
+      })
       .lean();
 
     return !tables.length

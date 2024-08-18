@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/app/lib/db";
+import { Types } from "mongoose";
+
+// imported interfaces
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+
+// import utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
-import { Types } from "mongoose";
-import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import Supplier from "@/app/lib/models/supplier";
 
 // @desc    Get supplier good by ID
 // @route   GET /supplierGoods/:supplierGoodId
@@ -29,7 +34,7 @@ export const GET = async (
     await connectDB();
 
     const supplierGood = await SupplierGood.findById(supplierGoodId)
-      // .populate("supplier", "tradeName")
+      .populate({ path: "supplier", select: "tradeName", model: Supplier })
       .lean();
 
     return !supplierGood

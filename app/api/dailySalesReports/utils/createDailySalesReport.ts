@@ -19,7 +19,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
     });
 
     if (dailyReportOpenExists) {
-      return "Daily report exists and it is open!";
+      return "There is an daily sales report opened!";
     }
 
     // get current date with real time to be the dayReferenceNumber
@@ -43,7 +43,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
       dailySalesReportObj
     );
 
-    return dailySalesReport.dayReferenceNumber;
+    return `New daily sales report number ${dailySalesReport.dayReferenceNumber} created`;
   } catch (error) {
     return "Fail to create a deily sales report! " + error;
   }
