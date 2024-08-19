@@ -16,7 +16,7 @@ export const GET = async (
   try {
     const businessId = context.params.businessId;
     // check if the businessId is valid
-    if (!Types.ObjectId.isValid(businessId)) {
+    if (!businessId || !Types.ObjectId.isValid(businessId)) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid inventory ID" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -49,7 +49,9 @@ export const GET = async (
     if (startDate && endDate) {
       if (startDate > endDate) {
         return new NextResponse(
-          "Invalid date range, start date must be before end date!",
+          JSON.stringify({
+            message: "Invalid date range, start date must be before end date!",
+          }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
@@ -61,7 +63,7 @@ export const GET = async (
         $lte: endOfDay,
       };
     }
-
+    
     // connect before first call to DB
     await connectDB();
 
@@ -71,10 +73,16 @@ export const GET = async (
       .select("title countedDate doneBy comments")
       .lean();
 
-    return new NextResponse(JSON.stringify(inventories), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return !inventories.length
+      ? new NextResponse(JSON.stringify({ message: "No inventories found!" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        })
+      : new NextResponse(JSON.stringify(inventories), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+
   } catch (error) {
     return handleApiError("Get inventories by business id failed!", error);
   }

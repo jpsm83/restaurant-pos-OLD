@@ -22,7 +22,10 @@ export const GET = async (
 
     // check if the ID is valid
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid business ID!"}), { status: 400, headers: { "Content-Type": "application/json" }});
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid business ID!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // date and time will como from the front as ex: "2023-04-01T15:00:00", you can create a Date object from it with new Date(startDate). This will create a Date object representing midnight on the given date in the LOCAL TIME ZONE OF THE SERVER.
@@ -33,19 +36,37 @@ export const GET = async (
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
+    // Convert date string to date object at the start of the day in UTC
+    const startOfDay = startDate
+      ? new Date(startDate.split("T")[0] + "T00:00:00.000Z")
+      : null;
+
+    const endOfDay = endDate
+      ? new Date(endDate.split("T")[0] + "T23:59:59.999Z")
+      : null;
+
     // Build query based on the presence of startDate and endDate
     let query: {
       business: Types.ObjectId;
-      createdAt?: { $gte: Date, $lte: Date };
+      createdAt?: { $gte?: Date | null; $lte?: Date | null };
     } = { business: businessId };
 
     if (startDate && endDate) {
-      if(startDate > endDate){
-        return new NextResponse(JSON.stringify({ message: "Invalid date range, start date must be before end date!"}), {
-          status: 400, headers: { "Content-Type": "application/json" }
-        });
+      if (startDate > endDate) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Invalid date range, start date must be before end date!",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
       }
-      query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+      query.createdAt = {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      };
     }
 
     // connect before first call to DB
@@ -57,11 +78,18 @@ export const GET = async (
       .lean();
 
     return !dailySalesReports.length
-      ? new NextResponse(JSON.stringify({ message: "No daily reports found!"}),
+      ? new NextResponse(
+          JSON.stringify({ message: "No daily reports found!" }),
           { status: 404, headers: { "Content-Type": "application/json" } }
         )
-      : new NextResponse(JSON.stringify(dailySalesReports), { status: 200, headers: { "Content-Type": "application/json" } });
+      : new NextResponse(JSON.stringify(dailySalesReports), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
   } catch (error) {
-    return handleApiError("Get daily sales report by business id failed!", error);
+    return handleApiError(
+      "Get daily sales report by business id failed!",
+      error
+    );
   }
 };

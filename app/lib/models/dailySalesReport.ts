@@ -22,7 +22,7 @@ const userDailySalesReportArraySchema = new Schema({
     ref: "User",
     required: true,
   }, // user that closed the table, table.responsibleBy
-
+  
   // optional fields on creation, required on update
   hasOpenTables: { type: Boolean }, // if the user has open tables, the user can view but not close the daily report
   // those "SALES" refer table sales closed by the user (table.responsibleBy)
@@ -32,6 +32,7 @@ const userDailySalesReportArraySchema = new Schema({
   userTotalSales: { type: Number }, // sum of all orders made by the table.closedBy regardless of promotions, discounts, voids, or cancellations
   userTotalNetPaid: { type: Number }, // sum of all orders after adjustments have been made to the final price, vois, invitations, discounts, and promotions
   userTotalTips: { type: Number }, // sum of all tips
+  userTotalCost: { type: Number }, // sum of the cost price of all goods sold by the user
   // if table is passed to another user, new user will be responsible for the previews sales, and also the customers served at the table will be pass to the new user
   // we recomment users to close their tables on a shift change, so the individual analitics by user will be more accurate
   // this has no negative impact on the business analitics, because the sales will be passed to the new user, and the customers served will be passed to the new user
@@ -43,7 +44,6 @@ const userDailySalesReportArraySchema = new Schema({
     type: Number,
     default: 0,
   }, // average of customers expended (total of customers served / total of sales)
-
   // those "GOODS" refer to the goods sold or void by the user itself, not the one that closed the table (order.user)
   userGoodsSoldArray: [userGoodsSchema], // array of goods sold by the user
   userGoodsVoidArray: [userGoodsSchema], // array of goods void by the user
@@ -69,13 +69,13 @@ const dailySalesReportSchema = new Schema(
     },
 
     // optional fields for creation, required for update
-    totalPayments: [paymentMethod], // array of all payment methods and its total sales
-    totalSales: { type: Number }, // sum of all users sales
-    totalNetPaid: { type: Number }, // sum of all users netPaid
-    totaltips: { type: Number }, // sum of all users tips
-    totalCost: { type: Number }, // sum of all goods costPrice incluiding voids and invitaions
-    profit: { type: Number }, // difference between totalNetPaid and totalCost (totalNetPaid - totalCost)
-    businessTotalCustomersServed: { type: Number }, // sum of all users customersServed
+    businessPayments: [paymentMethod], // array of all payment methods and its total sales
+    businessTotalSales: { type: Number }, // sum of all users sales
+    businessTotalNetPaid: { type: Number }, // sum of all users netPaid
+    businessTotaltips: { type: Number }, // sum of all users tips
+    businessTotalCost: { type: Number }, // sum of all goods costPrice incluiding voids and invitaions
+    businessTotalProfit: { type: Number }, // difference between totalNetPaid and totalCost (totalNetPaid - totalCost)
+    businessCustomersServed: { type: Number }, // sum of all users customersServed
     businessAverageCustomersExpended: { type: Number }, // average of all users customersExpended (totalNetPaid / businessTotalCustomersServed)
     businessGoodsSoldArray: [userGoodsSchema], // array of goods sold on the day
     businessGoodsVoidArray: [userGoodsSchema], // array of goods void on the day
@@ -87,5 +87,6 @@ const dailySalesReportSchema = new Schema(
   { timestamps: true, minimize: false }
 );
 
-const DailySalesReport = models.DailySalesReport || model("DailySalesReport", dailySalesReportSchema);
+const DailySalesReport =
+  models.DailySalesReport || model("DailySalesReport", dailySalesReportSchema);
 export default DailySalesReport;

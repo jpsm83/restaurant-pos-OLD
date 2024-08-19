@@ -2,16 +2,11 @@ import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
-// import models
-import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import {
-  ICardSales,
-  ICryptoSales,
-  IDailySalesReport,
-  IOtherSales,
-  IUserDailySalesReport,
-} from "@/app/lib/interface/IDailySalesReport";
+// imported utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+
+// imported models
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 
 // @desc    Get daily report by ID

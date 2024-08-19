@@ -10,6 +10,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addUserToDailySalesReport } from "./utils/addUserToDailySalesReport";
 import { createDailySalesReport } from "./utils/createDailySalesReport";
 import { updateUserDailySalesReportGeneric } from "./utils/updateUserDailySalesReportGeneric";
+import { closeDailySalesReport } from "./utils/closeDailySalesReport";
 
 // @desc    Get all daily reports
 // @route   GET /dailySalesReports
@@ -54,8 +55,11 @@ export const GET = async () => {
 //     // // @ts-ignore
 //     // const result = await createDailySalesReport(businessId);
 
+//     // // @ts-ignore
+//     // const result = await updateUserDailySalesReportGeneric(userId, dayReferenceNumber);
+
 //     // @ts-ignore
-//     const result = await updateUserDailySalesReportGeneric(userId, dayReferenceNumber);
+//     const result = await closeDailySalesReport(dayReferenceNumber, businessId);
 
 //     return new NextResponse(JSON.stringify({ message: result }), {
 //       status: 201,

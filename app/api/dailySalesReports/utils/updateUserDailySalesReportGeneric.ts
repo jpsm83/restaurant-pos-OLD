@@ -1,12 +1,11 @@
 import connectDB from "@/app/lib/db";
 import { Types } from "mongoose";
-import { ObjectId } from "mongodb";
 
 // imported interfaces
 import { IUserDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 interface IBusinessGood {
-  good: ObjectId;
+  good: Types.ObjectId;
   quantity: number;
   totalPrice: number;
   totalCostPrice: number;
@@ -17,6 +16,7 @@ import Order from "@/app/lib/models/order";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Table from "@/app/lib/models/table";
+import { IPayment } from "@/app/lib/interface/IPayment";
 
 
 // this function will update individual user daily sales report
@@ -35,7 +35,7 @@ export const updateUserDailySalesReportGeneric = async (
 
     // get all tables closed by the user at the given dayReferenceNumber
     const tableDocument = await Table.find({
-      closedBy: userId,
+      responsibleBy: userId,
       dayReferenceNumber: dayReferenceNumber,
     })
       .populate({
@@ -51,15 +51,15 @@ export const updateUserDailySalesReportGeneric = async (
           select: "_id name mainCategory subCategory sellingPrice costPrice",
         },
         select:
-          "user paymentMethod billingStatus orderPrice orderNetPrice orderTips",
+          "user paymentMethod billingStatus orderPrice orderNetPrice orderTips orderCostPrice",
       })
       .select(
         "dayReferenceNumber status business orderNetPrice orderTips guests closedBy"
       )
       .lean();
 
-    // business goods sales report
-    let businessGoodsReport: {
+    // user goods sales report
+    let userGoodsReport: {
       goodsSold: IBusinessGood[];
       goodsVoid: IBusinessGood[];
       goodsInvited: IBusinessGood[];
@@ -73,12 +73,13 @@ export const updateUserDailySalesReportGeneric = async (
     let userDailySalesReportObj: IUserDailySalesReport = {
       user: userId,
       hasOpenTables: false,
+      userPayments: [] as IPayment[],
+      userTotalSales: 0,
       userTotalNetPaid: 0,
       userTotalTips: 0,
+      userTotalCost: 0,
       userCustomersServed: 0,
-      userTotalSales: 0,
       userAverageCustomersExpended: 0,
-      userPayments: [],
     };
 
     // go through all the tables closed by the user
@@ -92,9 +93,9 @@ export const updateUserDailySalesReportGeneric = async (
         // update all the user sales
         if (eachTableDocument.orders && eachTableDocument.orders.length > 0) {
           eachTableDocument.orders.forEach((order: any) => {
-            order.paymentMethod.forEach((payment: any) => {
+            order.paymentMethod.forEach((payment: IPayment) => {
               // Find if the payment method and branch combination already exists in the userDailySalesReportObj.userPayments array
-              const existingPayment = userDailySalesReportObj.userPayments.find(
+              const existingPayment = userDailySalesReportObj?.userPayments?.find(
                 (p: any) =>
                   p.paymentMethodType === payment.paymentMethodType &&
                   p.methodBranch === payment.methodBranch
@@ -105,7 +106,7 @@ export const updateUserDailySalesReportGeneric = async (
                 existingPayment.methodSalesTotal += payment.methodSalesTotal;
               } else {
                 // If it doesn't exist, create a new entry in the userDailySalesReportObj.userPayments array
-                userDailySalesReportObj.userPayments.push({
+                userDailySalesReportObj?.userPayments?.push({
                   paymentMethodType: payment.paymentMethodType,
                   methodBranch: payment.methodBranch,
                   methodSalesTotal: payment.methodSalesTotal,
@@ -117,6 +118,7 @@ export const updateUserDailySalesReportGeneric = async (
               order.orderNetPrice ?? 0;
             userDailySalesReportObj.userTotalTips += order.orderTips ?? 0;
             userDailySalesReportObj.userTotalSales += order.orderPrice ?? 0;
+            userDailySalesReportObj.userTotalCost += order.orderCostPrice ?? 0;
 
             // Check billing status and update the business goods report without duplicates
             if (order.businessGoods && order.businessGoods.length > 0) {
@@ -145,13 +147,13 @@ export const updateUserDailySalesReportGeneric = async (
                 // Push or update the object in the correct array based on the order's billing status
                 switch (order.billingStatus) {
                   case "Paid":
-                    updateGoodsArray(businessGoodsReport.goodsSold);
+                    updateGoodsArray(userGoodsReport.goodsSold);
                     break;
                   case "Void":
-                    updateGoodsArray(businessGoodsReport.goodsVoid);
+                    updateGoodsArray(userGoodsReport.goodsVoid);
                     break;
                   case "Invitation":
-                    updateGoodsArray(businessGoodsReport.goodsInvited);
+                    updateGoodsArray(userGoodsReport.goodsInvited);
                     break;
                   default:
                     break;
@@ -179,17 +181,17 @@ export const updateUserDailySalesReportGeneric = async (
           : 0;
     }
 
-    userDailySalesReportObj.userGoodsSoldArray = businessGoodsReport.goodsSold;
-    userDailySalesReportObj.userGoodsVoidArray = businessGoodsReport.goodsVoid;
+    userDailySalesReportObj.userGoodsSoldArray = userGoodsReport.goodsSold;
+    userDailySalesReportObj.userGoodsVoidArray = userGoodsReport.goodsVoid;
     userDailySalesReportObj.userGoodsInvitedArray =
-      businessGoodsReport.goodsInvited;
+      userGoodsReport.goodsInvited;
     userDailySalesReportObj.userTotalVoid =
-      businessGoodsReport.goodsVoid.reduce(
+      userGoodsReport.goodsVoid.reduce(
         (acc, curr) => acc + curr.totalPrice,
         0
       );
     userDailySalesReportObj.userTotalInvited =
-      businessGoodsReport.goodsInvited.reduce(
+      userGoodsReport.goodsInvited.reduce(
         (acc, curr) => acc + curr.totalPrice,
         0
       );
@@ -204,7 +206,7 @@ export const updateUserDailySalesReportGeneric = async (
       { new: true }
     );
 
-    return "User daily sales report updated";
+    return userDailySalesReportObj;
   } catch (error) {
     return "Failed to update user daily sales report! " + error;
   }
