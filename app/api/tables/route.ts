@@ -165,7 +165,7 @@ export const POST = async (req: Request) => {
 
 // export const POST = async (req: Request) => {
 //   try {
-//     const tableReference ="business1table1";
+//     const tableReference = "business1table1";
 //     const guests = 3;
 //     const openedBy = "66758b8904c4e6f5bbaa6b81";
 //     const responsibleBy = "66758b8904c4e6f5bbaa6b81";
@@ -174,16 +174,15 @@ export const POST = async (req: Request) => {
 //     const dayReferenceNumber = 1720908000000;
 //     const tableId = "6693eb1c0693ec3374a89b41";
 
-//     // // create new table
-//     // const result = await createTable(
-//     //   tableReference,
-//     //   guest,
-//     //   openedBy,
-//     //   responsibleBy,
-//     //   business,
-//     //   clientName,
-//     //   dayReferenceNumber
-//     // );
+//     const result = await createTable(
+//       tableReference,
+//       guest,
+//       openedBy,
+//       responsibleBy,
+//       business,
+//       clientName,
+//       dayReferenceNumber
+//     );
 
 //     return new NextResponse(JSON.stringify(result), {
 //       status: 201,

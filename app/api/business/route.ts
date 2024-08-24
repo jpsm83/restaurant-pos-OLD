@@ -1,12 +1,17 @@
 import connectDB from "@/app/lib/db";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
+import { ObjectId } from "mongodb";
+
+// imported utils
+import { generateQrCode } from "./utils/generateQrCode";
 
 // imported models
 import Business from "@/app/lib/models/business";
 import { IBusiness } from "@/app/lib/interface/IBusiness";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
+import { deleteQrCode } from "./utils/deleteQrCode";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -52,7 +57,6 @@ export const POST = async (req: Request) => {
       subscription,
       address,
       contactPerson,
-      businessTables,
     } = (await req.json()) as IBusiness;
 
     // check required fields
@@ -68,7 +72,7 @@ export const POST = async (req: Request) => {
       !address
     ) {
       return new NextResponse(
-        JSON.stringify({ message: "Missing required fields!" }),
+        JSON.stringify({ message: "TradeName, legalName, email, password, phoneNumber, taxNumber, currencyTrade, subscription and address are required!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -121,7 +125,6 @@ export const POST = async (req: Request) => {
       subscription,
       address,
       contactPerson: contactPerson || undefined,
-      businessTables: businessTables || undefined,
     };
 
     // Create new business
@@ -135,3 +138,21 @@ export const POST = async (req: Request) => {
     return handleApiError("Create business failed!", error);
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     let cloudinaryImgToDelete =
+//       "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b";
+//     let businessId = "6673fed98c45d0a0ca5f34c1";
+
+//     const result = await generateQrCode(new ObjectId(businessId), new ObjectId());
+//     // const result = await deleteQrCode(cloudinaryImgToDelete);
+
+//     return new NextResponse(JSON.stringify(result), {
+//       status: 201,
+//       headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Create table failed!", error);
+//   }
+// };

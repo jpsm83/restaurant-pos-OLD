@@ -1,6 +1,15 @@
 import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
-import { subscription } from "../enums.js";
+import { subscription, locationTypes } from "../enums.js";
+
+const salesLocation = new Schema({
+  locationReferenceName: { type: String, required: true }, // Table name or location name
+  locationType: { type: String },
+  selfOrdering: { type: Boolean, default: false },
+  qrCode: { type: String, required: true }, // auto created QR code for the location
+  qrEnabled: { type: Boolean, default: true }, // QR code enabled or disabled - when QR is scanned, it will be disabled and a timer on the frontend will set, if the timer expires, the frontend page will close and the QR code will be enabled again
+  qrLastScanned: { type: Date }, // last time the QR code was scanned
+});
 
 const businessSchema = new Schema(
   {
@@ -21,8 +30,8 @@ const businessSchema = new Schema(
     address: { type: addressSchema, required: true }, // Address of the company
 
     // optional fields
-    contactPerson: { type: String }, // Contact person of the company
-    businessTables: { type: [String], default: undefined }, // Reference name of tables in the business
+    contactPerson: { type: String, default: "Table", enum: locationTypes }, // Contact person of the company
+    salesLocation: { type: [salesLocation] }, // tables reference and qr code of the company
   },
   {
     timestamps: true,

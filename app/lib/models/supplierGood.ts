@@ -36,7 +36,7 @@ const supplierGoodSchema = new Schema(
       default: "../public/images/default_img.png",
     }, // photo of the good
     inventorySchedule: { type: String, enum: inventorySchedule }, // daily, weekly, monthly
-
+    
     // analytics fields
     measurementUnit: {
       type: String,

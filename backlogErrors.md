@@ -13,6 +13,9 @@
 - orders all GETs, all get with populate user doesnt work
 - after first orders, chance table status to occupied if it is not so
 - all the errors next response supose to be pass as objects ({ message: "error" })
+- images in everything we can and save with cloudinary
+- generate qr image in all tables and save it on db
+- orders have to have an indentifier to be compare customer/waiter in case of selfordering
 
 - supplierGoods DELETE - must await data from businessGoods for a full testing
 - dailySalesReport helper function updateUserDailySalesReportGeneric been tested and it is working BUT, NEED all the controllers tested and with data to be real tested
