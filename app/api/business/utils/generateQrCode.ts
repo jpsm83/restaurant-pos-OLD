@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import QRCode from "qrcode";
 import { v2 as cloudinary } from "cloudinary";
+import { ObjectId } from "mongodb";
 
 // Configure Cloudinary (you should have these values in your environment variables)
 cloudinary.config({
@@ -10,8 +11,11 @@ cloudinary.config({
   secure: true,
 });
 
-export const generateQrCode = async (businessId: Types.ObjectId, generateRandomId: Types.ObjectId) => {
+export const generateQrCode = async (businessId: Types.ObjectId) => {
   try {
+    // generateRandomId is the ID of the new sales location
+    const generateRandomId = new ObjectId();
+
     // this QR will redirect to a page where user can order and pay - to be developed
     //    scan QR
     //    select language
@@ -45,6 +49,7 @@ export const generateQrCode = async (businessId: Types.ObjectId, generateRandomI
       invalidate: true,
       upload_preset: uploadPreset,
       public_id: generateRandomId.toString(), // Optional: use the ID as the public ID
+      // businessId is used as a folder name
       folder: `restaurant-pos/${businessId}/salesLocationQrCodes`, // Optional: specify a folder in Cloudinary
     });
 

@@ -1,3 +1,8 @@
+- EVERYTHING that user the property SALESLOCATION (businessTables B4) from business have to be reviewed
+- REFACTOR ALL THE FILES TREE, so everyting that is action is inside its respective parent
+- ADD IMAGES to everything you can
+- finish the inventory routes
+
 - business DELETE, supplierGood and businessGood causing error
 - supplier DELETE, supplierGood causing error
 - printer all GETs, they are not populating the user from printFor.user

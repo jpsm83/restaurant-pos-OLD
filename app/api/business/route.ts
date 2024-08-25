@@ -3,15 +3,17 @@ import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { ObjectId } from "mongodb";
 
+// imported interface
+import { IBusiness } from "@/app/lib/interface/IBusiness";
+
 // imported utils
 import { generateQrCode } from "./utils/generateQrCode";
+import { deleteQrCode } from "./utils/deleteQrCode";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { addressValidation } from "@/app/lib/utils/addressValidation";
 
 // imported models
 import Business from "@/app/lib/models/business";
-import { IBusiness } from "@/app/lib/interface/IBusiness";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { addressValidation } from "@/app/lib/utils/addressValidation";
-import { deleteQrCode } from "./utils/deleteQrCode";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -45,6 +47,8 @@ export const GET = async () => {
 // @route   POST /business
 // @access  Private
 export const POST = async (req: Request) => {
+  // business is created with a salesLocation
+  // salesLocation is created upon updating the business because it needs the businessId
   try {
     const {
       tradeName,
@@ -72,7 +76,10 @@ export const POST = async (req: Request) => {
       !address
     ) {
       return new NextResponse(
-        JSON.stringify({ message: "TradeName, legalName, email, password, phoneNumber, taxNumber, currencyTrade, subscription and address are required!" }),
+        JSON.stringify({
+          message:
+            "TradeName, legalName, email, password, phoneNumber, taxNumber, currencyTrade, subscription and address are required!",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }

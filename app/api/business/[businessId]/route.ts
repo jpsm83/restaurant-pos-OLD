@@ -98,7 +98,6 @@ export const PATCH = async (
       subscription,
       address,
       contactPerson,
-      salesLocation,
     } = (await req.json()) as IBusiness;
 
     // check email format
@@ -168,24 +167,6 @@ export const PATCH = async (
       }
     }
 
-    if(salesLocation){
-      for (const location of salesLocation) {
-        if (!location.locationReferenceName) {
-          return new NextResponse(
-            JSON.stringify({ message: "Location reference name is required!" }),
-            { status: 400, headers: { "Content-Type": "application/json" } }
-          );
-        }
-
-        let generateRandomId = new ObjectId();
-
-        salesLocationQrCode.push({
-          ...location,
-          qrCode: await generateQrCode(businessId, generateRandomId),
-        });
-      }
-    }
-
     // prepare update business object
     const updatedBusiness = {
       tradeName: tradeName || business.tradeName,
@@ -198,7 +179,6 @@ export const PATCH = async (
       subscription: subscription || business.subscription,
       address: updatedAddress,
       contactPerson: contactPerson || business.contactPerson,
-      salesLocation: salesLocation || business.salesLocation,
     };
 
     // save the updated business
