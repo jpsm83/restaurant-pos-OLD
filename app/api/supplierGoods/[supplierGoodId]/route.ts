@@ -192,6 +192,7 @@ export const DELETE = async (
 ) => {
   try {
     const supplierGoodId = context.params.supplierGoodId;
+
     // check if the supplier good is valid
     if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
       return new NextResponse(
@@ -203,9 +204,12 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDB();
 
+    // Attempt to find the supplier good and check if it's in use
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(
       supplierGoodId
-    ).lean();
+    )
+      .select("_id business")
+      .lean();
 
     if (!supplierGood) {
       return new NextResponse(
@@ -214,27 +218,21 @@ export const DELETE = async (
       );
     }
 
-    // give it a warning on the front application
-    // make user delete the supplier good from all business goods before deleting it
-    // thats way he will know that he need to replace the supplier good with another one for the business good be a valid one
-    // check if the supplier good is used in any business goods
-    const businessGoodsUsingSupplierGood = await BusinessGood.find({
-      ingredients: { $elemMatch: { ingredient: supplierGoodId } },
-    })
-      .select("name")
-      .lean();
+    // ***************************************************************************
+    // do not allow to delete a supplier good that is in use in any business goods
+    // ***************************************************************************
 
-    const supplierGoodBeenUsedMessage = `Supplier good ${
-      supplierGood.name
-    } is used in the following business goods: ${businessGoodsUsingSupplierGood
-      .map((good) => good.name)
-      .join(
-        ", "
-      )}. Please remove it from the business goods before deleting it!`;
+    // Check if any business goods uses this supplier good
+    const isInUse = await BusinessGood.exists({
+      business: supplierGood.business,
+      "ingredients.supplierGood": supplierGoodId,
+    });
 
-    if (businessGoodsUsingSupplierGood.length) {
+    if (isInUse) {
       return new NextResponse(
-        JSON.stringify({ message: supplierGoodBeenUsedMessage }),
+        JSON.stringify({
+          message: "Supplier good is in use in some business goods!",
+        }),
         { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -244,7 +242,7 @@ export const DELETE = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: `Supplier good ${supplierGood.name} deleted successfully!`,
+        message: `Supplier good deleted successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

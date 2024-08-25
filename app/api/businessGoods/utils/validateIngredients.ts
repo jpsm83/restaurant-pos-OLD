@@ -6,7 +6,7 @@ export const validateIngredients = (ingredientsArray: IIngredients[]) => {
     return "Invalid ingredients array";
   }
 
-  const requiredFields = ["ingredient", "measurementUnit", "requiredQuantity"];
+  const requiredFields = ["supplierGood", "measurementUnit", "requiredQuantity"];
 
   // Iterate over ingredients to check for missing fields
   for (const ingredient of ingredientsArray) {

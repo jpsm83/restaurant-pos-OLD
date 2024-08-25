@@ -31,13 +31,15 @@ export const createTable = async (
     await connectDB();
 
     // check if tableReference exists in the business
-    const validateTableReference = await Business.findOne({
+    const validateSalesLocationReference = await Business.findOne({
       _id: business,
-      businessTables: { $in: [tableReference] },
+      salesLocation: {
+        $elemMatch: { locationReferenceName: tableReference }
+      }
     });
 
     // check if tableReference exists in the business (pre set tables that can be used)
-    if (!validateTableReference) {
+    if (!validateSalesLocationReference) {
       return "TableReference does not exist in this business!";
     }
 

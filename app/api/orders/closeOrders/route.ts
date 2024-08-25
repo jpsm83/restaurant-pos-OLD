@@ -1,8 +1,8 @@
 import { Types } from "mongoose";
-import { validatePaymentMethodArray } from "../../utils/validatePaymentMethodArray";
+import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
 import connectDB from "@/app/lib/db";
 import Order from "@/app/lib/models/order";
-import { updateMultipleOrders } from "../../utils/updateMultipleOrders";
+import { updateMultipleOrders } from "../utils/updateMultipleOrders";
 import Table from "@/app/lib/models/table";
 import { IOrder } from "@/app/lib/interface/IOrder";
 import { IPayment } from "@/app/lib/interface/IPayment";
@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Create new orders
-// @route   POST /orders/actions
+// @route   POST /orders/closeOrders
 // @access  Private
 export const POST = async (req: Request) => {
   try {

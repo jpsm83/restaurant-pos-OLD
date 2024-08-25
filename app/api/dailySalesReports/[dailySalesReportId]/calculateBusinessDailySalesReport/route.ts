@@ -23,15 +23,20 @@ interface IBusinessGood {
   totalCostPrice: number;
 }
 
-// this function will call the updateUserDailySalesReportGeneric function to update the user daily sales report
-// them it will update the whole business daily sales report
-// this is called by mananger or admin
-export const POST = async (req: Request) => {
+// @desc    Create new notifications
+// @route   POST /dailySalesReports/:dailySalesReportId/calculateBusinessDailySalesReport
+// @access  Private
+export const POST = async (req: Request, context: { params: { dailySalesReportId: Types.ObjectId } }) => {
+  // this function will call the updateUserDailySalesReportGeneric function to update the user daily sales report
+  // them it will update the whole business daily sales report
+  // this is called by mananger or admin
   try {
-    const { userId, dailySalesReportId } = (await req.json()) as {
+    const { userId } = (await req.json()) as {
       userId: Types.ObjectId;
-      dailySalesReportId: Types.ObjectId;
     };
+
+    const dailySalesReportId = context.params.dailySalesReportId;
+
     // check if the userId is valid
     if (!userId || !Types.ObjectId.isValid(userId)) {
       return new NextResponse(JSON.stringify({ message: "Invalid userId!" }), {

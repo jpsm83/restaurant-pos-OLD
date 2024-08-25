@@ -6,15 +6,20 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // @desc    Create new users
-// @route   POST /users/actions
+// @route   POST /users/:userId/updateReadFlag
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (
+  req: Request,
+  context: { params: { userId: Types.ObjectId } }
+) => {
   // update notification readFlag from user
   try {
-    const { userId, notificationId } = (await req.json()) as {
-      userId: Types.ObjectId;
+    const { notificationId } = (await req.json()) as {
       notificationId: Types.ObjectId;
     };
+
+    const userId = context.params.userId;
+
     // connect before first call to DB
     await connectDB();
 

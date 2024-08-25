@@ -12,7 +12,7 @@ export const calculateIngredientsCostPriceAndAllergies = async (
 
     for (let ingredient of ingredients) {
       const supplierGood: ISupplierGood | null = await SupplierGood.findOne({
-        _id: ingredient.ingredient,
+        _id: ingredient.supplierGood,
       })
         .select("measurementUnit pricePerUnit allergens")
         .lean()
@@ -21,7 +21,7 @@ export const calculateIngredientsCostPriceAndAllergies = async (
         return "Supplier good not found!";
       }
       let ingredientObj = {
-        ingredient: ingredient.ingredient,
+        supplierGood: ingredient.supplierGood,
         measurementUnit: ingredient.measurementUnit,
         requiredQuantity: ingredient.requiredQuantity,
         costOfRequiredQuantity: 0,

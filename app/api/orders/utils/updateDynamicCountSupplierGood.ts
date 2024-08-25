@@ -24,11 +24,11 @@ export const updateDynamicCountSupplierGood = async (
       _id: { $in: businessGoodsIds },
     })
       .select(
-        "ingredients.ingredient ingredients.measurementUnit ingredients.requiredQuantity setMenu"
+        "ingredients.supplierGood ingredients.measurementUnit ingredients.requiredQuantity setMenu"
       )
       .populate(
         "setMenu",
-        "ingredients.ingredient ingredients.measurementUnit ingredients.requiredQuantity"
+        "ingredients.supplierGood ingredients.measurementUnit ingredients.requiredQuantity"
       )
       .lean();
 
@@ -37,6 +37,7 @@ export const updateDynamicCountSupplierGood = async (
     //     "requiredQuantity": 2,
     //     "measurementUnit": "unit"
     // ]
+    
     let allIngredientsUser: {
       ingredientId: Types.ObjectId;
       requiredQuantity: number;

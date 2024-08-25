@@ -6,14 +6,16 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // @desc    Create new inventories
-// @route   POST /inventories/actions
+// @route   POST /inventories/:inventoryId/deleteSupplierGoodFromInventory
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (req: Request, context: { params: { inventoryId: Types.ObjectId } }) => {
   try {
-    const { supplierGoodId, inventoryId } = (await req.json()) as {
+    const { supplierGoodId } = (await req.json()) as {
       supplierGoodId: Types.ObjectId;
-      inventoryId: Types.ObjectId;
     };
+
+    const inventoryId = context.params.inventoryId;
+
     // check required fields
     if (!inventoryId || !supplierGoodId) {
       return new NextResponse(

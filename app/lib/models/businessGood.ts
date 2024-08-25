@@ -22,7 +22,7 @@ const businessGoodSchema = new Schema(
     ingredients: {
       type: [
         {
-          ingredient: {
+          supplierGood: {
             type: Schema.Types.ObjectId,
             ref: "SupplierGood",
             required: true,

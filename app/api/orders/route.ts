@@ -80,6 +80,9 @@ export const GET = async () => {
 // ORDERS ARE CREATED INDIVIDUALLY UNLESS IT HAS ADDONS
 // THAT WAY WE CAN APPLY PROMOTIONS TO INDIVIDUAL ORDERS, MANAGE PAYMENTS AND TRACK THE STATUS OF EACH ORDER EASILY
 
+// orders are created individually, but are sent togueder to the kitchen or bar
+// those group of orders have the same orderCode
+
 // @desc    Create new order
 // @route   POST /orders
 // @access  Private
@@ -144,6 +147,13 @@ export const POST = async (req: Request) => {
     // ORDERS CAN BE DUPLICATED WITH DIFFERENT IDs ***
     // ***********************************************
 
+    const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const day = (new Date().getDate()).toString();
+    const month = (new Date().getMonth() + 1).toString(); // getMonth() returns 0-11, so add 1
+    const dayOfWeek = weekDays[new Date().getDay()];
+    const randomNum = (Math.floor(Math.random() * 9000) + 1000).toString();
+    const orderCode = (day.length === 1 ? "0" + day : day) + (month.length === 1 ? "0" + month : month) + dayOfWeek.slice(0,3) + randomNum;
+
     // create an order object with required fields
     const newOrder = {
       dayReferenceNumber: dayReferenceNumber,
@@ -161,6 +171,7 @@ export const POST = async (req: Request) => {
       orderNetPrice,
       orderCostPrice,
       orderStatus: "Sent",
+      orderCode: orderCode,
       user,
       table,
       businessGoods,
@@ -209,7 +220,7 @@ export const POST = async (req: Request) => {
       await Table.findByIdAndUpdate(
         { _id: table },
         { $push: { orders: order._id } },
-        { new: true }
+        { new: true },
       );
     }
 

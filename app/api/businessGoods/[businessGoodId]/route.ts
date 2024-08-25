@@ -36,7 +36,7 @@ export const GET = async (
     await connectDB();
 
     const businessGood = await BusinessGood.findById(businessGoodId)
-      .populate("ingredients.ingredient", "name mainCategory subCategory")
+      .populate("ingredients.supplierGood", "name mainCategory subCategory")
       .lean();
 
     return !businessGood
@@ -169,7 +169,7 @@ export const PATCH = async (
         updatedBusinessGood.ingredients =
           calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
-              ingredient: ing.ingredient,
+              supplierGood: ing.supplierGood,
               measurementUnit: ing.measurementUnit,
               requiredQuantity: ing.requiredQuantity ?? 0,
               costOfRequiredQuantity: ing.costOfRequiredQuantity,
@@ -279,15 +279,16 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDB();
 
-    // check if the business good is used in any order
+    // check if the business good is used in any order.billingStatus: "Open"
     const businessGoodInOrders = await Order.find({
       businessGoods: businessGoodId,
       billingStatus: "Open",
     }).lean();
+
     if (businessGoodInOrders.length > 0) {
       return new NextResponse(
         JSON.stringify({
-          message: "Cannot delete Business good because it is in some orders!",
+          message: "Cannot delete Business good because it is in some open orders!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -297,6 +298,7 @@ export const DELETE = async (
     const businessGoodInSetMenu = await BusinessGood.find({
       setMenu: businessGoodId,
     }).lean();
+
     if (businessGoodInSetMenu.length > 0) {
       return new NextResponse(
         JSON.stringify({

@@ -17,7 +17,7 @@ export const GET = async () => {
     // connect before first call to DB
     await connectDB();
     const businessGoods = await BusinessGood.find()
-      .populate("ingredients.ingredient", "name mainCategory subCategory")
+      .populate("ingredients.supplierGood", "name mainCategory subCategory")
       .populate("setMenu", "name mainCategory subCategory sellingPrice")
       .lean();
     return !businessGoods.length
@@ -146,7 +146,7 @@ export const POST = async (req: Request) => {
         newBusinessGood.ingredients =
           calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
-              ingredient: ing.ingredient,
+              supplierGood: ing.supplierGood,
               measurementUnit: ing.measurementUnit,
               requiredQuantity: ing.requiredQuantity ?? 0,
               costOfRequiredQuantity: ing.costOfRequiredQuantity,

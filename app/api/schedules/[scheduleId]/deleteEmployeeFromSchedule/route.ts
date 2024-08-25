@@ -7,16 +7,18 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // @desc    Create new schedules
-// @route   POST /schedules/actions
+// @route   POST /schedules/:schedulesId/deleteEmployeeFromSchedule
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (req: Request, context: { params: { scheduleId: Types.ObjectId } }) => {
   // delete employee from schedule
   try {
-    const { scheduleId, userId, userScheduleId } = (await req.json()) as {
-      scheduleId: Types.ObjectId;
+    const { userId, userScheduleId } = (await req.json()) as {
       userId: Types.ObjectId;
       userScheduleId: Types.ObjectId;
     };
+
+    const scheduleId = context.params.scheduleId;
+
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
       return new NextResponse(

@@ -8,17 +8,19 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // @desc    Create new inventories
-// @route   POST /inventories/actions
+// @route   POST /inventories/:inventoryId/updateSupplierGoodInventory
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (req: Request, context: { params: { inventoryId: Types.ObjectId } }) => {
   // this function will set the count quantity of a individual supplier good in an inventory
   try {
-    const { supplierGoodId, inventoryId, currentCountQuantity } =
+    const { supplierGoodId, currentCountQuantity } =
       (await req.json()) as {
         supplierGoodId: Types.ObjectId;
-        inventoryId: Types.ObjectId;
         currentCountQuantity: number;
       };
+
+      const inventoryId = context.params.inventoryId;
+
     // check required fields
     if (!inventoryId || !supplierGoodId || !currentCountQuantity) {
       return new NextResponse(

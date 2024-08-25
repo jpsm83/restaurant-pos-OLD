@@ -20,6 +20,8 @@ import Schedule from "@/app/lib/models/schedule";
 import Supplier from "@/app/lib/models/supplier";
 import Table from "@/app/lib/models/table";
 import User from "@/app/lib/models/user";
+import BusinessGood from "@/app/lib/models/businessGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -240,7 +242,7 @@ export const DELETE = async (
     } else {
       // Delete all related data in parallel
       await Promise.all([
-        // BusinessGood.deleteMany({ business: businessId }),
+        BusinessGood.deleteMany({ business: businessId }),
         DailySalesReport.deleteMany({ business: businessId }),
         Inventory.deleteMany({ business: businessId }),
         Notification.deleteMany({ business: businessId }),
@@ -249,7 +251,7 @@ export const DELETE = async (
         Promotion.deleteMany({ business: businessId }),
         Schedule.deleteMany({ business: businessId }),
         Supplier.deleteMany({ business: businessId }),
-        // SupplierGood.deleteMany({ business: businessId }),
+        SupplierGood.deleteMany({ business: businessId }),
         Table.deleteMany({ business: businessId }),
         User.deleteMany({ business: businessId }),
       ]);

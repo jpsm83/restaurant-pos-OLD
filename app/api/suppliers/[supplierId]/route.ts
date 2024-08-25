@@ -8,6 +8,8 @@ import { ISupplier } from "@/app/lib/interface/ISupplier";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { IAddress } from "@/app/lib/interface/IAddress";
+import SupplierGood from "@/app/lib/models/supplierGood";
+import BusinessGood from "@/app/lib/models/businessGood";
 
 // @desc    Get supplier by ID
 // @route   GET /supplier/:supplierId
@@ -190,6 +192,7 @@ export const DELETE = async (
 ) => {
   try {
     const supplierId = context.params.supplierId;
+
     // validate supplierId
     if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
       return new NextResponse(
@@ -201,11 +204,25 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDB();
 
-    // // remove the supplier reference from all supplier goods
-    // await SupplierGood.updateMany(
-    //   { supplier: supplierId },
-    //   { $unset: { supplier: "" } }
-    // );
+    // **********************************************************************
+    // do not allow to delete a supplier that is in use in any business goods
+    // **********************************************************************
+
+    // Check if any supplier goods referencing this supplier are in use at any business goods
+    const isInUse = await BusinessGood.exists({
+      "ingredients.supplierGood": {
+        $in: await SupplierGood.find({ supplier: supplierId }).distinct("_id"),
+      },
+    });
+
+    if (isInUse) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Supplier is in use in some business goods!",
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     // delete the supplier
     const result = await Supplier.deleteOne({ _id: supplierId });
@@ -219,7 +236,7 @@ export const DELETE = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: `Supplier id ${supplierId} deleted successfully!`,
+        message: `Supplier deleted successfully!`,
       }),
       {
         status: 200,

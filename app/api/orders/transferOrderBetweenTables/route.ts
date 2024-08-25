@@ -3,12 +3,12 @@ import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
 import { Types } from "mongoose";
-import { createTable } from "../../../tables/utils/createTable";
+import { createTable } from "../../tables/utils/createTable";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Create new orders
-// @route   POST /orders/actions
+// @route   POST /orders/transferOrderBetweenTables
 // @access  Private
 export const POST = async (req: Request) => {
   try {
@@ -99,7 +99,10 @@ export const POST = async (req: Request) => {
     // Update the table document by adding the order id to it
     await Table.findOneAndUpdate(
       { _id: tableToTransferId },
-      { $push: { orders: { $each: ordersArray } } },
+      {
+        $push: { orders: { $each: ordersArray } },
+        $set: { status: "Occupied" },
+      },
       { new: true }
     );
 

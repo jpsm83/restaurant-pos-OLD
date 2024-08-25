@@ -24,6 +24,7 @@ const orderSchema = new Schema(
       default: "Sent",
       required: true,
     }, // status regarding the order action to be taken or already taken
+    orderCode: { type: String, required: true }, // unique code for the order
     orderPrice: { type: Number, required: true }, // final price of the sun of product being sold regardless of any discounts, voids, or cancellations
     orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions
     orderCostPrice: { type: Number, required: true }, // cost price of the sun of product being sold regardless of any discounts, voids, or cancellations

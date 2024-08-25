@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { IPaymentMethod } from "./IPayment";
+import { IPayment } from "./IPayment";
 
 export interface IOrder {
     _id?: Types.ObjectId;
@@ -14,10 +14,11 @@ export interface IOrder {
     businessGoodsCategory?: string;
     business: Types.ObjectId;
     orderStatus?: string;
+    orderCode: string;
     allergens?: string[];
     promotionApplyed?: string;
     discountPercentage?: number;
     comments?: string;
     billingStatus?: string;
-    paymentMethod?: IPaymentMethod[];
+    paymentMethod?: IPayment[];
 }

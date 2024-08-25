@@ -9,14 +9,16 @@ import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Create new schedules
-// @route   POST /schedules/actions
+// @route   POST /schedules/:schedulesId/addEmployeeToSchedule
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (req: Request, context: { params: { scheduleId: Types.ObjectId } }) => {
   try {
-    const { scheduleId, employeeSchedule } = (await req.json()) as {
-      scheduleId: Types.ObjectId;
+    const { employeeSchedule } = (await req.json()) as {
       employeeSchedule: IEmployee;
     };
+
+    const scheduleId = context.params.scheduleId;
+
     // check if the schedule ID is valid
     if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
       return new NextResponse(

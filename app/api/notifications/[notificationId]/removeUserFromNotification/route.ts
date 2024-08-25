@@ -5,17 +5,19 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // @desc    Create new notifications
-// @route   POST /notifications/actions
+// @route   POST /notifications/:notificationId/removeUserFromNotification
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (req: Request, context: { params: { notificationId: Types.ObjectId } }) => {
   // keep each controller with its own helper functions
   // priciple of separation of concerns
   // Remove the user from the recipient array of the notification
   try {
-    const { userId, notificationId } = (await req.json()) as {
+    const { userId } = (await req.json()) as {
       userId: Types.ObjectId;
-      notificationId: Types.ObjectId;
     };
+    
+    const notificationId = context.params.notificationId;
+
     // check if the userId is valid
     if (!Types.ObjectId.isValid(userId)) {
       return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {

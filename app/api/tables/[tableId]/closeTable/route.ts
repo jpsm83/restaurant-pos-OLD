@@ -7,14 +7,16 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // @desc    Create new tables
-// @route   POST /tables/actions
+// @route   POST /tables/:tableId/closeTable
 // @access  Private
-export const POST = async (req: Request) => {
+export const POST = async (req: Request, context: { params: { tableId: Types.ObjectId } }) => {
   try {
-    const { tableId, closedBy } = (await req.json()) as {
-      tableId: Types.ObjectId;
+    const { closedBy } = (await req.json()) as {
       closedBy: Types.ObjectId;
     };
+
+    const tableId = context.params.tableId;
+
     // connect before first call to DB
     await connectDB();
 
