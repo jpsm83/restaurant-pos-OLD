@@ -2,6 +2,7 @@ import connectDB from "@/app/lib/db";
 import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
+import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import convert, { Unit } from "convert-units";
 import { Types } from "mongoose";
@@ -9,7 +10,7 @@ import { Types } from "mongoose";
 // every time an order is created or cancel, we MUST update the supplier goods
 // check all the ingredients of the business goods array of the order
 // each ingredient is a supplier good
-// add or remove the quantity used from the supplierGood.dynamicCountFromLastInventory
+// add or remove the quantity used from the inventoy.inventoryGoods.[the supplier good that applied].dynamicCountFromLastInventory
 // if insted of ingredients we have setMenu
 // get all business goods from the setMenu and repeat the cicle
 export const updateDynamicCountSupplierGood = async (
@@ -20,7 +21,7 @@ export const updateDynamicCountSupplierGood = async (
     // connect before first call to DB
     await connectDB();
 
-    const businessGoodsIngredients: IBusinessGood[] = await BusinessGood.find({
+    const businessGoodsIngredients = await BusinessGood.find({
       _id: { $in: businessGoodsIds },
     })
       .select(
@@ -37,7 +38,7 @@ export const updateDynamicCountSupplierGood = async (
     //     "requiredQuantity": 2,
     //     "measurementUnit": "unit"
     // ]
-    
+
     let allIngredientsUser: {
       ingredientId: Types.ObjectId;
       requiredQuantity: number;
@@ -46,7 +47,7 @@ export const updateDynamicCountSupplierGood = async (
 
     businessGoodsIngredients.forEach((businessGood) => {
       if (businessGood.ingredients) {
-        businessGood.ingredients.forEach((ing) => {
+        businessGood.ingredients.forEach((ing: any) => {
           allIngredientsUser.push({
             ingredientId: ing.ingredient, // Assuming the ID field is named ingredientId
             requiredQuantity: ing.requiredQuantity,
@@ -54,7 +55,7 @@ export const updateDynamicCountSupplierGood = async (
           });
         });
       } else if (businessGood.setMenu) {
-        businessGood.setMenu.forEach((setMenuItem) => {
+        businessGood.setMenu.forEach((setMenuItem: any) => {
           // @ts-ignore
           setMenuItem.ingredients.forEach((ing) => {
             allIngredientsUser.push({
@@ -72,12 +73,25 @@ export const updateDynamicCountSupplierGood = async (
       const supplierGood: ISupplierGood | null = await SupplierGood.findById(
         ing.ingredientId
       )
-        .select("dynamicCountFromLastInventory measurementUnit")
+        .select("measurementUnit")
         .lean();
 
+      const supplierGoodInventory: any = await Inventory.findOne(
+        {
+          setFinalCount: false,
+          "inventoryGoods.supplierGood": ing.ingredientId,
+        },
+        { "inventoryGoods.$": 1 } // Select only the matched item from the array
+      ).lean();
+
+      const supplierGoodInventoryObj = supplierGoodInventory?.inventoryGoods[0];
+
       if (supplierGood?.measurementUnit === ing.measurementUnit) {
-        await SupplierGood.findByIdAndUpdate(
-          ing.ingredientId,
+        await Inventory.updateOne(
+          {
+            _id: supplierGoodInventory._id,
+            "inventoryGoods._id": supplierGoodInventoryObj._id,
+          },
           {
             $inc: {
               dynamicCountFromLastInventory:
@@ -92,8 +106,11 @@ export const updateDynamicCountSupplierGood = async (
         const convertedQuantity = convert(ing.requiredQuantity)
           .from(ing.measurementUnit as Unit)
           .to(supplierGood?.measurementUnit as Unit);
-        await SupplierGood.findByIdAndUpdate(
-          ing.ingredientId,
+        await Inventory.updateOne(
+          {
+            _id: supplierGoodInventory._id,
+            "inventoryGoods._id": supplierGoodInventoryObj._id,
+          },
           {
             $inc: {
               dynamicCountFromLastInventory:

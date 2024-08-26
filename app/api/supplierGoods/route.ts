@@ -61,7 +61,6 @@ export const POST = async (req: Request) => {
       parLevel,
       minimumQuantityRequired,
       inventorySchedule,
-      dynamicCountFromLastInventory,
     } = (await req.json()) as ISupplierGood;
 
     // check required fields
@@ -128,10 +127,6 @@ export const POST = async (req: Request) => {
       parLevel: parLevel || undefined,
       minimumQuantityRequired: minimumQuantityRequired || undefined,
       inventorySchedule: inventorySchedule || undefined,
-      // upon creation, the dynamicCountFromLastInventory is the current quantity purchased from the supplier
-      // its required if business is to start using the inventory module
-      // IMPORTANT *** THAT NUMBER IS THE START POINT FOR THE INVENTORY COUNT
-      dynamicCountFromLastInventory: dynamicCountFromLastInventory || undefined,
     };
 
     // create a new supplier good

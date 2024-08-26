@@ -76,7 +76,7 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(
       supplierGoodId
     )
-      .select("_id dynamicCountFromLastInventory parLevel")
+      .select("_id parLevel")
       .lean();
 
     if (!supplierGood) {

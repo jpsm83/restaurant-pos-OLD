@@ -1,19 +1,36 @@
 import { Types } from "mongoose";
 
-export interface IInventoryGood {
-    supplierGood: Types.ObjectId;
-    systemCountQuantity?: number;
-    currentCountQuantity?: number;
-    deviationPercent?: number;
-    quantityNeeded?: number;
+interface IInventoryCount {
+  countedDate: Date;
+  currentCountQuantity: number;
+  systemCountQuantity: number;
+  deviationPercent: number;
+  quantityNeeded?: number;
+  countedBy: Types.ObjectId;
+  comments?: string;
+  reedited?: {
+    reeditedBy: Types.ObjectId;
+    date: Date;
+    reason: string;
+    originalValues: {
+      currentCountQuantity: number;
+      systemCountQuantity: number;
+      deviationPercent: number;
+    };
+  };
 }
 
-export interface IInventory {
-    title: string;
-    business: Types.ObjectId;
-    setFinalCount: boolean;
-    inventoryGoods: IInventoryGood[];
-    comments?: string;
-    countedDate?: Date;
-    doneBy?: Types.ObjectId[];
+interface IInventoryGoods {
+  supplierGood: Types.ObjectId;
+  monthlyCounts: IInventoryCount[];
+  averageDeviationPercent: number;
+  dynamicCountFromLastInventory: number;
 }
+
+interface IInventory {
+  business: Types.ObjectId;
+  setFinalCount: boolean;
+  inventoryGoods: IInventoryGoods[];
+}
+
+export default IInventory;

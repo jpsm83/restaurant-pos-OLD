@@ -22,7 +22,7 @@ export const GET = async () => {
       .populate({
         path: "inventoryGoods.supplierGood",
         select:
-          "name category subCategory budgetImpact measurementUnit parLevel inventorySchedule dynamicCountFromLastInventory",
+          "name category subCategory budgetImpact measurementUnit parLevel inventorySchedule",
         model: SupplierGood,
       })
       .lean();

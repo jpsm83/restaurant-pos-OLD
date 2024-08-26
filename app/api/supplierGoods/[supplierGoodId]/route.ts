@@ -86,7 +86,6 @@ export const PATCH = async (
       minimumQuantityRequired,
       inventorySchedule,
       totalQuantityPerUnit,
-      dynamicCountFromLastInventory,
     } = (await req.json()) as ISupplierGood;
 
     // connect before first call to DB
@@ -145,19 +144,6 @@ export const PATCH = async (
       minimumQuantityRequired:
         minimumQuantityRequired || supplierGood.minimumQuantityRequired,
       inventorySchedule: inventorySchedule || supplierGood.inventorySchedule,
-      // IMPORTANT *** dynamicCountFromLastInventory is the start point of the inventory count
-      // UPDATE BY ITSELF
-      // Should be add upon creation of the supplier good if the business is wants to use the inventory module
-      // Can be updated to a new value if the business didnt use the inventory module but decided to start using it
-      // Not supose to be updated manualy unless is one of the cases above
-      // UPDATED BY ORDER CONTROLLER
-      // Its value will decrease base on the supplier good that orders are made from
-      // it wont affect the inventory count till the inventory is counted
-      // UPDATED BY INVENTORY CONTROLLER
-      // Every time the inventory is counted, new value of supplierGood.dynamicCountFromLastInventory will be equatl to the current inventory.currentCountQuantity
-      dynamicCountFromLastInventory:
-        dynamicCountFromLastInventory ||
-        supplierGood.dynamicCountFromLastInventory,
     };
 
     // updated supplier good

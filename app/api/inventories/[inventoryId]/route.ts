@@ -33,7 +33,7 @@ export const GET = async (
     const inventory = await Inventory.findById(inventoryId)
       .populate(
         "inventoryGoods.supplierGood",
-        "name mainCategory subCategory budgetImpact measurementUnit parLevel inventorySchedule dynamicCountFromLastInventory"
+        "name mainCategory subCategory budgetImpact measurementUnit parLevel inventorySchedule"
       )
       .lean();
 
@@ -119,7 +119,7 @@ export const PATCH = async (
       const supplierGoods = await SupplierGood.find({
         _id: { $in: supplierGoodIds },
       })
-        .select("_id dynamicCountFromLastInventory parLevel")
+        .select("_id parLevel")
         .lean();
 
       // Create a map for quick access

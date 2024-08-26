@@ -1,27 +1,52 @@
 [
     {
         "_id": "669cc76e9876c117994d0a4c",
-        "title": "Inventory 1 updated",
         "business": "6673fed98c45d0a0ca5f34c1",
-        "setFinalCount": false,
+        "setFinalCounte": false,
         "inventoryGoods": [
             {
                 "supplierGood": "667bfac8d28a7ee19d9be444",
-                "systemCountQuantity": 5,
-                "currentCountQuantity": 2,
-                "deviationPercent": 60,
-                "quantityNeeded": 7,
-                "_id": "669ceaa29876c117994d0afd"
+                "monthlyCounts": [
+                    {
+                        "countedDate": "2024-07-21T11:01:54.691Z",
+                        "currentCountQuantity": 2,
+                        "systemCountQuantity": 5,
+                        "deviationPercent": 60,
+                        "quantityNeeded": 7,
+                        "countedBy": "667412df373ad7f1a285534e",
+                        "comments": "commentUpdated"
+                    },
+                    {
+                        "countedDate": "2024-07-20T11:01:54.691Z",
+                        "currentCountQuantity": 2,
+                        "systemCountQuantity": 5,
+                        "deviationPercent": 60,
+                        "quantityNeeded": 7,
+                        "countedBy": "667412df373ad7f1a285534e",
+                        "comments": "comment"
+                    }
+                ],
+                "averageDeviationPercent": 0,
+                "dynamicCountFromLastInventory": 0
+            },
+            {
+                "supplierGood": "667bfac8d28a7ee19d9be334",
+                "monthlyCounts": [
+                    {
+                        "countedDate": "2024-07-20T11:01:54.691Z",
+                        "currentCountQuantity": 21,
+                        "systemCountQuantity": 15,
+                        "deviationPercent": 60,
+                        "quantityNeeded": 7,
+                        "countedBy": "667412df373ad7f1a285534e",
+                        "comments": "comment2"
+                    }
+                ],
+                "averageDeviationPercent": 0,
+                "dynamicCountFromLastInventory": 0
             }
         ],
-        "doneBy": [
-            "667412df373ad7f1a285534e",
-            "667bfac8d28a7ee19d9be444"
-        ],
         "createdAt": "2024-07-21T08:31:42.600Z",
-        "updatedAt": "2024-07-21T11:05:59.653Z",
-        "__v": 0,
-        "comments": "commentUpdated",
-        "countedDate": "2024-07-21T11:01:54.691Z"
+        "updatedAt": "2024-07-21T11:05:59.653Z"
     }
 ]

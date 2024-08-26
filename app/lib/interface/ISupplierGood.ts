@@ -21,6 +21,4 @@ export interface ISupplierGood {
   parLevel?: number;
   minimumQuantityRequired?: number;
   inventorySchedule?: string;
-  dynamicCountFromLastInventory?: number;
-  lastInventoryCountDate?: Date;
 }

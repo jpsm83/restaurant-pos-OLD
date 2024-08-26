@@ -11,7 +11,7 @@ import { addressValidation } from "@/app/lib/utils/addressValidation";
 // imported models
 import Business from "@/app/lib/models/business";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import Inventory from "@/app/lib/models/inventory";
+import Inventory from "@/app/lib/models/oldInventory";
 import Notification from "@/app/lib/models/notification";
 import Order from "@/app/lib/models/order";
 import Printer from "@/app/lib/models/printer";

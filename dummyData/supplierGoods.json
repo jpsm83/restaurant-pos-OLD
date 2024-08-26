@@ -20,7 +20,6 @@
             "Eggs",
             "Milk"
         ],
-        "dynamicCountFromLastInventory": 50,
         "budgetImpact": "Mediun",
         "description": "Burger bread",
         "inventorySchedule": "weekly",
@@ -33,8 +32,7 @@
         "saleUnit": "Packet",
         "createdAt": "2024-06-26T00:00:00.000Z",
         "updatedAt": "2024-07-21T11:01:54.619Z",
-        "__v": 0,
-        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
+        "__v": 0
     },
     {
         "_id": {
@@ -55,7 +53,6 @@
         "allergens": [
             "Milk"
         ],
-        "dynamicCountFromLastInventory": 2,
         "budgetImpact": "Mediun",
         "description": "Cheese for burger",
         "inventorySchedule": "weekly",
@@ -68,8 +65,7 @@
         "saleUnit": "Block",
         "createdAt": "2024-06-26T00:00:00.000Z",
         "updatedAt": "2024-07-21T11:01:54.619Z",
-        "__v": 0,
-        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
+        "__v": 0
     },
     {
         "_id": {
@@ -87,7 +83,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 120,
         "budgetImpact": "High",
         "description": "Hamburge for burger",
         "inventorySchedule": "weekly",
@@ -118,7 +113,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 10,
         "budgetImpact": "Low",
         "description": "Whole tomato",
         "inventorySchedule": "weekly",
@@ -149,7 +143,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 12,
         "budgetImpact": "Low",
         "description": "Whole onion",
         "inventorySchedule": "weekly",
@@ -180,7 +173,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 59.49999999999999,
         "budgetImpact": "Low",
         "description": "French fries",
         "inventorySchedule": "weekly",
@@ -214,7 +206,6 @@
         "allergens": [
             "Sulphur dioxide"
         ],
-        "dynamicCountFromLastInventory": 140,
         "budgetImpact": "Mediun",
         "description": "Small bottle of coca cola",
         "inventorySchedule": "weekly",
@@ -245,7 +236,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 10,
         "budgetImpact": "Hight",
         "description": "Whole piece of beef steak",
         "inventorySchedule": "weekly",
@@ -276,7 +266,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 6,
         "budgetImpact": "Low",
         "description": "Whole brocolly",
         "inventorySchedule": "weekly",
@@ -307,7 +296,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 5,
         "budgetImpact": "Low",
         "description": "Whole lettuce",
         "inventorySchedule": "weekly",
@@ -343,7 +331,6 @@
             "Peanuts",
             "Nuts"
         ],
-        "dynamicCountFromLastInventory": 4,
         "budgetImpact": "Mediun",
         "description": "Hummus already prepared",
         "inventorySchedule": "weekly",
@@ -374,7 +361,6 @@
             "$oid": "6673fed98c45d0a0ca5f34c1"
         },
         "image": "../public/images/default_img.png",
-        "dynamicCountFromLastInventory": 240,
         "budgetImpact": "Small",
         "description": "Small bottle of water",
         "inventorySchedule": "weekly",

@@ -1,6 +1,6 @@
 import connectDB from "@/app/lib/db";
 import { IInventory } from "@/app/lib/interface/IInventory";
-import Inventory from "@/app/lib/models/inventory";
+import Inventory from "@/app/lib/models/oldInventory";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";

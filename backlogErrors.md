@@ -1,5 +1,6 @@
-- finish the inventory routes
-- ADD IMAGES to everything you can
+- INVENTORY MODEL BEEN FULLY UPDATE
+- inventory routes and logic have to be done from scratch
+
 - what is the function convertToShiftHours for, it use to be a route
 - dailySalesReport helper function closeDailySalesReport MUST be review - error - "Failed to update daily sales report! TypeError: Reduce of empty array with no initial value" / "Failed to update daily sales report! TypeError: sale.forEach is not a function"
 - images in everything we can and save with cloudinary

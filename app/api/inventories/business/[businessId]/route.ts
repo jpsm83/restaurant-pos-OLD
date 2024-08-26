@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/app/lib/db";
 
 // import models
-import Inventory from "@/app/lib/models/inventory";
+import Inventory from "@/app/lib/models/oldInventory";
 import { Types } from "mongoose";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
