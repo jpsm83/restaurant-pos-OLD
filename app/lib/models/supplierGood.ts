@@ -33,10 +33,9 @@ const supplierGoodSchema = new Schema(
     budgetImpact: { type: String, enum: budgetImpact }, // how relevant is the good on the business budget
     image: {
       type: String,
-      default: "../public/images/default_img.png",
     }, // photo of the good
     inventorySchedule: { type: String, enum: inventorySchedule }, // daily, weekly, monthly
-    
+
     // analytics fields
     measurementUnit: {
       type: String,
@@ -68,5 +67,6 @@ const supplierGoodSchema = new Schema(
   }
 );
 
-const SupplierGood = models.SupplierGood || model("SupplierGood", supplierGoodSchema);
+const SupplierGood =
+  models.SupplierGood || model("SupplierGood", supplierGoodSchema);
 export default SupplierGood;

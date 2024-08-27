@@ -2,8 +2,17 @@ import connectDB from "@/app/lib/db";
 import Business from "@/app/lib/models/business";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
-import { deleteQrCode } from "../../../utils/deleteQrCode";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+
+import { v2 as cloudinary } from "cloudinary";
+
+// Cloudinary ENV variables
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 // @desc    Delete sales location
 // @route   DELETE /business/:businessId/deleteSalesLocation/:salesLocationId
@@ -62,11 +71,6 @@ export const DELETE = async (
       );
     }
 
-    // Extract cloudinaryPublicId using regex
-    let cloudinaryPublicId = business.salesLocation[0].qrCode.match(
-      /restaurant-pos\/[^.]+/
-    );
-
     // delete location from salesLocation array
     await Business.updateOne(
       {
@@ -81,8 +85,19 @@ export const DELETE = async (
       }
     );
 
-    // delete qrCode from cloudinary
-    await deleteQrCode(cloudinaryPublicId[0]);
+    // example of a cloudinary image url
+    // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
+
+    // Extract cloudinaryPublicId using regex
+    // example of a publicId
+    // "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b"
+    let cloudinaryPublicId = business.salesLocation[0].qrCode.match(
+      /restaurant-pos\/[^.]+/
+    );
+
+    await cloudinary.uploader.destroy(cloudinaryPublicId?.[0] ?? "", {
+      resource_type: "image",
+    });
 
     return new NextResponse(
       JSON.stringify({
@@ -93,7 +108,6 @@ export const DELETE = async (
         headers: { "Content-Type": "application/json" },
       }
     );
-
   } catch (error) {
     return handleApiError("Delete business failed!", error);
   }

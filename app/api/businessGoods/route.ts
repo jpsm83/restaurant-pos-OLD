@@ -51,7 +51,6 @@ export const POST = async (req: Request) => {
       ingredients,
       setMenu,
       description,
-      image,
       deliveryTime,
     } = (await req.json()) as IBusinessGood;
 
@@ -117,7 +116,6 @@ export const POST = async (req: Request) => {
       sellingPrice,
       business,
       description: description || undefined,
-      image: image || undefined,
       deliveryTime: deliveryTime || undefined,
     };
 

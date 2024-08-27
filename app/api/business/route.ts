@@ -8,7 +8,6 @@ import { IBusiness } from "@/app/lib/interface/IBusiness";
 
 // imported utils
 import { generateQrCode } from "./utils/generateQrCode";
-import { deleteQrCode } from "./utils/deleteQrCode";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 
@@ -152,8 +151,8 @@ export const POST = async (req: Request) => {
 //       "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b";
 //     let businessId = "6673fed98c45d0a0ca5f34c1";
 
-//     const result = await generateQrCode(new ObjectId(businessId), new ObjectId());
-//     // const result = await deleteQrCode(cloudinaryImgToDelete);
+//     //@ts-ignore
+//     const result = generateQrCode(businessId);
 
 //     return new NextResponse(JSON.stringify(result), {
 //       status: 201,

@@ -73,7 +73,6 @@ export const PATCH = async (
       ingredients,
       setMenu,
       description,
-      image,
       deliveryTime,
     } = (await req.json()) as IBusinessGood;
 
@@ -140,7 +139,6 @@ export const PATCH = async (
       available: available || businessGood.available,
       sellingPrice: sellingPrice || businessGood.sellingPrice,
       description: description || businessGood.description,
-      image: image || businessGood.image,
       deliveryTime: deliveryTime || businessGood.deliveryTime,
     };
 

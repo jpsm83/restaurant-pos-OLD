@@ -11,7 +11,6 @@ import { addressValidation } from "@/app/lib/utils/addressValidation";
 // imported models
 import Business from "@/app/lib/models/business";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import Inventory from "@/app/lib/models/oldInventory";
 import Notification from "@/app/lib/models/notification";
 import Order from "@/app/lib/models/order";
 import Printer from "@/app/lib/models/printer";
@@ -22,6 +21,7 @@ import Table from "@/app/lib/models/table";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
+import Inventory from "@/app/lib/models/inventory";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -192,10 +192,7 @@ export const PATCH = async (
       JSON.stringify({
         message: `Business ${updatedBusiness.legalName} updated`,
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Update business failed!", error);
