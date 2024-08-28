@@ -22,6 +22,6 @@ export interface IBusinessGood {
   costPrice?: number;
   description?: string;
   allergens?: string[];
-  image?: string;
+  imageUrl?: string;
   deliveryTime?: number;
 }

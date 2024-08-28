@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
-import Business from "@/app/lib/models/business";
-import BusinessGood from "@/app/lib/models/businessGood";
-import SupplierGood from "@/app/lib/models/supplierGood";
-import Supplier from "@/app/lib/models/supplier";
-import User from "@/app/lib/models/user";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import updateDbModels from "./utils/updateDbModels";
+import deleteCloudinaryImage from "./utils/deleteCloudinaryImage";
+import documentModelExists from "./utils/documentModelExists";
 
 // Cloudinary ENV variables
 cloudinary.config({
@@ -26,25 +25,25 @@ export async function POST(req: Request) {
     const supplierId = data.get("supplierId") || null; // subfolder = "suppliers"
     const userId = data.get("userId") || null; // subfolder = "users"
 
-    let restaurantSubfolder = null;
+    let documentModelResult: any = await documentModelExists(
+      businessId,
+      businessGoodId,
+      supplierGoodId,
+      supplierId,
+      userId
+    );
 
-    if (businessGoodId) restaurantSubfolder = "businessGoods";
-    if (supplierGoodId) restaurantSubfolder = "supplierGoods";
-    if (supplierId) restaurantSubfolder = "suppliers";
-    if (userId) restaurantSubfolder = "users";
-
-    // validate requeried fields
-    if (!imageFile || !businessId) {
+    if (typeof documentModelResult === "string") {
       return new NextResponse(
-        JSON.stringify({ message: "Image and restaurant folder are required" }),
+        JSON.stringify({ message: documentModelResult }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Ensure imageFile is a File object before processing it
-    if (!(imageFile instanceof File)) {
+    // Validate required fields
+    if (!imageFile || !businessId || !(imageFile instanceof File)) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid file format" }),
+        JSON.stringify({ message: "Image file and business ID are required." }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -59,9 +58,10 @@ export async function POST(req: Request) {
     // to which project in Cloudinary
     const uploadPreset = "restaurant-pos"; // Use your Cloudinary preset
 
-    const folder = restaurantSubfolder
-      ? `restaurant-pos/${businessId}/${restaurantSubfolder}`
-      : `restaurant-pos/${businessId}`;
+    const folder =
+      documentModelResult.restaurantSubfolder.length > 0
+        ? `restaurant-pos/${businessId}/${documentModelResult.restaurantSubfolder}`
+        : `restaurant-pos/${businessId}`;
 
     const response = await cloudinary.uploader.upload(fileUri, {
       invalidate: true,
@@ -70,43 +70,46 @@ export async function POST(req: Request) {
       folder: folder, // Optional: specify a folder in Cloudinary
     });
 
-    if (!businessGoodId && !supplierGoodId && !supplierId && !userId) {
-      await Business.findByIdAndUpdate(businessId, {
-        logoImageUrl: response.secure_url,
-      });
+    let updateModelResponse = await updateDbModels(
+      documentModelResult.name,
+      documentModelResult.id,
+      response.secure_url
+    );
+
+    if (updateModelResponse) {
+      const deleteResponse = await deleteCloudinaryImage(response.secure_url);
+
+      if (deleteResponse) {
+        return new NextResponse(
+          JSON.stringify({
+            message:
+              "Error occurred on deleteCloudinaryImage: " + deleteResponse,
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "Error occurred on updateDocumentModels: " + updateModelResponse,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    if (businessGoodId) {
-      await BusinessGood.findByIdAndUpdate(businessGoodId, {
-        image: response.secure_url,
-      });
-    }
-
-    if (supplierGoodId) {
-      await SupplierGood.findByIdAndUpdate(supplierGoodId, {
-        image: response.secure_url,
-      });
-    }
-
-    if (supplierId) {
-      await Supplier.findByIdAndUpdate(supplierId, {
-        logoImageUrl: response.secure_url,
-      });
-    }
-
-    if (userId) {
-      await User.findByIdAndUpdate(userId, {
-        image: response.secure_url,
-      });
-    }
-
-    return new NextResponse(JSON.stringify({ message: "ok" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new NextResponse(
+      JSON.stringify({ message: "Image upload and url reference saved" }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     return new NextResponse(
-      JSON.stringify({ message: "An error occurred while uploading images." }),
+      JSON.stringify({
+        message: "An error occurred while uploading images." + error,
+      }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -116,55 +119,76 @@ export async function DELETE(req: Request) {
   try {
     // example of a cloudinary image url
     // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
-    const { logoImageUrl } = await req.json();
+    const {
+      imageUrl,
+      businessId,
+      businessGoodId,
+      supplierGoodId,
+      supplierId,
+      userId,
+    } = await req.json();
 
-    if (!logoImageUrl) {
-      return "Invalid logoImageUrl!";
+    if (!imageUrl) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Image url is required!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Extract cloudinaryPublicId using regex
-    // example of a publicId
-    // "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b"
-    let cloudinaryPublicId = logoImageUrl.match(/restaurant-pos\/[^.]+/);
-
-    const deletionResponse = await cloudinary.uploader.destroy(
-      cloudinaryPublicId?.[0] ?? "",
-      {
-        resource_type: "image",
-      }
+    let documentModelResult: any = await documentModelExists(
+      businessId,
+      businessGoodId,
+      supplierGoodId,
+      supplierId,
+      userId
     );
 
-    if (deletionResponse.result === "ok") {
+    if (typeof documentModelResult === "string") {
       return new NextResponse(
-        JSON.stringify({
-          cloudinaryPublicId,
-          success: true,
-          message: "Image deleted successfully.",
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    } else {
-      return new NextResponse(
-        JSON.stringify({
-          cloudinaryPublicId,
-          success: false,
-          message: "Failed to delete the image.",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+        JSON.stringify({ message: documentModelResult }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
-  } catch (error) {
+
+    // Delete the image from Cloudinary
+    const deleteResponse = await deleteCloudinaryImage(imageUrl);
+
+    if (deleteResponse) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Error occurred on deleteCloudinaryImage: " + deleteResponse,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    let updateModelResponse = await updateDbModels(
+      documentModelResult.name,
+      documentModelResult.id
+    );
+
+    if (updateModelResponse) {
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "Error occurred on updateDocumentModels: " + updateModelResponse,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     return new NextResponse(
       JSON.stringify({
-        message: "Error occurred while deleting the image(s).",
+        message: "Image deleted successfully.",
       }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
     );
+  } catch (error) {
+    return handleApiError("Error occurred while deleting the image(s).", error);
   }
 }

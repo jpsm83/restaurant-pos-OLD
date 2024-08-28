@@ -12,4 +12,5 @@ export interface ISupplier {
   address?: IAddress;
   contactPerson?: string;
   supplierGoods?: Types.ObjectId[];
+  imageUrl?: string;
 }

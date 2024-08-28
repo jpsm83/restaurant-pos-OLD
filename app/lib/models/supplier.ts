@@ -6,7 +6,7 @@ const supplierSchema = new Schema(
     // required fields
     tradeName: { type: String, required: true }, // Suplier company Name for the public
     legalName: { type: String, required: true }, // Legal Name of the suplier company
-    logoImageUrl: { type: String }, // Logo of the suplier company
+    imageUrl: { type: String }, // Logo of the suplier company
     email: { type: String, required: true, unique: true }, // Email of the suplier
     phoneNumber: { type: String, required: true }, // Phone number of the suplier
     taxNumber: { type: String, required: true, unique: true }, // Tax number of the suplier

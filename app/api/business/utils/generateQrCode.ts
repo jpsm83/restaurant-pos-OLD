@@ -13,8 +13,8 @@ cloudinary.config({
 
 export const generateQrCode = async (businessId: Types.ObjectId) => {
   try {
-    // generateRandomId is the ID of the new sales location
-    const generateRandomId = new ObjectId();
+    // generate randomUniqueId
+    const randomUniqueId = new ObjectId();
 
     // this QR will redirect to a page where user can order and pay - to be developed
     //    scan QR
@@ -35,7 +35,7 @@ export const generateQrCode = async (businessId: Types.ObjectId) => {
 
     // Generate QR code as a data URL
     const qrCodeDataUrl = await QRCode.toDataURL(
-      `http://localhost:3000/selfOrder/${generateRandomId}`
+      `http://localhost:3000/selfOrder/${randomUniqueId}`
     );
 
     // Prepare the data for Cloudinary upload
@@ -48,7 +48,7 @@ export const generateQrCode = async (businessId: Types.ObjectId) => {
     const response = await cloudinary.uploader.upload(fileUri, {
       invalidate: true,
       upload_preset: uploadPreset,
-      public_id: generateRandomId.toString(), // Optional: use the ID as the public ID
+      public_id: randomUniqueId.toString(), // Optional: use the ID as the public ID
       // businessId is used as a folder name
       folder: `restaurant-pos/${businessId}/salesLocationQrCodes`, // Optional: specify a folder in Cloudinary
     });

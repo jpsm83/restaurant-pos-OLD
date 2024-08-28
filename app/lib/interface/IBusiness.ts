@@ -14,7 +14,7 @@ export interface ISalesLocation {
 export interface IBusiness {
   tradeName: string;
   legalName: string;
-  logoImageUrl?: string;
+  imageUrl?: string;
   email: string;
   password: string;
   phoneNumber: string;

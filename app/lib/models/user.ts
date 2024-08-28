@@ -48,7 +48,7 @@ const userSchema = new Schema(
     // optional fields
     currentShiftRole: { type: String, enum: userRoles }, // current shift role of the user
     address: addressSchema, // address of the user
-    photo: { type: String }, // photo of the user
+    imageUrl: { type: String }, // photo of the user
     contractHoursWeek: { type: Number }, // contract hours per week
     grossMonthlySalary: { type: Number }, // monthly user salary before taxes
     grossHourlySalary: { type: Number }, // hourly user salary before taxes

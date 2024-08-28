@@ -16,7 +16,7 @@ const businessSchema = new Schema(
     // required fields
     tradeName: { type: String, required: true }, // Company Name for the public
     legalName: { type: String, required: true }, // Legal Name of the company, not unique because could happens of same name bussines in different countries
-    logoImageUrl: { type: String }, // Logo of the company as url link to cloudinary
+    imageUrl: { type: String }, // Logo of the company as url link to cloudinary
     email: { type: String, required: true }, // Email of the company, not unique because could happens of one office managing multiple companies
     password: { type: String, required: true }, // Password of the company pos account
     phoneNumber: { type: String, required: true }, // Phone number of the company

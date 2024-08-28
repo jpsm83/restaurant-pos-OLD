@@ -12,7 +12,7 @@ export interface ISupplierGood {
   description?: string;
   allergens?: string[];
   budgetImpact?: string;
-  image?: string;
+  imageUrl?: string;
   saleUnit?: string;
   wholeSalePrice?: number;
   measurementUnit?: string;

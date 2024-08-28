@@ -28,7 +28,7 @@ export interface IUser {
   business: Types.ObjectId;
   currentShiftRole?: string;
   address?: IAddress;
-  photo?: string;
+  imageUrl?: string;
   contractHoursWeek?: number;
   grossMonthlySalary?: number;
   grossHourlySalary?: number;
