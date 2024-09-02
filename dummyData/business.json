@@ -65,9 +65,13 @@
             "locationType": "Bar"
             },
             {
-            "locationReferenceName": "001",
-            "locationType": "Seat"
-            }
-        ]
+                "locationReferenceName": "B101 // user input required", 
+                "locationType": "Bar // user input not required", 
+                "selfOrdering": "false // user input not required - default false",
+                "qrCode": "http:.... // auto created - url to qr code", 
+                "qrEnabled": "true // auto updated - default true", 
+                "qrLastScanned": "2024-12-07.... // auto updated - date of last scan"
+              }
+            ]
     }
 ]

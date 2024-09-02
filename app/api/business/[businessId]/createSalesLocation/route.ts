@@ -1,9 +1,19 @@
 import connectDB from "@/app/lib/db";
-import { ISalesLocation } from "@/app/lib/interface/IBusiness";
-import Business from "@/app/lib/models/business";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
+
+// imported utils
 import { generateQrCode } from "../../utils/generateQrCode";
+
+// imported interfaces
+import { ISalesLocation } from "@/app/lib/interface/IBusiness";
+
+// imported models
+import Business from "@/app/lib/models/business";
+
+// this route create a sales location for the business (ex: tables, counters, etc.)
+// it will work "on click" of a button in the frontend
+// it will create a table document with its qr code
 
 // @desc    Create sales location
 // @route   POST /business/:businessId/createSalesLocation
@@ -50,21 +60,23 @@ export const POST = async (
       );
     }
 
-    // check if the combination of locationReferenceName and locationType already exists
-    const existingSalesLocation = business.salesLocation.some(
-      (location: ISalesLocation) =>
-        location.locationReferenceName === locationReferenceName &&
-        location.locationType === locationType
-    );
-
-    if (existingSalesLocation) {
-      return new NextResponse(
-        JSON.stringify({ message: "Sales location already exists!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+    if (business.salesLocation && business.salesLocation.length > 0) {
+      // check if the combination of locationReferenceName and locationType already exists
+      const existingSalesLocation = business.salesLocation.some(
+        (location: ISalesLocation) =>
+          location.locationReferenceName === locationReferenceName &&
+          location.locationType === locationType
       );
+
+      if (existingSalesLocation) {
+        return new NextResponse(
+          JSON.stringify({ message: "Sales location already exists!" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     const qrCode = await generateQrCode(businessId);

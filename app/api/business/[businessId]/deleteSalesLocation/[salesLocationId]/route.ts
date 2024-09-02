@@ -1,10 +1,13 @@
 import connectDB from "@/app/lib/db";
-import Business from "@/app/lib/models/business";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
+import { v2 as cloudinary } from "cloudinary";
+
+// imported utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
-import { v2 as cloudinary } from "cloudinary";
+// imported models
+import Business from "@/app/lib/models/business";
 
 // Cloudinary ENV variables
 cloudinary.config({
@@ -55,11 +58,12 @@ export const DELETE = async (
     const business = await Business.findOne(
       {
         _id: businessId,
-      },
-      {
+        "salesLocation._id": salesLocationId,
+    },
+    {
         salesLocation: { $elemMatch: { _id: salesLocationId } },
-      }
-    );
+    }
+);
 
     if (!business) {
       return new NextResponse(

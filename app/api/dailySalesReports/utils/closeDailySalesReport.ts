@@ -48,13 +48,18 @@ export const closeDailySalesReport = async (
       return "Daily sales report not found!";
     }
 
-    // check if any user has open tables before closing the daily report
-    const userWithOpenTables = dailySalesReport?.usersDailySalesReport.find(
-      (user: any) => user.hasOpenTables
-    );
+    if (
+      dailySalesReport.usersDailySalesReport &&
+      dailySalesReport.usersDailySalesReport.length > 0
+    ) {
+      // check if any user has open tables before closing the daily report
+      const userWithOpenTables = dailySalesReport?.usersDailySalesReport.find(
+        (user: any) => user.hasOpenTables
+      );
 
-    if (userWithOpenTables) {
-      return "You cant close the daily sales because there are open tables!";
+      if (userWithOpenTables) {
+        return "You cant close the daily sales because there are open tables!";
+      }
     }
 
     await DailySalesReport.findByIdAndUpdate(
