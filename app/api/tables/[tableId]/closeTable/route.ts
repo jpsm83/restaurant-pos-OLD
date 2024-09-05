@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/table";
@@ -18,7 +18,7 @@ export const POST = async (req: Request, context: { params: { tableId: Types.Obj
     const tableId = context.params.tableId;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // get all orders from the table
     const tableOrders: ITable[] | null = await Order.find({ table: tableId })

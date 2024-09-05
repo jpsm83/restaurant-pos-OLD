@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 // imported interfaces
@@ -19,7 +19,7 @@ import Printer from "@/app/lib/models/printer";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const printers = await Printer.find()
       .populate({ path: "printFor.users", select: "username", model: User })
@@ -85,7 +85,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     //check duplicate printer
     const duplicatePrinter = await Printer.findOne({

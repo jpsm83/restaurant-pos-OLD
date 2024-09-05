@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
@@ -33,7 +33,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const schedule = await Schedule.findById(scheduleId)
       .populate({
@@ -80,7 +80,7 @@ export const PATCH = async (
     const { comments } = (await req.json()) as ISchedule;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
@@ -138,7 +138,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // delete schedule and check if it existed
     const result = await Schedule.deleteOne({ _id: scheduleId });

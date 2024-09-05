@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { ITable } from "@/app/lib/interface/ITable";
@@ -32,7 +32,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const tables = await Table.findById(tableId)
       .populate({
@@ -104,7 +104,7 @@ export const PATCH = async (
     } = (await req.json()) as ITable;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if table exists
     const table: ITable | null = await Table.findById(tableId).lean();
@@ -196,7 +196,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const table: ITable | null = await Table.findById(tableId).lean();
 

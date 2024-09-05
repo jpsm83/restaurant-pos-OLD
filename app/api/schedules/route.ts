@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 // imported interfaces
@@ -18,7 +18,7 @@ import User from "@/app/lib/models/user";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const schedules = await Schedule.find()
       .populate({
@@ -69,7 +69,7 @@ export const POST = async (req: Request) => {
     const weekNumber = getWeekNumber(new Date(date));
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if schedule already exists
     const duplicateSchedule = await Schedule.findOne({ date, business });

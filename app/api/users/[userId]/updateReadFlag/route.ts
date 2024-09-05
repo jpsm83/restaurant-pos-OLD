@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import Notification from "@/app/lib/models/notification";
 import User from "@/app/lib/models/user";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
@@ -21,7 +21,7 @@ export const POST = async (
     const userId = context.params.userId;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if user exists
     const user = await User.findById(userId);

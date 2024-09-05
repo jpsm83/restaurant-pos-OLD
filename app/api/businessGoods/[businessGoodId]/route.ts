@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
@@ -33,7 +33,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const businessGood = await BusinessGood.findById(businessGoodId)
       .populate("ingredients.supplierGood", "name mainCategory subCategory")
@@ -98,7 +98,7 @@ export const PATCH = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the business good exists
     const businessGood = (await BusinessGood.findById(
@@ -275,7 +275,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the business good is used in any order.billingStatus: "Open"
     const businessGoodInOrders = await Order.find({

@@ -1,6 +1,5 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { IInventory } from "@/app/lib/interface/IInventory";
-import Inventory from "@/app/lib/models/oldInventory";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
@@ -43,7 +42,7 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if inventory exists
     const inventory: IInventory | null = await Inventory.findById(inventoryId)

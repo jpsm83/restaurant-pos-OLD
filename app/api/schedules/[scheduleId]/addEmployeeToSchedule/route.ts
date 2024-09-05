@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
@@ -37,7 +37,7 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)

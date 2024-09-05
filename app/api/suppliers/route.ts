@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // import models
 import Supplier from "@/app/lib/models/supplier";
@@ -13,7 +13,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const suppliers = await Supplier.find()
       .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
@@ -86,7 +86,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check for duplicate legalName, email or taxNumber
     const duplicateSupplier = await Supplier.findOne({

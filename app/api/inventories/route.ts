@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { IInventory, IInventoryGood } from "@/app/lib/interface/IInventory";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // import models
 import Inventory from "@/app/lib/models/inventory";
@@ -14,7 +14,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // just get basic information user visualisation, not the whole inventory
     // user will be able to click on the inventory to see the details
@@ -93,7 +93,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // supplier goods must be unique in all the open inventory
     // Fetch all inventories with setFinalCount set to false
@@ -134,7 +134,7 @@ export const POST = async (req: Request) => {
       .select("_id lastInventoryCountDate")
       .lean();
 
-    const inventoryGoodsArr: IInventoryGood[] = supplierGoods.map((good) => ({
+    const inventoryGoodsArr = supplierGoods.map((good) => ({
       supplierGood: good._id as Types.ObjectId,
       lastInventoryCountDate: good.lastInventoryCountDate || undefined,
     }));

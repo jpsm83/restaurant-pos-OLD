@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
@@ -54,7 +54,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the user is "General Manager", "Manager", "Assistant Manager", "MoD" or "Admin"
     const userRoleOnDuty: IUser | null = await User.findOne({ _id: userId })

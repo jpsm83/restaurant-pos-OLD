@@ -14,10 +14,8 @@ export interface ISupplierGood {
   budgetImpact?: string;
   imageUrl?: string;
   saleUnit?: string;
-  wholeSalePrice?: number;
   measurementUnit?: string;
-  totalQuantityPerUnit?: number;
-  pricePerUnit?: number;
+  pricePerUnit: number;
   parLevel?: number;
   minimumQuantityRequired?: number;
   inventorySchedule?: string;

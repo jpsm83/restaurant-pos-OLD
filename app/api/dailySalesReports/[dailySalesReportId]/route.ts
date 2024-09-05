@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
@@ -28,7 +28,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const dailySalesReport = await DailySalesReport.findById(dailySalesReportId)
       .populate({
@@ -73,7 +73,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // delete daily report and check if it existed
     const result = await DailySalesReport.deleteOne({

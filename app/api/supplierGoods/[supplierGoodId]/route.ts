@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
 // imported interfaces
@@ -31,7 +31,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const supplierGood = await SupplierGood.findById(supplierGoodId)
       .populate({ path: "supplier", select: "tradeName", model: Supplier })
@@ -79,16 +79,15 @@ export const PATCH = async (
       allergens,
       budgetImpact,
       saleUnit,
-      wholeSalePrice,
       measurementUnit,
       parLevel,
       minimumQuantityRequired,
       inventorySchedule,
-      totalQuantityPerUnit,
+      pricePerUnit,
     } = (await req.json()) as ISupplierGood;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the supplier good exists
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(
@@ -130,14 +129,8 @@ export const PATCH = async (
       allergens: allergens || supplierGood.allergens,
       budgetImpact: budgetImpact || supplierGood.budgetImpact,
       saleUnit: saleUnit || supplierGood.saleUnit,
-      wholeSalePrice: wholeSalePrice || supplierGood.wholeSalePrice,
       measurementUnit: measurementUnit || supplierGood.measurementUnit,
-      totalQuantityPerUnit:
-        totalQuantityPerUnit || supplierGood.totalQuantityPerUnit,
-      pricePerUnit:
-        wholeSalePrice && totalQuantityPerUnit
-          ? wholeSalePrice / totalQuantityPerUnit
-          : undefined,
+      pricePerUnit: pricePerUnit || supplierGood.pricePerUnit,
       parLevel: parLevel || supplierGood.parLevel,
       minimumQuantityRequired:
         minimumQuantityRequired || supplierGood.minimumQuantityRequired,
@@ -186,7 +179,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // Attempt to find the supplier good and check if it's in use
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(

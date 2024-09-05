@@ -3,7 +3,7 @@ import { updateDynamicCountSupplierGood } from "./updateDynamicCountSupplierGood
 import Order from "@/app/lib/models/order";
 import { IOrder } from "@/app/lib/interface/IOrder";
 import Table from "@/app/lib/models/table";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // order with status "Started", "Done", "Dont Make" and "Started Hold" cannot be canceled
 export const cancelOrderAndUpdateDynamicCount = async (
@@ -16,7 +16,7 @@ export const cancelOrderAndUpdateDynamicCount = async (
     }
 
         // connect before first call to DB
-        await connectDB();
+        await connectDb();
 
         // check if order exists and can be canceled
     const orderBusinessGoods: IOrder | null = await Order.findById(orderId)

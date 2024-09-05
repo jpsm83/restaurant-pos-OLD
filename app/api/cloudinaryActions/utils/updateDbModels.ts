@@ -1,5 +1,4 @@
-// db check connection
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // Import all your models
 import Business from "@/app/lib/models/business";
@@ -32,7 +31,7 @@ const updateDbModels = async (
     const model = modelMap[modelName];
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // update the model with the imageUrl
     if (!uploadUrl) {

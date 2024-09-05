@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -52,7 +52,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if business exists
     const business = await Business.findOne(

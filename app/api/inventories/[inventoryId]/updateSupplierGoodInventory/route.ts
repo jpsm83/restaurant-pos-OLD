@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { IInventory } from "@/app/lib/interface/IInventory";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import Inventory from "@/app/lib/models/inventory";
@@ -49,7 +49,7 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if inventory exists
     const inventory: IInventory | null = await Inventory.findById(inventoryId)

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // imported models
 import Promotion from "@/app/lib/models/promotion";
@@ -20,6 +20,7 @@ export const GET = async (
 ) => {
   try {
     const businessId = context.params.businessId;
+    
     // Validate businessId
     if (!businessId || !Types.ObjectId.isValid(businessId)) {
       return new NextResponse(
@@ -63,7 +64,7 @@ export const GET = async (
     }
 
     // Connect to DB before first call
-    await connectDB();
+    await connectDb();
 
     const promotion = await Promotion.find(query)
       .populate("businessGoodsToApply", "name sellingPrice")

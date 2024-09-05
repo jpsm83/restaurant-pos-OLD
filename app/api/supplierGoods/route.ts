@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // imported interfaces
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
@@ -17,7 +17,7 @@ import Supplier from "@/app/lib/models/supplier";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const supplierGoods = await SupplierGood.find()
       .populate({ path: "supplier", select: "tradeName", model: Supplier })
@@ -54,12 +54,11 @@ export const POST = async (req: Request) => {
       allergens,
       budgetImpact,
       saleUnit,
-      wholeSalePrice,
       measurementUnit,
-      totalQuantityPerUnit,
       parLevel,
       minimumQuantityRequired,
       inventorySchedule,
+      pricePerUnit,
     } = (await req.json()) as ISupplierGood;
 
     // check required fields
@@ -70,7 +69,8 @@ export const POST = async (req: Request) => {
       !subCategory ||
       currentlyInUse === undefined ||
       !supplier ||
-      !business
+      !business ||
+      !pricePerUnit
     ) {
       return new NextResponse(
         JSON.stringify({
@@ -82,7 +82,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the supplier good already exists
     const duplicateSupplierGood = await SupplierGood.findOne({
@@ -115,13 +115,8 @@ export const POST = async (req: Request) => {
       allergens: allergens || undefined,
       budgetImpact: budgetImpact || undefined,
       saleUnit: saleUnit || undefined,
-      wholeSalePrice: wholeSalePrice || undefined,
       measurementUnit: measurementUnit || undefined,
-      totalQuantityPerUnit: totalQuantityPerUnit || undefined,
-      pricePerUnit:
-        wholeSalePrice && totalQuantityPerUnit
-          ? wholeSalePrice / totalQuantityPerUnit
-          : undefined,
+      pricePerUnit,
       parLevel: parLevel || undefined,
       minimumQuantityRequired: minimumQuantityRequired || undefined,
       inventorySchedule: inventorySchedule || undefined,

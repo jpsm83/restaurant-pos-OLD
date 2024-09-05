@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import Order from "@/app/lib/models/order";
 import { Types } from "mongoose";
 
@@ -13,7 +13,7 @@ export const updateMultipleOrders = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     return await Order.findOneAndUpdate({ _id: orderId }, update, {
       new: true,

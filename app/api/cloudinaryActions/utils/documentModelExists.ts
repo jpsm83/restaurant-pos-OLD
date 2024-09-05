@@ -1,17 +1,19 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 import Business from "@/app/lib/models/business";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
 import User from "@/app/lib/models/user";
+import Purchase from "@/app/lib/models/purchase";
 
 const documentModelExists = async (
   businessId: FormDataEntryValue | null,
   businessGoodId: FormDataEntryValue | null,
   supplierGoodId: FormDataEntryValue | null,
   supplierId: FormDataEntryValue | null,
-  userId: FormDataEntryValue | null
+  userId: FormDataEntryValue | null,
+  purchaseId: FormDataEntryValue | null
 ) => {
   // Create a mapping between model names and actual models
   const modelMap: { [key: string]: any } = {
@@ -20,6 +22,7 @@ const documentModelExists = async (
     SupplierGood,
     Supplier,
     User,
+    Purchase,
   };
 
   let documentModel = {
@@ -52,11 +55,17 @@ const documentModelExists = async (
     documentModel.id = userId;
   }
 
+  if(purchaseId) {
+    documentModel.restaurantSubfolder = "purchases";
+    documentModel.name = "Purchase";
+    documentModel.id = purchaseId;
+  }
+
   // Retrieve the actual model based on the string input
   const model = modelMap[documentModel.name];
 
   // connect before first call to DB
-  await connectDB();
+  await connectDb();
 
   // check if the document with id exists
   const documentExists = await model.findById(documentModel.id).lean();

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { IInventory } from "@/app/lib/interface/IInventory";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // import models
 import Inventory from "@/app/lib/models/inventory";
@@ -28,7 +28,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const inventory = await Inventory.findById(inventoryId)
       .populate(
@@ -87,7 +87,7 @@ export const PATCH = async (
     };
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if inventory exists
     const inventory: IInventory | null = await Inventory.findById(inventoryId)
@@ -227,7 +227,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // delete inventory and check if it existed
     const result = await Inventory.deleteOne({ _id: inventoryId });

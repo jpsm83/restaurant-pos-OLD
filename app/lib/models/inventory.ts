@@ -3,11 +3,15 @@ import { Schema, model, models } from "mongoose";
 // Schema for individual count events will be created only upon the count of the inventory
 const inventoryCountSchema = new Schema({
   countedDate: { type: Date, required: true, default: Date.now }, // Date when the count was performed
-  currentCountQuantity: { type: Number, required: true }, // quantity of the good in the current real count, when goods are delivered, the quantity will be added to the currentCountQuantity
-  systemCountQuantity: { type: Number, required: true }, // is the value of the dynamicCountFromLastInventory at the time of the inventory count
-  deviationPercent: { type: Number, required: true, default: 0 }, // differece between the systemCountQuantity and the currentCountQuantity in percentage. For a perfect inventory, this number should be 0
-  quantityNeeded: { type: Number, default: 0 }, // quantity needed to reach the parLevel. Difference between the parLevel and the currentCountQuantity. parLevel is defined in the supplierGood
-  countedBy: {
+  
+  // ************************* IMPORTANT *************************
+  // this quantity is base on the supplierGood.MEAUREMENTUNIT
+  currentCountQuantity: { type: Number, required: true }, // quantity of the good in the current real count
+  // *************************************************************
+
+  deviationPercent: { type: Number, required: true, default: 0 }, // differece between the dynamicSystemCount and the currentCountQuantity in percentage. For a perfect inventory, this number should be 0
+  quantityNeeded: { type: Number, default: 0 }, // quantity needed to reach the parLevel. Difference between the parLevel and the currentCountQuantity. parLevel is defined in the supplierGood - all related with the MEASUREMENTUNIT
+  countedByUserId: {
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -15,12 +19,12 @@ const inventoryCountSchema = new Schema({
   comments: { type: String }, // Comments about the inventory
   // counte cannot be re-edited once is send, if there is a mistake, the user will have to contact the admin to re-edit and this will be recorded in the reedited field
   reedited: {
-    reeditedBy: { type: Schema.Types.ObjectId, ref: "User" }, // User who re-edited - user in session
+    reeditedByUserId: { type: Schema.Types.ObjectId, ref: "User" }, // User who re-edited - user in session
     date: { type: Date, default: Date.now }, // Date when the re-edit occurred
     reason: { type: String, required: true }, // Reason for the re-edit
     originalValues: {
       currentCountQuantity: { type: Number, required: true },
-      systemCountQuantity: { type: Number, required: true },
+      dynamicSystemCount: { type: Number, required: true },
       deviationPercent: { type: Number, required: true },
     }, // Original values before re-edit
   },
@@ -28,20 +32,23 @@ const inventoryCountSchema = new Schema({
 
 // on the creation of the inventory, one object for each supplierGood will be created
 const inventoryGoodsSchema = new Schema({
-  supplierGood: {
+  supplierGoodId: {
     type: Schema.Types.ObjectId,
     ref: "SupplierGood",
     required: true,
   }, // Good in the inventory
   monthlyCounts: [inventoryCountSchema], // Array of count events for the month
   averageDeviationPercent: { type: Number, default: 0 }, // sun of all average deviation percent for the month divide by the number of counts
-  dynamicCountFromLastInventory: { type: Number, default: 0 }, // quantity start point of the good. Its first value will be the first inventory.currentCountQuantity. From there, it will be automaticaly updated base on the orders, substracting its supplierGood used to manufactured the businessGoods in the orders. Upon next inventory count, this field will set the inventory.systemCountQuantity value, then it will be reset to the value of inventory.currentCountQuantity - REQUIRED FOR ANALITCS
+
+  // ************************* IMPORTANT *************************
+  // this quantity is base on the supplierGood.MEAUREMENTUNIT
+  dynamicSystemCount: { type: Number, default: 0 }, // quantity start point of the good. Its first value will be the first inventory.currentCountQuantity. From there, it will be automaticaly updated base on the orders, substracting its supplierGood used to manufactured the businessGoods in the orders or will be add all the purchases. Upon next inventory count, this field will set the inventory.systemCountQuantity value, then it will be reset to the value of inventory.currentCountQuantity - REQUIRED FOR ANALITCS
 });
 
 // Inventory schema to manage the overall inventory event of the month (1 month = 1 inventory)
 const inventorySchema = new Schema(
   {
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,

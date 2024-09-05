@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
@@ -19,7 +19,7 @@ export const updateDynamicCountSupplierGood = async (
 ) => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const businessGoodsIngredients = await BusinessGood.find({
       _id: { $in: businessGoodsIds },

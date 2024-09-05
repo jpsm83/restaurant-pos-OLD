@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 import { INotification } from "@/app/lib/interface/INotification";
@@ -18,7 +18,7 @@ export const GET = async (
 ) => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const notificationId = context.params.notificationId;
     // check if the notificationId is valid
@@ -70,7 +70,7 @@ export const PATCH = async (
       (await req.json()) as INotification;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if notification exists
     const notification: INotification | null = await Notification.findById(
@@ -189,7 +189,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // Fetch the notification
     const notification = await Notification.findById(notificationId);

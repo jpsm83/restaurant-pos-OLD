@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
 // imported interfaces
@@ -31,7 +31,7 @@ export const updateUserDailySalesReportGeneric = async (
       return "UserId and dayReferenceNumber are required!";
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // get all tables closed by the user at the given dayReferenceNumber
     const tableDocument = await Table.find({

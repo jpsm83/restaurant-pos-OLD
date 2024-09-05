@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 // import models
@@ -15,7 +15,7 @@ import { calculateSetMenuCostPriceAndAllergies } from "./utils/calculateSetMenuC
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
     const businessGoods = await BusinessGood.find()
       .populate("ingredients.supplierGood", "name mainCategory subCategory")
       .populate("setMenu", "name mainCategory subCategory sellingPrice")
@@ -85,7 +85,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check for duplicate business good
     const duplicateBusinessGood = await BusinessGood.findOne({
@@ -259,7 +259,7 @@ export const POST = async (req: Request) => {
 //     // cheeseburger - fries
 //     const setMenuArr = ["667bfc0c5d50be40f0c7b065", "667bfddd5d50be40f0c7b079"];
 
-//     await connectDB();
+//     await connectDb();
 
 //     // // @ts-ignore
 //     // const ingredients = await calculateIngredientsCostPriceAndAllergies(

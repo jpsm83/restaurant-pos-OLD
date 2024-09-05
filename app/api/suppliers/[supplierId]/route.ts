@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
 // import models
@@ -29,7 +29,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const supplier = await Supplier.findById(supplierId)
       .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
@@ -81,7 +81,7 @@ export const PATCH = async (
     } = (await req.json()) as ISupplier;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if supplier exists
     const supplier: ISupplier | null = await Supplier.findById(
@@ -202,7 +202,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // **********************************************************************
     // do not allow to delete a supplier that is in use in any business goods

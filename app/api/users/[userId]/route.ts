@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 
@@ -34,7 +34,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const user = await User.findById(userId).select("-password").lean();
 
@@ -95,7 +95,7 @@ export const PATCH = async (
     } = (await req.json()) as IUser;
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if user exists
     const user = await User.findById(userId);
@@ -279,7 +279,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // Delete the user
     const result = await User.deleteOne({ _id: userId });

@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
@@ -63,7 +63,7 @@ export const POST = async (
     );
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // get all schedules from the week where user is scheduled
     const employeeScheduleOnTheWeek: ISchedule[] | any[] = await Schedule.find({

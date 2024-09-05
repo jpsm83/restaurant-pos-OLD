@@ -37,24 +37,27 @@ const supplierGoodSchema = new Schema(
     inventorySchedule: { type: String, enum: inventorySchedule }, // daily, weekly, monthly
 
     // analytics fields
-    measurementUnit: {
-      type: String,
-      enum: measurementUnit,
-    }, // unit used for conversion, measurement on how to good is bought
-    totalQuantityPerUnit: { type: Number }, // total quantity in each unit of the good - block of cheese 3kg - bag of bread 12 pieces - milk gallon 4L
     minimumQuantityRequired: { type: Number }, // limit quantity required for a day work
+    
+    // ************************* IMPORTANT *************************
+    // parLevel is base on MEASUREMENT UNIT,
     parLevel: { type: Number }, // optimal quantity to maintain, bar orders have to reach this level - if par level is 100, you got 20, today is order day, you have to order 80
-    wholeSalePrice: { type: Number }, // price of the good when sold as a whole
-    pricePerUnit: { type: Number }, // price of the good per unit - calculated automatically in the backend = wholeSalePrice / totalQuantityPerUnit
+    // *************************************************************
+    
     saleUnit: {
       type: String,
       enum: saleUnit,
     }, // unit in which the good is sold - block of cheese, bag of bread, milk gallon
-
-    // saleUnit | wholeSalePrice | measurementUnit | totalQuantityPerUnit |  pricePerUnit
-    //   Packet |       10€      |     Kilogram    |           5          | 2€ per kilogram
-    //    Unit  |       03€      |       Unit      |           1          |   3€ per unit
-    //    Box   |       20€      |     Kilogram    |           2          | 10€ per kilogram
+    measurementUnit: {
+      type: String,
+      enum: measurementUnit,
+    }, // unit used for conversion, measurement on how to good is bought
+    pricePerUnit: { type: Number }, // price of the good per unit - user will divede the price of the product by the quantity of unit to get this value
+    
+    // saleUnit | measurementUnit |  pricePerUnit
+    //   Packet |     Kilogram    | 2€ per kilogram
+    //    Unit  |       Unit      |   3€ per unit
+    //   Carton |      Liters     |  1€ per liter
 
     // IMPORTANT *** this caluclation will be done automatically in the backend
     // this will need information of orders to do so

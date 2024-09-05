@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { ITable } from "@/app/lib/interface/ITable";
 import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
@@ -21,7 +21,7 @@ import Order from "@/app/lib/models/order";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const tables = await Table.find()
       .populate({
@@ -103,7 +103,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // dailySalesReport is created when the first table is created
     const dailySalesReport: IDailySalesReport | null =

@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 
@@ -16,7 +16,7 @@ import { calculateVacationProportional } from "./utils/calculateVacationProporti
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const users = await User.find().select("-password").lean();
 
@@ -109,7 +109,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check for duplicates username, email, taxNumber and idNumber with same business ID
     const duplicateUser: IUser | null = await User.findOne({

@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 import { INotification } from "@/app/lib/interface/INotification";
@@ -14,7 +14,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const notifications = await Notification.find()
       .populate("recipients", "username")
@@ -79,7 +79,7 @@ export const POST = async (req: Request) => {
     };
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // save new notification
     const newNotification = await Notification.create(notificationObj);

@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { ObjectId } from "mongodb";
@@ -22,7 +22,7 @@ const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 export const GET = async () => {
   try {
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const business = await Business.find().select("-password").lean();
 
@@ -100,7 +100,7 @@ export const POST = async (req: Request) => {
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check for duplicate legalName, email or taxNumber
     const duplicateBusiness = await Business.findOne({

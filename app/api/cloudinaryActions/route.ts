@@ -24,13 +24,15 @@ export async function POST(req: Request) {
     const supplierGoodId = data.get("supplierGoodId") || null; // subfolder = "supplierGoods"
     const supplierId = data.get("supplierId") || null; // subfolder = "suppliers"
     const userId = data.get("userId") || null; // subfolder = "users"
+    const purchaseId = data.get("purchaseId") || null; // subfolder = "purchases"
 
     let documentModelResult: any = await documentModelExists(
       businessId,
       businessGoodId,
       supplierGoodId,
       supplierId,
-      userId
+      userId,
+      purchaseId
     );
 
     if (typeof documentModelResult === "string") {
@@ -126,6 +128,7 @@ export async function DELETE(req: Request) {
       supplierGoodId,
       supplierId,
       userId,
+      purchaseId,
     } = await req.json();
 
     if (!imageUrl) {
@@ -142,7 +145,8 @@ export async function DELETE(req: Request) {
       businessGoodId,
       supplierGoodId,
       supplierId,
-      userId
+      userId,
+      purchaseId
     );
 
     if (typeof documentModelResult === "string") {

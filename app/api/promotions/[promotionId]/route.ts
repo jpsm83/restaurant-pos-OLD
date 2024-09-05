@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
 // imported interfaces
@@ -39,7 +39,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const promotion = await Promotion.findById(promotionId)
       .populate({
@@ -153,7 +153,7 @@ export const PATCH = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if the promotion exists
     const promotion: IPromotion | null = await Promotion.findById(
@@ -233,7 +233,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // delete promotion and check if it existed
     const result = await Promotion.deleteOne({ _id: promotionId });

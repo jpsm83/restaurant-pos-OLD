@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
@@ -32,7 +32,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // fetch printers with the given business ID
     const printers = await Printer.find({ business: businessId })

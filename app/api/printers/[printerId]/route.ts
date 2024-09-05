@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
@@ -34,7 +34,7 @@ export const GET = async (
       );
     }
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const printer = await Printer.findById(printerId)
       .populate({ path: "printFor.users", select: "username", model: User })
@@ -91,7 +91,7 @@ export const PATCH = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // fetch the printer with the given ID
     const printer: IPrinter | null = await Printer.findById(printerId).lean();
@@ -172,7 +172,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // delete printer and check if it existed
     const result = await Printer.deleteOne({ _id: printerId });

@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import Order from "@/app/lib/models/order";
 import { updateMultipleOrders } from "../utils/updateMultipleOrders";
 import Table from "@/app/lib/models/table";
@@ -48,7 +48,7 @@ export const POST = async (req: Request) => {
     }
 
     // Connect to DB
-    await connectDB();
+    await connectDb();
 
     // Fetch orders to be closed
     const orders: IOrder[] | null = await Order.find({

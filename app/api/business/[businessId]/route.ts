@@ -1,4 +1,4 @@
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { Types } from "mongoose";
@@ -48,7 +48,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const business = await Business.findById(businessId)
       .select("-password")
@@ -111,7 +111,7 @@ export const PATCH = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // check if business exists
     const business: IBusiness | null = await Business.findById(
@@ -223,7 +223,7 @@ export const DELETE = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // delete business and check if it exists
     const result = await Business.deleteOne({ _id: businessId });

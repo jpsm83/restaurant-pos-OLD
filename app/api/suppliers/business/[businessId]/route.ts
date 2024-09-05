@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
 // import models
@@ -26,7 +26,7 @@ export const GET = async (
     }
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     const suppliers = await Supplier.find({ business: businessId })
       .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")

@@ -5,7 +5,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import Table from "@/app/lib/models/table";
 
 import mongoose, { model, Types } from "mongoose";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // this function will update individual user daily sales report
 // it is used ONLY when managers close the day sales report CLOSEDAILYSALESREPORT route
@@ -19,7 +19,7 @@ export const updateUserDailySalesReportGeneric = async (
       return "UserId and dayReferenceNumber are required!";
 
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // get all tables closed by the user at the given dayReferenceNumber
     const tableDocument = await Table.find({

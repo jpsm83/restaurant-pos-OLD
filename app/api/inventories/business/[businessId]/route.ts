@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/app/lib/db";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // import models
 import Inventory from "@/app/lib/models/oldInventory";
@@ -65,7 +65,7 @@ export const GET = async (
     }
     
     // connect before first call to DB
-    await connectDB();
+    await connectDb();
 
     // just get basic information user visualisation, not the whole inventory
     // user will be able to click on the inventory to see the details
