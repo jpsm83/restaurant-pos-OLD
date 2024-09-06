@@ -22,7 +22,7 @@ interface IInventoryCount {
 export interface IInventoryGood {
   supplierGoodId: Types.ObjectId;
   monthlyCounts: IInventoryCount[];
-  averageDeviationPercent: number;
+  averageDeviationPercent?: number;
   dynamicSystemCount: number;
 }
 

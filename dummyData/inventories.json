@@ -1,52 +1,58 @@
-[
-    {
-        "_id": "669cc76e9876c117994d0a4c",
-        "business": "6673fed98c45d0a0ca5f34c1",
-        "setFinalCounte": false,
-        "inventoryGoods": [
-            {
-                "supplierGood": "667bfac8d28a7ee19d9be444",
-                "monthlyCounts": [
-                    {
-                        "countedDate": "2024-07-21T11:01:54.691Z",
-                        "currentCountQuantity": 2,
-                        "systemCountQuantity": 5,
-                        "deviationPercent": 60,
-                        "quantityNeeded": 7,
-                        "countedBy": "667412df373ad7f1a285534e",
-                        "comments": "commentUpdated"
-                    },
-                    {
-                        "countedDate": "2024-07-20T11:01:54.691Z",
-                        "currentCountQuantity": 2,
-                        "systemCountQuantity": 5,
-                        "deviationPercent": 60,
-                        "quantityNeeded": 7,
-                        "countedBy": "667412df373ad7f1a285534e",
-                        "comments": "comment"
-                    }
-                ],
-                "averageDeviationPercent": 0,
-                "dynamicCountFromLastInventory": 0
-            },
-            {
-                "supplierGood": "667bfac8d28a7ee19d9be334",
-                "monthlyCounts": [
-                    {
-                        "countedDate": "2024-07-20T11:01:54.691Z",
-                        "currentCountQuantity": 21,
-                        "systemCountQuantity": 15,
-                        "deviationPercent": 60,
-                        "quantityNeeded": 7,
-                        "countedBy": "667412df373ad7f1a285534e",
-                        "comments": "comment2"
-                    }
-                ],
-                "averageDeviationPercent": 0,
-                "dynamicCountFromLastInventory": 0
+{
+    "_id": "64f67a9d8c2b1e0016f5d1bc",
+    "businessId": "64f67a9d8c2b1e0016f5d1aa",
+    "setFinalCount": false,
+    "inventoryGoods": [
+      {
+        "supplierGoodId": "64f67a9d8c2b1e0016f5d1ab",
+        "monthlyCounts": [
+          {
+            "countedDate": "2024-09-01T12:00:00Z",
+            "currentCountQuantity": 100,
+            "deviationPercent": 5,
+            "quantityNeeded": 50,
+            "countedByUserId": "64f67a9d8c2b1e0016f5d1ad",
+            "comments": "Initial count for September",
+            "reedited": {
+              "reeditedByUserId": "64f67a9d8c2b1e0016f5d1ae",
+              "date": "2024-09-02T12:00:00Z",
+              "reason": "Incorrect initial count",
+              "originalValues": {
+                "currentCountQuantity": 110,
+                "dynamicSystemCount": 105,
+                "deviationPercent": 7
+              }
             }
+          },
+          {
+            "countedDate": "2024-09-15T12:00:00Z",
+            "currentCountQuantity": 90,
+            "deviationPercent": 3,
+            "quantityNeeded": 60,
+            "countedByUserId": "64f67a9d8c2b1e0016f5d1af",
+            "comments": "Mid-month check"
+          }
         ],
-        "createdAt": "2024-07-21T08:31:42.600Z",
-        "updatedAt": "2024-07-21T11:05:59.653Z"
-    }
-]
+        "averageDeviationPercent": 4,
+        "dynamicSystemCount": 95
+      },
+      {
+        "supplierGoodId": "64f67a9d8c2b1e0016f5d1ac",
+        "monthlyCounts": [
+          {
+            "countedDate": "2024-09-01T12:00:00Z",
+            "currentCountQuantity": 200,
+            "deviationPercent": 2,
+            "quantityNeeded": 30,
+            "countedByUserId": "64f67a9d8c2b1e0016f5d1af",
+            "comments": "Initial count"
+          }
+        ],
+        "averageDeviationPercent": 2,
+        "dynamicSystemCount": 195
+      }
+    ],
+    "createdAt": "2024-09-01T00:00:00Z",
+    "updatedAt": "2024-09-15T12:00:00Z"
+  }
+  

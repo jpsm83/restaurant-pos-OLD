@@ -42,7 +42,7 @@ const inventoryGoodsSchema = new Schema({
 
   // ************************* IMPORTANT *************************
   // this quantity is base on the supplierGood.MEAUREMENTUNIT
-  dynamicSystemCount: { type: Number, default: 0 }, // quantity start point of the good. Its first value will be the first inventory.currentCountQuantity. From there, it will be automaticaly updated base on the orders, substracting its supplierGood used to manufactured the businessGoods in the orders or will be add all the purchases. Upon next inventory count, this field will set the inventory.systemCountQuantity value, then it will be reset to the value of inventory.currentCountQuantity - REQUIRED FOR ANALITCS
+  dynamicSystemCount: { type: Number, default: 0 }, // quantity start point of the good. Its equal to inventoryCount.currentCountQuantity. From there, it will be automaticaly updated base on the orders, substracting its supplierGood used to manufactured the businessGoods in the orders or will be add when purchases are done. Upon next inventory count, this field will set the inventory.systemCountQuantity value, then it will be reset to the value of inventoryCount.currentCountQuantity - REQUIRED FOR ANALITCS
 });
 
 // Inventory schema to manage the overall inventory event of the month (1 month = 1 inventory)

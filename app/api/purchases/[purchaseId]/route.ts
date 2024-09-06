@@ -193,6 +193,8 @@ export const PATCH = async (
   }
 };
 
+// delete an purchase shouldnt be allowed for data integrity, historical purposes and analytics
+// the only case where an purchase should be deleted is if the business itself is deleted
 // @desc    Delete purchase by ID
 // @route   DELETE /purchases/:purchaseId
 // @access  Private

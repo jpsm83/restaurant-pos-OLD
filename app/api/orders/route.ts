@@ -136,6 +136,7 @@ export const POST = async (req: Request) => {
     const tableExists: ITable | null = await Table.findById(table)
       .select("status")
       .lean();
+    console.log("🚀 ~ POST ~ tableExists:", tableExists)
     if (!tableExists || tableExists.status === "Closed") {
       return new NextResponse(
         JSON.stringify({ message: "Table not found or closed!" }),

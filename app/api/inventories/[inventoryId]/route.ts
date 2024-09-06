@@ -8,6 +8,7 @@ import SupplierGood from "@/app/lib/models/supplierGood";
 import { Types } from "mongoose";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
+// on the front display all supplier goods, you should be able to display everything and them filter it through many parametere like inventorySchedule, supplier, mainCategory to print so user can counte it
 // @desc    Get inventory by ID
 // @route   GET /inventories/:inventoryId
 // @access  Private
