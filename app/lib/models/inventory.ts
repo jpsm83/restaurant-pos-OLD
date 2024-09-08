@@ -20,7 +20,7 @@ const inventoryCountSchema = new Schema({
   // counte cannot be re-edited once is send, if there is a mistake, the user will have to contact the admin to re-edit and this will be recorded in the reedited field
   reedited: {
     reeditedByUserId: { type: Schema.Types.ObjectId, ref: "User" }, // User who re-edited - user in session
-    date: { type: Date, default: Date.now }, // Date when the re-edit occurred
+    date: { type: Date }, // Date when the re-edit occurred
     reason: { type: String, required: true }, // Reason for the re-edit
     originalValues: {
       currentCountQuantity: { type: Number, required: true },

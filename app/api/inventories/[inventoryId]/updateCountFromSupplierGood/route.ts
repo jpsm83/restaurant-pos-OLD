@@ -1,5 +1,9 @@
 import connectDb from "@/app/lib/utils/connectDb";
-import { IInventory, IInventoryCount } from "@/app/lib/interface/IInventory";
+import {
+  IInventory,
+  IInventoryCount,
+  IInventoryGood,
+} from "@/app/lib/interface/IInventory";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
@@ -7,6 +11,7 @@ import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { ISupplier } from "@/app/lib/interface/ISupplier";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 
 // This PATCH route will update an existing count for a supplier good
 // @desc    Update inventory count for a specific supplier good
@@ -55,14 +60,26 @@ export const PATCH = async (
     // Connect to the database
     await connectDb();
 
-    // Fetch the inventory
-    const inventory: IInventory | null = await Inventory.findById(inventoryId)
-      .select("setFinalCount inventoryGoods")
-      .lean();
+    // Fetch inventory and supplier good in a single query
+    const [inventory, supplierGood] = await Promise.all([
+      Inventory.findById(inventoryId)
+        .select("setFinalCount inventoryGoods")
+        .lean() as Promise<IInventory | null>,
+      SupplierGood.findById(supplierGoodId)
+        .select("parLevel")
+        .lean() as Promise<ISupplierGood | null>,
+    ]);
 
     if (!inventory) {
       return new NextResponse(
         JSON.stringify({ message: "Inventory not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!supplierGood) {
+      return new NextResponse(
+        JSON.stringify({ message: "Supplier good not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -77,38 +94,27 @@ export const PATCH = async (
       );
     }
 
-    // Fetch the supplier good
-    const supplierGood: any = await SupplierGood.findById(supplierGoodId)
-      .select("parLevel")
-      .lean();
-
-    if (!supplierGood) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier good not found!" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
+    // Locate the correct supplierGood and count to update
+    const inventoryGood = inventory.inventoryGoods.find(
+      (good) => good.supplierGoodId.toString() === supplierGoodId.toString()
+    );
+    if (!inventoryGood) {
+      return NextResponse.json(
+        { message: "Supplier good not found in inventory!" },
+        { status: 404 }
       );
     }
 
     // Find the existing count to update
-    const existingCount = inventory.inventoryGoods
-      .find(
-        (good) => good.supplierGoodId.toString() === supplierGoodId.toString()
-      )
-      ?.monthlyCounts.find(
-        (count: any) => count._id.toString() === countId.toString()
-      );
-
+    const existingCount = inventoryGood.monthlyCounts.find(
+      (count: any) => count._id.toString() === countId.toString()
+    );
     if (!existingCount) {
-      return new NextResponse(JSON.stringify({ message: "Count not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return NextResponse.json(
+        { message: "Count not found!" },
+        { status: 404 }
+      );
     }
-
-    // Calculate dynamicSystemCount based on currentCountQuantity and deviationPercent
-    const previewsDynamicSystemCount =
-      existingCount.currentCountQuantity *
-      (1 + (existingCount.deviationPercent ?? 0 / 100));
 
     // Prepare the reedited object
     const reeditedData = {
@@ -117,12 +123,25 @@ export const PATCH = async (
       reason: reason, // You might want to pass this in the request as well
       originalValues: {
         currentCountQuantity: existingCount.currentCountQuantity,
-        dynamicSystemCount: previewsDynamicSystemCount,
-        deviationPercent: existingCount.deviationPercent ?? 0,
+        dynamicSystemCount: inventoryGood.dynamicSystemCount,
+        deviationPercent: existingCount.deviationPercent,
       },
     };
 
-    // Update the inventory count
+    // Calculate deviationPercent and dynamicSystemCount
+    const deviationPercent =
+      ((inventoryGood.dynamicSystemCount - currentCountQuantity) /
+        (inventoryGood.dynamicSystemCount || 1)) *
+      100;
+
+    // calculate the average deviation percent
+    const averageDeviationPercent =
+      inventoryGood.monthlyCounts.reduce(
+        (acc, count) => acc + (count.deviationPercent || 0),
+        0
+      ) / inventoryGood.monthlyCounts.length;
+
+    // Update the inventory count with optimized query
     await Inventory.findOneAndUpdate(
       {
         _id: inventoryId,
@@ -131,22 +150,18 @@ export const PATCH = async (
       },
       {
         $set: {
+          "inventoryGoods.$[elem].dynamicSystemCount": currentCountQuantity,
+          "inventoryGoods.$[elem].averageDeviationPercent":
+            averageDeviationPercent,
           "inventoryGoods.$[elem].monthlyCounts.$[count].currentCountQuantity":
             currentCountQuantity,
+          "inventoryGoods.$[elem].monthlyCounts.$[count].quantityNeeded":
+            (supplierGood.parLevel || 0) - currentCountQuantity,
           "inventoryGoods.$[elem].monthlyCounts.$[count].countedByUserId":
             countedByUserId,
-          "inventoryGoods.$[elem].monthlyCounts.$[count].comments": comments,
-          "inventoryGoods.$[elem].monthlyCounts.$[count].quantityNeeded":
-            Math.max(
-              (supplierGood.parLevel ?? 0) - (currentCountQuantity ?? 0),
-              0
-            ),
           "inventoryGoods.$[elem].monthlyCounts.$[count].deviationPercent":
-            currentCountQuantity !== undefined
-              ? ((supplierGood.parLevel ?? 0 - (currentCountQuantity ?? 0)) /
-                  (currentCountQuantity ?? 1)) *
-                100
-              : 0,
+            deviationPercent,
+          "inventoryGoods.$[elem].monthlyCounts.$[count].comments": comments,
           "inventoryGoods.$[elem].monthlyCounts.$[count].reedited":
             reeditedData,
         },

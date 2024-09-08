@@ -76,7 +76,7 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Name, keyword, mainCategory, subCategory, currentlyInUse, supplier and business are required!",
+            "Name, keyword, mainCategory, subCategory, currentlyInUse, supplier, business and pricePerUnit are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );

@@ -38,13 +38,27 @@ export const GET = async (
 
     // Parse query parameters for optional date range
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+
+    // Initialize startDate and endDate
+    let startDate = startDateParam ? new Date(startDateParam) : null;
+    let endDate = endDateParam ? new Date(endDateParam) : null;
+
+    // Set startDate to the first day of the month if provided
+    if (startDate) {
+      startDate.setDate(1);
+    }
+
+    // Set endDate to the last day of the month if provided
+    if (endDate) {
+      endDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
+    }
 
     // Build query based on the presence of startDate and endDate
     let query: {
       businessId: Types.ObjectId;
-      purchaseDate?: {
+      createdAt?: {
         $gte: Date;
         $lte: Date;
       };
@@ -63,9 +77,9 @@ export const GET = async (
           }
         );
       }
-      query.purchaseDate = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+      query.createdAt = {
+        $gte: startDate,
+        $lte: endDate,
       };
     }
 
@@ -73,7 +87,7 @@ export const GET = async (
     await connectDb();
 
     // Find inventories with the query
-    const inventories: IInventory | null = await Inventory.findById(query)
+    const inventories: IInventory | null = await Inventory.findOne(query)
       .populate({
         path: "inventoryGoods.supplierGoodId",
         select:
