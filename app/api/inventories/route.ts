@@ -79,8 +79,7 @@ export const GET = async (req: Request) => {
   }
 };
 
-// this route supose to run in every login, so it will create the montly inventory for the business if it doesnt exist
-// if there is an inventory with the current month, it will do nothing, otherwise it will create a new inventory with all the supplier goods that exists on the business and close the last one
+// if there is an inventory with the current month, it will do nothing, otherways from the first day of the month, when manager or admin login, the system will set the setFinalCount from previews inventory to "true" them create a new inventory with all the supplier goods in used 
 // @desc    Create a new inventory
 // @route   POST /inventories
 // @access  Private
@@ -127,14 +126,19 @@ export const POST = async (req: Request) => {
         .toDate();
 
       // Fetch the previous month's inventory for the business
-      const lastInventory: IInventory | null = await Inventory.findOne({
-        businessId: businessId,
-        setfinalCount: true,
-        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
-      }).lean();
-
+      const lastInventory: IInventory | null = await Inventory.findOneAndUpdate(
+        {
+          businessId: businessId,
+          createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth },
+        },
+        {
+          $set: { setFinalCount: true },
+        },
+        { new: true}
+      ).lean();
+      
       // Fetch all supplier goods for the business
-      const supplierGoods = await SupplierGood.find({ business: businessId })
+      const supplierGoods = await SupplierGood.find({ business: businessId, currentlyInUse: true })
         .select("_id")
         .lean();
 
@@ -160,8 +164,8 @@ export const POST = async (req: Request) => {
           const mostRecentCount =
             lastInventoryGood.monthlyCounts.sort(
               (a, b) =>
-                new Date(b.countedDate).getTime() -
-                new Date(a.countedDate).getTime()
+                new Date(b.countedDate ?? "").getTime() -
+                new Date(a.countedDate ?? "").getTime()
             )[0]?.currentCountQuantity || 0;
 
           return {

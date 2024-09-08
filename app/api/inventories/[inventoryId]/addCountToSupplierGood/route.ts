@@ -1,25 +1,31 @@
 import connectDb from "@/app/lib/utils/connectDb";
-import { IInventory } from "@/app/lib/interface/IInventory";
+import { IInventory, IInventoryCount } from "@/app/lib/interface/IInventory";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
+// this PATCH route will add on each supplierGood its new inventory count quantity individually
 // @desc    Create new inventories
-// @route   POST /inventories/:inventoryId/updateSupplierGoodInventory
+// @route   PATCH /inventories/:inventoryId/addCountToSupplierGood
 // @access  Private
-export const POST = async (req: Request, context: { params: { inventoryId: Types.ObjectId } }) => {
+export const PATCH = async (
+  req: Request,
+  context: {
+    params: { inventoryId: Types.ObjectId };
+  }
+) => {
   // this function will set the count quantity of a individual supplier good in an inventory
   try {
-    const { supplierGoodId, currentCountQuantity } =
-      (await req.json()) as {
-        supplierGoodId: Types.ObjectId;
-        currentCountQuantity: number;
-      };
+    const { inventoryId } = context.params;
 
-      const inventoryId = context.params.inventoryId;
+    const { currentCountQuantity, countedByUserId, comments, supplierGoodId } =
+      (await req.json()) as IInventoryCount & {
+        supplierGoodId: Types.ObjectId;
+      };
 
     // check required fields
     if (!inventoryId || !supplierGoodId || !currentCountQuantity) {
@@ -33,17 +39,9 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
     }
 
     // check if the inventoryId is valid
-    if (!Types.ObjectId.isValid(inventoryId)) {
+    if (!isObjectIdValid([inventoryId, supplierGoodId])) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid inventory ID" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // check if the supplierGoodId is valid
-    if (!Types.ObjectId.isValid(supplierGoodId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid supplier good ID" }),
+        JSON.stringify({ message: "InventoryId or supplierGoodId not valid!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -51,9 +49,9 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
     // connect before first call to DB
     await connectDb();
 
-    // check if inventory exists
+    // get the inventory
     const inventory: IInventory | null = await Inventory.findById(inventoryId)
-      .select("setFinalCount inventoryGoods comments")
+      .select("setFinalCount inventoryGoods")
       .lean();
 
     if (!inventory) {
@@ -63,7 +61,8 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
       );
     }
 
-    if (inventory.setFinalCount === true) {
+    // check if the inventory is already set as final count (finalized)
+    if (inventory.setFinalCount) {
       return new NextResponse(
         JSON.stringify({
           message: "Inventory already set as final count! Cannot update!",
@@ -72,11 +71,11 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
       );
     }
 
-    // Fetch supplierGoods
+    // get the supplier good from the supplierGoodId
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(
       supplierGoodId
     )
-      .select("_id parLevel")
+      .select("parLevel")
       .lean();
 
     if (!supplierGood) {
@@ -86,20 +85,34 @@ export const POST = async (req: Request, context: { params: { inventoryId: Types
       );
     }
 
-    let updatedSupplierGoodInventoryObj = {
-      supplierGood: supplierGood._id,
-      currentCountQuantity: currentCountQuantity,
+    // Prepare the new inventory count object
+    const newInventoryCount: IInventoryCount = {
+      currentCountQuantity,
+      countedByUserId,
+      quantityNeeded: Math.max(
+        supplierGood.parLevel ?? 0 - currentCountQuantity,
+        0
+      ),
+      deviationPercent: inventory.inventoryGoods.some(
+        (good) => good.toString() === supplierGoodId.toString()
+      )
+        ? ((supplierGood.parLevel ?? 0 - currentCountQuantity) /
+            currentCountQuantity) *
+          100
+        : 0,
+      comments,
     };
 
+    // add to the inventory, at the supplierGood its belong, inside the monthlyCounts array the new inventory count object
     await Inventory.findByIdAndUpdate(
       inventoryId,
       {
-        $set: {
-          "inventoryGoods.$[elem]": updatedSupplierGoodInventoryObj,
+        $push: {
+          "inventoryGoods.$[elem].monthlyCounts": newInventoryCount,
         },
       },
       {
-        arrayFilters: [{ "elem.supplierGood": supplierGoodId }],
+        arrayFilters: [{ "elem._id": supplierGoodId }],
         new: true,
       }
     );

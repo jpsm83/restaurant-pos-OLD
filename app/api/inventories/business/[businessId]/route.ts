@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // import models
-import Inventory from "@/app/lib/models/oldInventory";
 import { Types } from "mongoose";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import Inventory from "@/app/lib/models/inventory";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import SupplierGood from "@/app/lib/models/supplierGood";
+import Supplier from "@/app/lib/models/supplier";
+import { IInventory } from "@/app/lib/interface/IInventory";
 
 // @desc    Get inventories by business ID and range of dates
 // @route   GET /inventories/business/:businessId?startDate=<date>&endDate=<date>
@@ -15,15 +19,21 @@ export const GET = async (
 ) => {
   try {
     const businessId = context.params.businessId;
+
     // check if the businessId is valid
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (!isObjectIdValid([businessId])) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid inventory ID" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ message: "Business ID not valid!" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
-    // date will como from the front as ex: "2023-04-01T15:00:00", create a Date object from it with new Date(startDate). This will create a Date object representing midnight on the given date in the LOCAL TIME ZONE OF THE SERVER.
+    // date and time will como from the front as ex: "2023-04-01T15:00:00", you can create a Date object from it with new Date(startDate). This will create a Date object representing midnight on the given date in the LOCAL TIME ZONE OF THE SERVER.
     // If you need to ensure that the date represents midnight in a specific time zone, you may need to use a library like Moment.js or date-fns that supports time zones. These libraries can parse the date string and create a Date object in a specific time zone.
 
     // Parse query parameters for optional date range
@@ -31,21 +41,16 @@ export const GET = async (
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // Convert date string to date object at the start of the day in UTC
-    const startOfDay = startDate
-      ? new Date(startDate.split("T")[0] + "T00:00:00.000Z")
-      : null;
-
-    const endOfDay = endDate
-      ? new Date(endDate.split("T")[0] + "T23:59:59.999Z")
-      : null;
-
-    // Build the query based on the presence of startDate and endDate
+    // Build query based on the presence of startDate and endDate
     let query: {
-      business: Types.ObjectId;
-      createdAt?: { $gte?: Date | null; $lte?: Date | null };
-    } = { business: businessId };
+      businessId: Types.ObjectId;
+      purchaseDate?: {
+        $gte: Date;
+        $lte: Date;
+      };
+    } = { businessId: businessId };
 
+    // Build the query object with the optional date range
     if (startDate && endDate) {
       if (startDate > endDate) {
         return new NextResponse(
@@ -58,22 +63,31 @@ export const GET = async (
           }
         );
       }
-      query.createdAt = {
-        $gte: startOfDay,
-        $lte: endOfDay,
+      query.purchaseDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
       };
     }
-    
+
     // connect before first call to DB
     await connectDb();
 
-    // just get basic information user visualisation, not the whole inventory
-    // user will be able to click on the inventory to see the details
-    const inventories = await Inventory.find(query)
-      .select("title countedDate doneBy comments")
+    // Find inventories with the query
+    const inventories: IInventory | null = await Inventory.findById(query)
+      .populate({
+        path: "inventoryGoods.supplierGoodId",
+        select:
+          "name mainCategory subCategory supplier budgetImpact imageUrl inventorySchedule parLevel measurementUnit pricePerUnit",
+        model: SupplierGood,
+        populate: {
+          path: "supplier",
+          select: "tradeName",
+          model: Supplier,
+        },
+      })
       .lean();
 
-    return !inventories.length
+    return !inventories
       ? new NextResponse(JSON.stringify({ message: "No inventories found!" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -82,7 +96,6 @@ export const GET = async (
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
-
   } catch (error) {
     return handleApiError("Get inventories by business id failed!", error);
   }

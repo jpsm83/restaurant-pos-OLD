@@ -10,6 +10,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
+import addSupplierGoodToInventory from "../inventories/utils/addSupplierGoodToInventory";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods
@@ -123,7 +124,11 @@ export const POST = async (req: Request) => {
     };
 
     // create a new supplier good
-    await SupplierGood.create(supplierGoodObj);
+    const newSupplierGood = await SupplierGood.create(supplierGoodObj);
+
+    // *** IMPORTANT ***
+    // when supplier good is created, it will be added to the inventory
+    await addSupplierGoodToInventory(newSupplierGood._id, business);
 
     // confirm supplier good was created
     return new NextResponse(

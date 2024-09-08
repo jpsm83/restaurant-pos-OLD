@@ -8,13 +8,12 @@ import Purchase from "@/app/lib/models/purchase";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported interfaces
-import { IPurchase } from "@/app/lib/interface/IPurchase";
+import { IPurchase, IPurchaseItem } from "@/app/lib/interface/IPurchase";
 import { validatePurchaseItems } from "./utils/validatePurchaseItems";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
-import updateInventory from "./utils/updateInventory";
 import { Types } from "mongoose";
 
 // @desc    Get all purchases
@@ -90,6 +89,7 @@ export const GET = async (req: Request) => {
 export const POST = async (req: Request) => {
   try {
     const {
+      title,
       supplierId,
       purchaseDate,
       businessId,
@@ -123,12 +123,7 @@ export const POST = async (req: Request) => {
     }
 
     // check if ids are valid
-    const areIdsValid = isObjectIdValid([
-      supplierId,
-      businessId,
-      purchasedByUserId,
-    ]);
-    if (areIdsValid !== true) {
+    if (!isObjectIdValid([supplierId, businessId, purchasedByUserId])) {
       return new NextResponse(
         JSON.stringify({
           message: "Supplier, business or user IDs not valid!",
@@ -157,6 +152,7 @@ export const POST = async (req: Request) => {
       );
     }
 
+    // Validate purchase items structure
     const arePurchaseItemsValid = validatePurchaseItems(purchaseItems);
     if (typeof arePurchaseItemsValid === "string") {
       return new NextResponse(
@@ -180,7 +176,7 @@ export const POST = async (req: Request) => {
       const existingReceiptId = await Purchase.exists({
         receiptId: receiptId,
         businessId: businessId,
-      });
+      }).lean();
       if (existingReceiptId) {
         return new NextResponse(
           JSON.stringify({ message: "Receipt Id already exists!" }),
@@ -194,7 +190,8 @@ export const POST = async (req: Request) => {
       }
     }
 
-    const newPurchase = new Purchase({
+    const newPurchase = {
+      title: title ? title : "Purchase without title!",
       supplierId,
       purchaseDate,
       businessId,
@@ -202,25 +199,47 @@ export const POST = async (req: Request) => {
       purchaseItems,
       totalAmount,
       receiptId: receiptId || Date.now(),
-    });
+    };
 
     await Purchase.create(newPurchase);
 
-    // call the updateInventory function to update the inventory
-    const isUpdateInventoryDone = await updateInventory(
-      businessId,
-      purchaseItems
-    );
+    // Update inventory with the new purchase items
+    // Fetch the inventory document that is currently active
+    const inventory = await Inventory.findOne({
+      businessId: businessId,
+      setFinalCount: false,
+    }).lean();
 
-    if (isUpdateInventoryDone !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: isUpdateInventoryDone }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
+    if (!inventory) {
+      return "No inventory found!";
+    }
+
+    // Create a batch update operation to update inventoryGoods
+    const bulkOperations = purchaseItems.map((item: IPurchaseItem) => {
+      const { supplierGoodId, quantityPurchased } = item;
+      return {
+        updateOne: {
+          filter: {
+            businessId: businessId,
+            "inventoryGoods.supplierGoodId": supplierGoodId,
+            setFinalCount: false,
           },
-        }
+          update: {
+            $inc: { "inventoryGoods.$.dynamicSystemCount": quantityPurchased },
+          },
+        },
+      };
+    });
+
+    // Perform bulk write operation to update inventory
+    const bulkResult = await Inventory.bulkWrite(bulkOperations);
+
+    if (bulkResult.modifiedCount === 0) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Inventory not found or update failed.",
+        }),
+        { status: 404 }
       );
     }
 

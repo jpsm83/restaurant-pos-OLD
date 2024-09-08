@@ -17,11 +17,12 @@ const purchaseItemSchema = new Schema({
 
   // ************************* IMPORTANT *************************
   purchasePrice: { type: Number, required: true }, // this is calculate on the FRONT before be saved on DB supplierGood.pricePerUnit * quantityPurchased for user confirmation
-  // ex: 10kg * 2€ = 20€ - if the receipt says 25€, the user should be able to edit the supplierGood.pricePerUnit
+  // ex: 10kg * 2€ = 20€ - if the receipt says 25€, the user should be able to edit the supplierGood.pricePerUnit **** IMPORTANT for the analytics
 });
 
 const purchaseSchema = new Schema(
   {
+    title: { type: String }, // Title of the purchase
     supplierId: {
       type: Schema.Types.ObjectId,
       ref: "Supplier",

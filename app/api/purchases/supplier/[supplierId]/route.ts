@@ -69,6 +69,7 @@ export const GET = async (
         $lte: new Date(endDate),
       };
     }
+    
     // connect before first call to DB
     await connectDb();
 

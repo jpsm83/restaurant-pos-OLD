@@ -11,7 +11,7 @@ import Purchase from "@/app/lib/models/purchase";
 import Supplier from "@/app/lib/models/supplier";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { IPurchase } from "@/app/lib/interface/IPurchase";
-import updateInventory from "../utils/updateInventory";
+import { validatePurchaseItems } from "../utils/validatePurchaseItems";
 
 // @desc    GET purchase by ID
 // @route   GET /purchases/:purchaseId?startDate=<date>&endDate=<date>
@@ -68,6 +68,7 @@ export const GET = async (
   }
 };
 
+// updates on the PURCHASEITEMS are not been done here, we got separate route for that
 // @desc    Update purchase by ID
 // @route   PUT /purchases/:purchaseId
 // @access  Private
@@ -78,10 +79,10 @@ export const PATCH = async (
   try {
     const purchaseId = context.params.purchaseId;
     const {
+      title,
       purchaseDate,
       businessId,
       purchasedByUserId,
-      purchaseItems,
       totalAmount,
       receiptId,
     } = (await req.json()) as IPurchase;
@@ -92,21 +93,6 @@ export const PATCH = async (
       return new NextResponse(
         JSON.stringify({
           message: "Supplier, business or user IDs not valid!",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // check purchase items are valid
-    if (!Array.isArray(purchaseItems) || purchaseItems.length === 0) {
-      return new NextResponse(
-        JSON.stringify({
-          message: "Purchase items is not an array or it is empty!",
         }),
         {
           status: 400,
@@ -142,10 +128,10 @@ export const PATCH = async (
 
     // Prepare the fields that need to be updated
     const updatedPurchase: Partial<IPurchase> = {};
+    if (title) updatedPurchase.title = title;
     if (purchaseDate) updatedPurchase.purchaseDate = purchaseDate;
     if (purchasedByUserId)
       updatedPurchase.purchasedByUserId = purchasedByUserId;
-    if (purchaseItems) updatedPurchase.purchaseItems = purchaseItems;
     if (totalAmount) updatedPurchase.totalAmount = totalAmount;
     if (receiptId) updatedPurchase.receiptId = receiptId;
 
@@ -161,24 +147,6 @@ export const PATCH = async (
       return new NextResponse(
         JSON.stringify({ message: "Purchase not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // call the updateInventory function to update the inventory
-    const isUpdateInventoryDone = await updateInventory(
-      businessId,
-      purchaseItems
-    );
-
-    if (isUpdateInventoryDone !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: isUpdateInventoryDone }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
       );
     }
 
@@ -221,7 +189,7 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
-    // delete daily report and check if it existed
+    // delete purchase and check if it existed
     const result = await Purchase.deleteOne({
       _id: purchaseId,
     });

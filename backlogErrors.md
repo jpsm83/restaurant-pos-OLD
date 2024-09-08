@@ -13,3 +13,7 @@
 - PURCHASES have to have a option of buy something that does not belong to any register supplyer, buy on spot, relate that good to some that already exist just for accurrate counte of dynamicSystemCount
 
 - update the business deletation to delete all the models in db and all the images on cloudinary
+
+- find out all notifications scenario and update notification routes
+
+- for user check in at work he has to read the qrcode of the day

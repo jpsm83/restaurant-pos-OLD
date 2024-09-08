@@ -7,6 +7,7 @@ export interface IPurchaseItem {
 }
 
 export interface IPurchase {
+  title?: string;
   supplierId: Types.ObjectId;
   imageUrl?: string;
   purchaseDate: Date;

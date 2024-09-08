@@ -1,14 +1,14 @@
 import { Types } from "mongoose";
 
-interface IInventoryCount {
-  countedDate: Date;
+export interface IInventoryCount {
+  countedDate?: Date;
   currentCountQuantity: number;
-  deviationPercent: number;
+  deviationPercent?: number;
   quantityNeeded?: number;
   countedByUserId: Types.ObjectId;
   comments?: string;
-  reeditedByUserId?: {
-    reeditedBy: Types.ObjectId;
+  reedited?: {
+    reeditedByUserId: Types.ObjectId;
     date: Date;
     reason: string;
     originalValues: {
