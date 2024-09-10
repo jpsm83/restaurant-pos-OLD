@@ -1,10 +1,12 @@
 import connectDb from "@/app/lib/utils/connectDb";
-import { Types } from "mongoose";
-import convert, { Unit } from "convert-units";
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
-import { IInventory } from "./app/lib/interface/IInventory";
+import convert, { Unit } from "convert-units";
+import { Types } from "mongoose";
+import { IInventory } from "@/app/lib/interface/IInventory";
 
 // every time an order is created or cancel, we MUST update the supplier goods
 // check all the ingredients of the business goods array of the order
@@ -32,12 +34,6 @@ export const updateDynamicCountSupplierGood = async (
         "ingredients.supplierGood ingredients.measurementUnit ingredients.requiredQuantity"
       )
       .lean();
-
-    // [
-    //     "ingredientId": "60f1b3b3b3b3b3b3b3b3b3b3",
-    //     "requiredQuantity": 2,
-    //     "measurementUnit": "unit"
-    // ]
 
     // Collect all required ingredients from business goods and setMenus
     let allIngredientsRequired: {
@@ -69,32 +65,62 @@ export const updateDynamicCountSupplierGood = async (
       }
     });
 
-    // Fetch supplier goods and their units in one query
-    const supplierGoods = await SupplierGood.find({
-      _id: { $in: allIngredientsRequired.map((ing) => ing.ingredientId) },
-    })
-      .select("_id measurementUnit")
-      .lean();
-
-    // Fetch inventory items in one query
-    const inventoryItems: IInventory | null = await Inventory.findOne({
-      setFinalCount: false,
-      "inventoryGoods.supplierGoodId": {
-        $in: allIngredientsRequired.map((ing) => ing.ingredientId),
+    // Aggregation to fetch both inventory items and supplier goods in one query
+    const inventoryItems = await Inventory.aggregate([
+      {
+        $match: {
+          setFinalCount: false,
+          "inventoryGoods.supplierGoodId": {
+            $in: allIngredientsRequired.map((ing) => ing.ingredientId),
+          },
+        },
       },
-    })
-      .select("inventoryGoods.supplierGoodId inventoryGoods.dynamicSystemCount")
-      .lean();
+      {
+        $project: {
+          inventoryGoods: {
+            $filter: {
+              input: "$inventoryGoods",
+              as: "item",
+              cond: {
+                $in: [
+                  "$$item.supplierGoodId",
+                  allIngredientsRequired.map((ing) => ing.ingredientId),
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "suppliergoods",
+          localField: "inventoryGoods.supplierGoodId",
+          foreignField: "_id",
+          as: "supplierGoods",
+        },
+      },
+      {
+        $project: {
+          "inventoryGoods.supplierGoodId": 1,
+          "inventoryGoods.dynamicSystemCount": 1,
+          "supplierGoods._id": 1,
+          "supplierGoods.measurementUnit": 1,
+        },
+      },
+    ]);
 
-    if (!inventoryItems) return "Inventory not found!";
+    if (!inventoryItems || inventoryItems.length === 0) return "Inventory not found!";
 
-    // Create a map of supplier good measurement units and dynamic system counts
-    const supplierGoodUnitsMap = supplierGoods.reduce((map: any, good: any) => {
-      map[good._id] = good.measurementUnit;
-      return map;
-    }, {});
+    // Map supplierGoodId to measurementUnit and dynamicSystemCount
+    const supplierGoodUnitsMap = inventoryItems[0].supplierGoods.reduce(
+      (map: any, good: any) => {
+        map[good._id.toString()] = good.measurementUnit;
+        return map;
+      },
+      {}
+    );
 
-    const inventoryMap = inventoryItems.inventoryGoods.reduce(
+    const inventoryMap = inventoryItems[0].inventoryGoods.reduce(
       (map: any, invItem: any) => {
         map[invItem.supplierGoodId.toString()] = invItem;
         return map;
@@ -128,7 +154,7 @@ export const updateDynamicCountSupplierGood = async (
             update: {
               $inc: {
                 "inventoryGoods.$.dynamicSystemCount":
-                  addOrRemove === "add" ? -quantityChange : quantityChange,
+                  addOrRemove === "add" ? quantityChange : -quantityChange,
               },
             },
           },

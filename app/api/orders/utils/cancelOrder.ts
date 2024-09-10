@@ -1,12 +1,12 @@
 import { Types } from "mongoose";
-import { updateDynamicCountSupplierGood } from "./updateDynamicCountSupplierGood";
+import { updateDynamicCountSupplierGood } from "../../inventories/utils/updateDynamicCountSupplierGood";
 import Order from "@/app/lib/models/order";
 import { IOrder } from "@/app/lib/interface/IOrder";
 import Table from "@/app/lib/models/table";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // order with status "Started", "Done", "Dont Make" and "Started Hold" cannot be canceled
-export const cancelOrderAndUpdateDynamicCount = async (
+export const cancelOrder = async (
   orderId: Types.ObjectId
 ) => {
   try {
@@ -36,16 +36,15 @@ export const cancelOrderAndUpdateDynamicCount = async (
         "remove"
       );
 
-    if (
-      updateDynamicCountSupplierGoodResult ===
-      "Dynamic count supplier good updated!"
-    ) {
+      if(updateDynamicCountSupplierGoodResult !== true) {
+        return "updateDynamicCountSupplierGood! " + updateDynamicCountSupplierGoodResult
+      }
+
       await Table.findOneAndUpdate(
         { _id: orderBusinessGoods.table },
         { $pull: { orders: orderId } },
         { new: true } // Now this option is valid and will return the updated document
       );
-    }
 
     await Order.deleteOne({ _id: orderId });
 

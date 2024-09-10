@@ -7,7 +7,7 @@ import { IOrder } from "@/app/lib/interface/IOrder";
 
 // import utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { cancelOrderAndUpdateDynamicCount } from "../utils/cancelOrderAndUpdateDynamicCount";
+import { cancelOrder } from "../utils/cancelOrder";
 
 // import models
 import Order from "@/app/lib/models/order";
@@ -133,7 +133,7 @@ export const PATCH = async (
         updatedOrder.orderNetPrice = 0;
         break;
       case "Cancel":
-        await cancelOrderAndUpdateDynamicCount(orderId);
+        await cancelOrder(orderId);
         return new NextResponse(
           JSON.stringify({ message: "Order cancel and deleted successfully!" }),
           {
@@ -212,7 +212,7 @@ export const DELETE = async (
   try {
     const orderId = context.params.orderId;
 
-    const result = await cancelOrderAndUpdateDynamicCount(orderId);
+    const result = await cancelOrder(orderId);
 
     if (result !== "Cancel order and update dynamic count success") {
       return new NextResponse(JSON.stringify({ message: result }), {

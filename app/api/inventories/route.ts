@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { IInventory, IInventoryGood } from "@/app/lib/interface/IInventory";
+import { IInventory } from "@/app/lib/interface/IInventory";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // import models
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
-import { model, Types } from "mongoose";
+import { Types } from "mongoose";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import Supplier from "@/app/lib/models/supplier";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import moment from "moment";
-import { json } from "stream/consumers";
+import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
 
 // @desc    Get all inventories
 // @route   GET /inventories?startDate=<date>&endDate=<date>
@@ -79,7 +79,7 @@ export const GET = async (req: Request) => {
   }
 };
 
-// if there is an inventory with the current month, it will do nothing, otherways from the first day of the month, when manager or admin login, the system will set the setFinalCount from previews inventory to "true" them create a new inventory with all the supplier goods in used 
+// if there is an inventory with the current month, it will do nothing, otherways from the first day of the month, when manager or admin login, the system will set the setFinalCount from previews inventory to "true" them create a new inventory with all the supplier goods in used
 // @desc    Create a new inventory
 // @route   POST /inventories
 // @access  Private
@@ -134,11 +134,14 @@ export const POST = async (req: Request) => {
         {
           $set: { setFinalCount: true },
         },
-        { new: true}
+        { new: true }
       ).lean();
-      
+
       // Fetch all supplier goods for the business
-      const supplierGoods = await SupplierGood.find({ business: businessId, currentlyInUse: true })
+      const supplierGoods = await SupplierGood.find({
+        business: businessId,
+        currentlyInUse: true,
+      })
         .select("_id")
         .lean();
 
@@ -210,3 +213,29 @@ export const POST = async (req: Request) => {
     return handleApiError("Create inventory failed!", error);
   }
 };
+
+// export const POST = async () => {
+//   try {
+//     let businessGoodsIds = [
+//       "667bfc0c5d50be40f0c7b065",
+//       "667c0761b1f9de2be3a80e17",
+//     ];
+//     let addOrRemove: "remove" | "add" = "remove";
+
+//     // connect before first call to DB
+//     await connectDb();
+
+//     const result = await updateDynamicCountSupplierGood(
+//       //@ts-ignore
+//       businessGoodsIds,
+//       addOrRemove
+//     );
+
+//     return new NextResponse(JSON.stringify(result), {
+//       status: 200, // Change status to 200
+//       headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Create inventory failed!", error);
+//   }
+// };

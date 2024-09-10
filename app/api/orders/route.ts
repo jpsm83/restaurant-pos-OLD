@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 // import utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { updateDynamicCountSupplierGood } from "./utils/updateDynamicCountSupplierGood";
+import { updateDynamicCountSupplierGood } from "../inventories/utils/updateDynamicCountSupplierGood";
 
 // import interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
@@ -55,7 +55,7 @@ export const GET = async () => {
 // *** IMPORTANT *** PROMOTIONS PRICE SHOULD BE CALCUATED ON THE FRONT END
 
 // INDIVIDUAL BUSINESS GOODS CANNOT HAVE MORE THAN ONE PROMOTION AT THE SAME TIME
-// ex: 2x1 COCKTAILS AND 50% OFF COCKTAILS CANNOT BE APPLIED AT THE SAME TIME
+// ex: (2x1 COCKTAILS) OR (50% OFF COCKTAILS) CANNOT BE APPLIED AT THE SAME TIME
 
 // AT TIME OF ORDER CREATION IS WHERE WE CHECK IF ANY PROMOTION APPLY FROM THAT TIME ON
 // IN THE FRONT CHECK IF THE ORDERS CAN BE APPLIED TO THE CURRENT PROMOTION
@@ -136,7 +136,6 @@ export const POST = async (req: Request) => {
     const tableExists: ITable | null = await Table.findById(table)
       .select("status")
       .lean();
-    console.log("🚀 ~ POST ~ tableExists:", tableExists)
     if (!tableExists || tableExists.status === "Closed") {
       return new NextResponse(
         JSON.stringify({ message: "Table not found or closed!" }),
@@ -215,7 +214,14 @@ export const POST = async (req: Request) => {
     if (order) {
       // update the dynamic count of supplier goods
       // "add" or "remove" from the count
-      await updateDynamicCountSupplierGood(newOrder.businessGoods, "add");
+      const updateDynamicCountSupplierGoodResult = await updateDynamicCountSupplierGood(newOrder.businessGoods, "add");
+
+      if(updateDynamicCountSupplierGoodResult !== true) {
+        return new NextResponse(
+          JSON.stringify({ message: "updateDynamicCountSupplierGood! " + updateDynamicCountSupplierGoodResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      };
 
       // After order is created, add order ID to table
       await Table.findByIdAndUpdate(
