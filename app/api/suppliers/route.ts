@@ -85,6 +85,22 @@ export const POST = async (req: Request) => {
       }
     }
 
+    // validate the reserve string "One Time Purchase" for tradeName, legalName, phoneNumber and taxNumber
+    if (
+      tradeName === "One Time Purchase" ||
+      legalName === "One Time Purchase" ||
+      phoneNumber === "One Time Purchase" ||
+      taxNumber === "One Time Purchase"
+    ) {
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "TradeName, legalName, phoneNumber and taxNumber cannot be 'One Time Purchase', thas a reserve string!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // connect before first call to DB
     await connectDb();
 

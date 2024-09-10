@@ -4,9 +4,9 @@ import { IPurchaseItem } from "@/app/lib/interface/IPurchase";
 // imported utils
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
-export const validatePurchaseItems = (purchaseItems: IPurchaseItem[]) => {
+export const validateInventoryPurchaseItems = (purchaseInventoryItems: IPurchaseItem[]) => {
   // example of a purchase item object
-  // purchaseItems = [
+  // purchaseInventoryItems = [
   //   {
   //     supplierGood: "5f5e5e5e5e5e5e5e5e5e5e5e",
   //     quantityPurchased: 5,
@@ -24,7 +24,7 @@ export const validatePurchaseItems = (purchaseItems: IPurchaseItem[]) => {
   //   },
   // ];
 
-  for (const purchaseItem of purchaseItems) {
+  for (const purchaseItem of purchaseInventoryItems) {
    // validate supplierGood
    if (!isObjectIdValid([purchaseItem.supplierGoodId])) {
     return "Incorrect supplier good Id!";

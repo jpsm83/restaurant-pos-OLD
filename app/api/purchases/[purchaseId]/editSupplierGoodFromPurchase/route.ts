@@ -34,9 +34,9 @@ export const POST = async (req: Request) => {
     // get the purchase purchaseItem for comparison
     const purchaseItem: IPurchase | null = await Purchase.findOne({
       _id: purchaseId,
-      "purchaseItems.supplierGoodId": supplierGoodId,
+      "purchaseInventoryItems.supplierGoodId": supplierGoodId,
     })
-      .select("purchaseItems.$.quantityPurchased purchaseItems.$.purchasePrice")
+      .select("purchaseInventoryItems.$.quantityPurchased purchaseInventoryItems.$.purchasePrice")
       .lean();
 
     if (!purchaseItem) {
@@ -53,16 +53,16 @@ export const POST = async (req: Request) => {
 
     // Update the purchaseItem with the new values
     const updatePurchase: IPurchase | null = await Purchase.findOneAndUpdate(
-      { _id: purchaseId, "purchaseItems.supplierGoodId": supplierGoodId },
+      { _id: purchaseId, "purchaseInventoryItems.supplierGoodId": supplierGoodId },
       {
         $set: {
-          "purchaseItems.$.quantityPurchased": quantityPurchased,
-          "purchaseItems.$.purchasePrice": purchasePrice,
+          "purchaseInventoryItems.$.quantityPurchased": quantityPurchased,
+          "purchaseInventoryItems.$.purchasePrice": purchasePrice,
         },
       },
       { new: true }
     )
-      .select("businessId purchaseItems.$.quantityPurchased")
+      .select("businessId purchaseInventoryItems.$.quantityPurchased")
       .lean();
 
     if (!updatePurchase) {
@@ -86,7 +86,7 @@ export const POST = async (req: Request) => {
       {
         $inc: {
           "inventoryGoods.$.dynamicSystemCount":
-            quantityPurchased - purchaseItem.purchaseItems[0].quantityPurchased,
+            quantityPurchased - purchaseItem.purchaseInventoryItems[0].quantityPurchased,
         },
       },
       { new: true }

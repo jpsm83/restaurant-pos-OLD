@@ -80,7 +80,7 @@ export const GET = async (
         model: Supplier,
       })
       .populate({
-        path: "purchaseItems.supplierGoodId",
+        path: "purchaseInventoryItems.supplierGoodId",
         select: "name mainCategory subCategory measurementUnit pricePerUnit",
         model: SupplierGood,
       })

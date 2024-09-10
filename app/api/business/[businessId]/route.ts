@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { Types } from "mongoose";
 import { IBusiness } from "@/app/lib/interface/IBusiness";
+import { v2 as cloudinary } from "cloudinary";
 
 // import functions
 import { handleApiError } from "@/app/lib/utils/handleApiError";
@@ -22,6 +23,7 @@ import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Inventory from "@/app/lib/models/inventory";
+import Purchase from "@/app/lib/models/purchase";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -208,6 +210,14 @@ export const DELETE = async (
     params: { businessId: Types.ObjectId };
   }
 ) => {
+  // Cloudinary ENV variables
+  cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+
   try {
     const businessId = context.params.businessId;
 
@@ -246,13 +256,18 @@ export const DELETE = async (
         Order.deleteMany({ business: businessId }),
         Printer.deleteMany({ business: businessId }),
         Promotion.deleteMany({ business: businessId }),
+        Purchase.deleteMany({ business: businessId }),
         Schedule.deleteMany({ business: businessId }),
-        Supplier.deleteMany({ business: businessId }),
         SupplierGood.deleteMany({ business: businessId }),
+        Supplier.deleteMany({ business: businessId }),
         Table.deleteMany({ business: businessId }),
         User.deleteMany({ business: businessId }),
       ]);
     }
+
+    const deleteBusinessFolderOnCloudinary = cloudinary.api.delete_folder(
+      `restaurant-pos/${businessId}/`
+    );
 
     return new NextResponse(
       JSON.stringify({

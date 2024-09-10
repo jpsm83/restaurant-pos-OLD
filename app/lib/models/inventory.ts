@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 // Schema for individual count events will be created only upon the count of the inventory
 const inventoryCountSchema = new Schema({
   countedDate: { type: Date, required: true, default: Date.now }, // Date when the count was performed
-  
+
   // ************************* IMPORTANT *************************
   // this quantity is base on the supplierGood.MEAUREMENTUNIT
   currentCountQuantity: { type: Number, required: true }, // quantity of the good in the current real count

@@ -1,19 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import { paymentMethod } from "./paymentMethod";
-
-const userGoodsSchema = new Schema({
-  good: {
-    type: Schema.Types.ObjectId,
-    ref: "Order",
-    required: true,
-  }, // good sold or void
-  quantity: {
-    type: Number,
-    required: true,
-  }, // quanity of the good sold or void
-  totalPrice: { type: Number, required: true }, // total price of the good sold or void
-  totalCostPrice: { type: Number, required: true }, // total cost price of the good sold or void
-});
+import { businessGoodReduceSchema } from "./businessGoodReduce";
 
 const userDailySalesReportArraySchema = new Schema({
   // required fields
@@ -22,7 +9,7 @@ const userDailySalesReportArraySchema = new Schema({
     ref: "User",
     required: true,
   }, // user that closed the table, table.responsibleBy
-  
+
   // optional fields on creation, required on update
   hasOpenTables: { type: Boolean }, // if the user has open tables, the user can view but not close the daily report
   // those "SALES" refer table sales closed by the user (table.responsibleBy)
@@ -45,9 +32,9 @@ const userDailySalesReportArraySchema = new Schema({
     default: 0,
   }, // average of customers expended (total of customers served / total of sales)
   // those "GOODS" refer to the goods sold or void by the user itself, not the one that closed the table (order.user)
-  userGoodsSoldArray: [userGoodsSchema], // array of goods sold by the user
-  userGoodsVoidArray: [userGoodsSchema], // array of goods void by the user
-  userGoodsInvitedArray: [userGoodsSchema], // array of goods invited by the user
+  userGoodsSoldArray: [businessGoodReduceSchema], // array of goods sold by the user
+  userGoodsVoidArray: [businessGoodReduceSchema], // array of goods void by the user
+  userGoodsInvitedArray: [businessGoodReduceSchema], // array of goods invited by the user
   userTotalVoid: { type: Number }, // sum of the price of the voided items
   userTotalInvited: { type: Number }, // sum of the price of the invited items
 }); // individual sales report of the user
@@ -77,9 +64,9 @@ const dailySalesReportSchema = new Schema(
     businessTotalProfit: { type: Number }, // difference between totalNetPaid and totalCost (totalNetPaid - totalCost)
     businessCustomersServed: { type: Number }, // sum of all users customersServed
     businessAverageCustomersExpended: { type: Number }, // average of all users customersExpended (totalNetPaid / businessTotalCustomersServed)
-    businessGoodsSoldArray: [userGoodsSchema], // array of goods sold on the day
-    businessGoodsVoidArray: [userGoodsSchema], // array of goods void on the day
-    businessGoodsInvitedArray: [userGoodsSchema], // array of goods invited on the day
+    businessGoodsSoldArray: [businessGoodReduceSchema], // array of goods sold on the day
+    businessGoodsVoidArray: [businessGoodReduceSchema], // array of goods void on the day
+    businessGoodsInvitedArray: [businessGoodReduceSchema], // array of goods invited on the day
     businessTotalVoidPrice: { type: Number }, // sum of the price of the void items
     businessTotalInvitedPrice: { type: Number }, // sum of the price of the invited items
     posSystemAppComission: { type: Number }, // comission of the POS system app

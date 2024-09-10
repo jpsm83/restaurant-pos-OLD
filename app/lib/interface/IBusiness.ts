@@ -11,6 +11,20 @@ export interface ISalesLocation {
   _id?: Types.ObjectId;
 }
 
+export interface IMetrics {
+  foodCostPercentage: number;
+  beverageCostPercentage: number;
+  laborCostPercentage: number;
+  fixedCostPercentage: number;
+  supplierGoodWastePercentage: {
+    veryLowBudgetImpact: number;
+    lowBudgetImpact: number;
+    mediumBudgetImpact: number;
+    hightBudgetImpact: number;
+    veryHightBudgetImpact: number;
+  };
+}
+
 export interface IBusiness {
   tradeName: string;
   legalName: string;
@@ -22,6 +36,7 @@ export interface IBusiness {
   currencyTrade: string;
   subscription: string;
   address: IAddress;
+  metrics?: IMetrics;
   contactPerson?: string;
   salesLocation?: ISalesLocation[];
 }

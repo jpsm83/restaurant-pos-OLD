@@ -29,6 +29,20 @@ const businessSchema = new Schema(
       required: true,
     }, // Subscription plan for the company
     address: { type: addressSchema, required: true }, // Address of the company
+    metrics: {
+      foodCostPercentage: { type: Number, default: 30 }, // Food cost percentage acceptable - 28-35% of sales average
+      beverageCostPercentage: { type: Number, default: 20 }, // Beverage cost percentage acceptable - 18-24% of sales average
+      laborCostPercentage: { type: Number, default: 30 }, // Labor cost percentage acceptable - 28-35% of sales average
+      fixedCostPercentage: { type: Number, default: 20 }, // Fixed cost percentage acceptable - 18-24% of sales average
+      // the sun of the cost percentage above should be 100%
+      supplierGoodWastePercentage: {
+        veryLowBudgetImpact: { type: Number, default: 9 }, // Food waste percentage acceptable - 8-12% of sales average
+        lowBudgetImpact: { type: Number, default: 7 }, // Food waste percentage acceptable - 6-10% of sales average
+        mediumBudgetImpact: { type: Number, default: 5 }, // Food waste percentage acceptable - 4-8% of sales average
+        hightBudgetImpact: { type: Number, default: 3 }, // Food waste percentage acceptable - 2-5% of sales average
+        veryHightBudgetImpact: { type: Number, default: 1 }, // Food waste percentage acceptable - 0-2% of sales average
+      }, // Food waste percentage acceptable - 3-7% of sales average
+    },
 
     // optional fields
     contactPerson: { type: String, default: "Table", enum: locationTypes }, // Contact person of the company

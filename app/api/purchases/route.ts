@@ -9,12 +9,12 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported interfaces
 import { IPurchase, IPurchaseItem } from "@/app/lib/interface/IPurchase";
-import { validatePurchaseItems } from "./utils/validatePurchaseItems";
+import { validateInventoryPurchaseItems } from "./utils/validateInventoryPurchaseItems";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
-import { Types } from "mongoose";
+import oneTimePurchaseSupplier from "../suppliers/utils/oneTimePurchaseSupplier";
 
 // @desc    Get all purchases
 // @route   GET /purchases?startDate=<date>&endDate=<date>
@@ -61,7 +61,7 @@ export const GET = async (req: Request) => {
         model: Supplier,
       })
       .populate({
-        path: "purchaseItems.supplierGoodId",
+        path: "purchaseInventoryItems.supplierGoodId",
         select: "name mainCategory subCategory measurementUnit pricePerUnit",
         model: SupplierGood,
       })
@@ -94,7 +94,7 @@ export const POST = async (req: Request) => {
       purchaseDate,
       businessId,
       purchasedByUserId,
-      purchaseItems,
+      purchaseInventoryItems,
       totalAmount,
       receiptId,
     } = (await req.json()) as IPurchase;
@@ -105,13 +105,13 @@ export const POST = async (req: Request) => {
       !purchaseDate ||
       !businessId ||
       !purchasedByUserId ||
-      !purchaseItems ||
+      !purchaseInventoryItems ||
       !totalAmount
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "SupplierId, purchaseDate, businessId, purchasedByUserId, purchaseItems, totalAmount are required!",
+            "SupplierId, purchaseDate, businessId, purchasedByUserId, purchaseInventoryItems, totalAmount are required!",
         }),
         {
           status: 400,
@@ -122,11 +122,35 @@ export const POST = async (req: Request) => {
       );
     }
 
+    // get the default supplier id for one time purchase
+    let defaultSupplierId;
+
+    if (supplierId.toString() === "One Time Purchase") {
+      let createOneTimePurchaseSupplierResult = await oneTimePurchaseSupplier(
+        businessId
+      );
+      // check if new supplier ids is valid
+      if (!isObjectIdValid([createOneTimePurchaseSupplierResult])) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "SupplierId not valid!",
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+      defaultSupplierId = createOneTimePurchaseSupplierResult;
+    }
+
     // check if ids are valid
-    if (!isObjectIdValid([supplierId, businessId, purchasedByUserId])) {
+    if (!isObjectIdValid([businessId, purchasedByUserId])) {
       return new NextResponse(
         JSON.stringify({
-          message: "Supplier, business or user IDs not valid!",
+          message: "Business or user IDs not valid!",
         }),
         {
           status: 400,
@@ -138,34 +162,41 @@ export const POST = async (req: Request) => {
     }
 
     // check purchase items are valid
-    if (!Array.isArray(purchaseItems) || purchaseItems.length === 0) {
-      return new NextResponse(
-        JSON.stringify({
-          message: "Purchase items is not an array or it is empty!",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+    if (!defaultSupplierId) {
+      if (
+        !Array.isArray(purchaseInventoryItems) ||
+        purchaseInventoryItems.length === 0
+      ) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Purchase items is not an array or it is empty!",
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
 
-    // Validate purchase items structure
-    const arePurchaseItemsValid = validatePurchaseItems(purchaseItems);
-    if (typeof arePurchaseItemsValid === "string") {
-      return new NextResponse(
-        JSON.stringify({
-          message: "Purchase items array of objects not valid!",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      // Validate purchase items structure
+      const arePurchaseItemsValid = validateInventoryPurchaseItems(
+        purchaseInventoryItems
       );
+      if (typeof arePurchaseItemsValid === "string") {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Purchase items array of objects not valid!",
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
     }
 
     // connect before first call to DB
@@ -176,6 +207,7 @@ export const POST = async (req: Request) => {
       const existingReceiptId = await Purchase.exists({
         receiptId: receiptId,
         businessId: businessId,
+        supplierId: defaultSupplierId ? defaultSupplierId : supplierId,
       }).lean();
       if (existingReceiptId) {
         return new NextResponse(
@@ -192,11 +224,12 @@ export const POST = async (req: Request) => {
 
     const newPurchase = {
       title: title ? title : "Purchase without title!",
-      supplierId,
+      supplierId: defaultSupplierId ? defaultSupplierId : supplierId,
       purchaseDate,
       businessId,
       purchasedByUserId,
-      purchaseItems,
+      purchaseInventoryItems: defaultSupplierId ? null : purchaseInventoryItems,
+      oneTimePurchase: defaultSupplierId ? true : false,
       totalAmount,
       receiptId: receiptId || Date.now(),
     };
@@ -215,7 +248,7 @@ export const POST = async (req: Request) => {
     }
 
     // Create a batch update operation to update inventoryGoods
-    const bulkOperations = purchaseItems.map((item: IPurchaseItem) => {
+    const bulkOperations = purchaseInventoryItems.map((item: IPurchaseItem) => {
       const { supplierGoodId, quantityPurchased } = item;
       return {
         updateOne: {

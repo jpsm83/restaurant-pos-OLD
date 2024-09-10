@@ -3,7 +3,7 @@ import { Schema, model, models } from "mongoose";
 // on the time of record the purchase, user should be able to select the supplier good in a dropdown
 // and from there user should be able to see the supplierGood.pricePerUnit to compare with the price of the purchase
 // if they are not the same, the user should be able to edit the supplierGood.pricePerUnit
-const purchaseItemSchema = new Schema({
+const purchaseItemInventorySchema = new Schema({
   supplierGoodId: {
     type: Schema.Types.ObjectId,
     ref: "SupplierGood",
@@ -40,7 +40,8 @@ const purchaseSchema = new Schema(
       ref: "User",
       required: true,
     }, // User who made the purchase
-    purchaseItems: [purchaseItemSchema], // Array of goods in this purchase
+    purchaseInventoryItems: [purchaseItemInventorySchema], // Array of goods in this purchase
+    oneTimePurchase: { type: Boolean, default: false }, // If the purchase is a one time purchase
     totalAmount: { type: Number, required: true }, // Total price of the purchase
     receiptId: { type: String, required: true }, // supplier receipt identification from supplier - if not available, system will generate one
   },

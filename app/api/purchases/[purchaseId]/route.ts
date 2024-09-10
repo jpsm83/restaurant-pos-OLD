@@ -11,7 +11,6 @@ import Purchase from "@/app/lib/models/purchase";
 import Supplier from "@/app/lib/models/supplier";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { IPurchase } from "@/app/lib/interface/IPurchase";
-import { validatePurchaseItems } from "../utils/validatePurchaseItems";
 
 // @desc    GET purchase by ID
 // @route   GET /purchases/:purchaseId?startDate=<date>&endDate=<date>
@@ -46,7 +45,7 @@ export const GET = async (
         model: Supplier,
       })
       .populate({
-        path: "purchaseItems.supplierGoodId",
+        path: "purchaseInventoryItems.supplierGoodId",
         select: "name mainCategory subCategory measurementUnit pricePerUnit",
         model: SupplierGood,
       })
@@ -68,7 +67,7 @@ export const GET = async (
   }
 };
 
-// updates on the PURCHASEITEMS are not been done here, we got separate route for that
+// updates on the PURCHASEINVENTORYITEMS are not been done here, we got separate route for that
 // @desc    Update purchase by ID
 // @route   PUT /purchases/:purchaseId
 // @access  Private

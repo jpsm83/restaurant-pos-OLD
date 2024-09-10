@@ -12,7 +12,8 @@ import Inventory from "@/app/lib/models/inventory";
 // @access  Private
 export const POST = async (req: Request) => {
   try {
-    const { supplierGoodId, quantityPurchased, purchasePrice, purchaseId } = await req.json();
+    const { supplierGoodId, quantityPurchased, purchasePrice, purchaseId } =
+      await req.json();
 
     // check if the purchaseId is a valid ObjectId
     if (!isObjectIdValid([purchaseId, supplierGoodId])) {
@@ -34,7 +35,7 @@ export const POST = async (req: Request) => {
       { _id: purchaseId },
       {
         $push: {
-          purchaseItems: {
+          purchaseInventoryItems: {
             supplierGoodId: supplierGoodId,
             quantityPurchased: quantityPurchased,
             purchasePrice: purchasePrice,

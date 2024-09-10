@@ -33,9 +33,9 @@ export const POST = async (req: Request) => {
     // get the purchase purchaseItem for inventory update
     const purchase: IPurchase | null = await Purchase.findOne({
       _id: purchaseId,
-      "purchaseItems.supplierGoodId": supplierGoodId,
+      "purchaseInventoryItems.supplierGoodId": supplierGoodId,
     })
-      .select("purchaseItems.$.quantityPurchased")
+      .select("purchaseInventoryItems.$.quantityPurchased")
       .lean();
 
     if (!purchase) {
@@ -50,14 +50,15 @@ export const POST = async (req: Request) => {
       );
     }
 
-    const quantityPurchased = purchase.purchaseItems[0].quantityPurchased;
+    const quantityPurchased =
+      purchase?.purchaseInventoryItems?.[0]?.quantityPurchased ?? 0;
 
     // delete supplierGood from purchase
     const updatePurchase: IPurchase | null = await Purchase.findOneAndUpdate(
       {
         _id: purchaseId,
       },
-      { $pull: { purchaseItems: { supplierGoodId: supplierGoodId } } },
+      { $pull: { purchaseInventoryItems: { supplierGoodId: supplierGoodId } } },
       { new: true }
     )
       .select("businessId")
