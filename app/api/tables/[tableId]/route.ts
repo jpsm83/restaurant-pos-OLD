@@ -1,18 +1,18 @@
 import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
-import { ITable } from "@/app/lib/interface/ITable";
 
 // import utils
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import models
-import Table from "@/app/lib/models/table";
+import SalesLocation from "@/app/lib/models/salesLocation";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 // @desc    Get tables by ID
 // @route   GET /tables/:tableId
@@ -34,7 +34,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const tables = await Table.findById(tableId)
+    const tables = await SalesLocation.findById(tableId)
       .populate({
         path: "openedBy",
         select: "username currentShiftRole",
@@ -64,7 +64,7 @@ export const GET = async (
       .lean();
 
     return !tables
-      ? new NextResponse(JSON.stringify({ message: "Table not found!" }), {
+      ? new NextResponse(JSON.stringify({ message: "SalesLocation not found!" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         })
@@ -101,15 +101,15 @@ export const PATCH = async (
       responsibleBy,
       clientName,
       closedBy,
-    } = (await req.json()) as ITable;
+    } = (await req.json()) as ISalesLocation;
 
     // connect before first call to DB
     await connectDb();
 
-    // check if table exists
-    const table: ITable | null = await Table.findById(tableId).lean();
-    if (!table) {
-      return new NextResponse(JSON.stringify({ message: "Table not found!" }), {
+    // check if salesLocation exists
+    const salesLocation: ISalesLocation | null = await SalesLocation.findById(tableId).lean();
+    if (!salesLocation) {
+      return new NextResponse(JSON.stringify({ message: "SalesLocation not found!" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
@@ -117,40 +117,40 @@ export const PATCH = async (
 
     // prepare the tableObj to update
     let updatedTable = {
-      guests: guests || table.guests,
-      status: status || table.status,
-      responsibleBy: responsibleBy || table.responsibleBy,
-      clientName: clientName || table.clientName,
+      guests: guests || salesLocation.guests,
+      status: status || salesLocation.status,
+      responsibleBy: responsibleBy || salesLocation.responsibleBy,
+      clientName: clientName || salesLocation.clientName,
     };
 
-    // The order controller would handle the creation of orders and updating the relevant table's order array. The table controller would then only be responsible for reading and managing table data, not order data. This separation of concerns makes the code easier to maintain and understand.
+    // The order controller would handle the creation of orders and updating the relevant salesLocation's order array. The salesLocation controller would then only be responsible for reading and managing salesLocation data, not order data. This separation of concerns makes the code easier to maintain and understand.
 
-    // function closeOrders will automaticaly close the table once all OPEN orders are closed
+    // function closeOrders will automaticaly close the salesLocation once all OPEN orders are closed
 
-    // if table is transferred to another user, and that is the first table from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
-    if (responsibleBy && responsibleBy !== table.openedBy) {
+    // if salesLocation is transferred to another user, and that is the first salesLocation from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
+    if (responsibleBy && responsibleBy !== salesLocation.openedBy) {
       // check if user exists in the dailySalesReport
       const userDailySalesReport = await DailySalesReport.findOne({
-        dailyReportOpen: true,
-        business: table.business,
+        isDailyReportOpen: true,
+        business: salesLocation.business,
         "usersDailySalesReport.user": responsibleBy,
       }).lean();
 
       // if user does not exist in the dailySalesReport, create it
       if (!userDailySalesReport) {
-        await addUserToDailySalesReport(responsibleBy, table.business);
+        await addUserToDailySalesReport(responsibleBy, salesLocation.business);
       }
     }
 
-    // if table is occupied and no orders, delete the table
+    // if salesLocation is occupied and no orders, delete the salesLocation
     if (
-      table.status === "Occupied" &&
-      (!table.orders || table.orders.length === 0)
+      salesLocation.status === "Occupied" &&
+      (!salesLocation.orders || salesLocation.orders.length === 0)
     ) {
-      await Table.deleteOne({ _id: tableId });
+      await SalesLocation.deleteOne({ _id: tableId });
       return new NextResponse(
         JSON.stringify({
-          message: "Occupied table with no orders been deleted!",
+          message: "Occupied salesLocation with no orders been deleted!",
         }),
         {
           status: 200,
@@ -159,27 +159,27 @@ export const PATCH = async (
       );
     }
 
-    // save the updated table
-    await Table.findOneAndUpdate({ _id: tableId }, updatedTable, {
+    // save the updated salesLocation
+    await SalesLocation.findOneAndUpdate({ _id: tableId }, updatedTable, {
       new: true,
     });
 
     return new NextResponse(
       JSON.stringify({
-        message: `Table ${table.tableReference} updated successfully!`,
+        message: `SalesLocation ${salesLocation.salesLocationReference} updated successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    return handleApiError("Update table failed!", error);
+    return handleApiError("Update salesLocation failed!", error);
   }
 };
 
-// delete a table shouldnt be allowed for data integrity, historical purposes and analytics
-// the only case where a table should be deleted is if the business itself is deleted
-// or if the table was created by mistake and it has no orders
-// @desc    Delete table
-// @route   DELETE /table/:tableId
+// delete a salesLocation shouldnt be allowed for data integrity, historical purposes and analytics
+// the only case where a salesLocation should be deleted is if the business itself is deleted
+// or if the salesLocation was created by mistake and it has no orders
+// @desc    Delete salesLocation
+// @route   DELETE /salesLocation/:tableId
 // @access  Private
 export const DELETE = async (
   req: Request,
@@ -198,19 +198,19 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
-    const table: ITable | null = await Table.findById(tableId).lean();
+    const salesLocation: ISalesLocation | null = await SalesLocation.findById(tableId).lean();
 
-    if (!table) {
-      return new NextResponse(JSON.stringify({ message: "Table not found!" }), {
+    if (!salesLocation) {
+      return new NextResponse(JSON.stringify({ message: "SalesLocation not found!" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // do not allow delete if table has orders
-    if ((table?.orders ?? []).length > 0) {
+    // do not allow delete if salesLocation has orders
+    if ((salesLocation?.orders ?? []).length > 0) {
       return new NextResponse(
-        JSON.stringify({ message: "Cannot delete TABLE with orders!" }),
+        JSON.stringify({ message: "Cannot delete SALESLOCATION with orders!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -218,16 +218,16 @@ export const DELETE = async (
       );
     }
 
-    // delete the table
-    await Table.deleteOne({ _id: tableId });
+    // delete the salesLocation
+    await SalesLocation.deleteOne({ _id: tableId });
 
     return new NextResponse(
       JSON.stringify({
-        message: `Table ${table.tableReference} deleted successfully!`,
+        message: `SalesLocation ${salesLocation.salesLocationReference} deleted successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    return handleApiError("Fail to delete table", error);
+    return handleApiError("Fail to delete salesLocation", error);
   }
 };

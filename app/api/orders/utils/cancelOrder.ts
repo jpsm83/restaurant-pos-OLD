@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import { updateDynamicCountSupplierGood } from "../../inventories/utils/updateDynamicCountSupplierGood";
 import Order from "@/app/lib/models/order";
 import { IOrder } from "@/app/lib/interface/IOrder";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // order with status "Started", "Done", "Dont Make" and "Started Hold" cannot be canceled

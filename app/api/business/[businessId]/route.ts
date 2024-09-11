@@ -18,7 +18,7 @@ import Printer from "@/app/lib/models/printer";
 import Promotion from "@/app/lib/models/promotion";
 import Schedule from "@/app/lib/models/schedule";
 import Supplier from "@/app/lib/models/supplier";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";

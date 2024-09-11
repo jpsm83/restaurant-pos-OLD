@@ -3,7 +3,7 @@ import { IPayment } from "./IPayment";
 
 export interface IOrder {
     _id?: Types.ObjectId;
-    dayReferenceNumber: number;
+    dailyReferenceNumber: number;
     orderPrice: number;
     orderNetPrice: number;
     orderCostPrice: number;

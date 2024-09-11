@@ -1,7 +1,7 @@
 [
     {
         "_id": "66803987d9aaa4219f274618",
-        "dayReferenceNumber": 1714285649454,
+        "dailyReferenceNumber": 1714285649454,
         "billingStatus": "Invitation",
         "orderStatus": "Done",
         "orderPrice": 200,
@@ -10,7 +10,7 @@
         "user": "667412df373ad7f1a285534e",
         "table": {
             "_id": "6693eb1c0693ec3374a89b41",
-            "tableReference": "business1table3"
+            "salesLocationReference": "business1table3"
         },
         "businessGoods": [
             {
@@ -35,7 +35,7 @@
     },
     {
         "_id": "6693c0fd0693ec3374a899b5",
-        "dayReferenceNumber": 1714285649454,
+        "dailyReferenceNumber": 1714285649454,
         "billingStatus": "Paid",
         "orderStatus": "Done",
         "orderPrice": 200,
@@ -44,7 +44,7 @@
         "user": "667412df373ad7f1a285534e",
         "table": {
             "_id": "6693eb1c0693ec3374a89b41",
-            "tableReference": "business1table3"
+            "salesLocationReference": "business1table3"
         },
         "businessGoods": [
             {

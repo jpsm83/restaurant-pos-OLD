@@ -46,7 +46,7 @@ const businessSchema = new Schema(
 
     // optional fields
     contactPerson: { type: String, default: "Table", enum: locationTypes }, // Contact person of the company
-    salesLocation: { type: [salesLocation], default: [] }, // tables reference and qr code of the company
+    salesLocation: [salesLocation], // tables reference and qr code of the company
   },
   {
     timestamps: true,

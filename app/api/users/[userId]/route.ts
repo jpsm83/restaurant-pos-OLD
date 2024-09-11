@@ -4,7 +4,7 @@ import { hash } from "bcrypt";
 
 // imported models
 import User from "@/app/lib/models/user";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import Order from "@/app/lib/models/order";
 import Schedule from "@/app/lib/models/schedule";
 import { Types } from "mongoose";

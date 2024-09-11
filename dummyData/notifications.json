@@ -1,7 +1,7 @@
 [
     {
         "_id": "6675475e3bfefbb6373c7158",
-        "dayReferenceNumber": 1,
+        "dailyReferenceNumber": 1,
         "notificationType": [
             "Warning"
         ],
@@ -24,7 +24,7 @@
     },
     {
         "_id": "6675476e3bfefbb6373c715c",
-        "dayReferenceNumber": 1,
+        "dailyReferenceNumber": 1,
         "notificationType": [
             "Info"
         ],
@@ -42,7 +42,7 @@
     },
     {
         "_id": "667548d33bfefbb6373c716e",
-        "dayReferenceNumber": 1,
+        "dailyReferenceNumber": 1,
         "notificationType": [
             "Info"
         ],

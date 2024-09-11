@@ -3,12 +3,12 @@ import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray"
 import connectDb from "@/app/lib/utils/connectDb";
 import Order from "@/app/lib/models/order";
 import { updateMultipleOrders } from "../utils/updateMultipleOrders";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import { IOrder } from "@/app/lib/interface/IOrder";
 import { IPayment } from "@/app/lib/interface/IPayment";
-import { ITable } from "@/app/lib/interface/ITable";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 // @desc    Create new orders
 // @route   POST /orders/closeOrders
@@ -139,7 +139,7 @@ export const POST = async (req: Request) => {
     }).lean();
 
     if (openOrders.length === 0) {
-      const table: ITable | null = await Table.findById(tableId)
+      const table: ISalesLocation | null = await Table.findById(tableId)
         .select("responsibleBy")
         .lean();
       if (!table) {

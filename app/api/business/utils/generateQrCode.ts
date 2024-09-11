@@ -20,13 +20,13 @@ export const generateQrCode = async (businessId: Types.ObjectId) => {
     //    scan QR
     //    select language
     //    createTable function will be called so user will fill the necessary inputs
-    //      tableReference - auto generated
+    //      salesLocation - auto generated
     //      guests - user input
     //      openedBy - auto generated
     //      responsibleBy - auto generated
     //      business - auto generated
     //      clientName - user input
-    //      dayReferenceNumber - auto generated
+    //      dailyReferenceNumber - auto generated
     // *** once a table is created, no other user will be able to scan the QR code and create a table till this table is closed ***
     //    user will be redirected to an order menu page - to be developed
     //    user will select items and quantity

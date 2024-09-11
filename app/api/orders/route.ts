@@ -7,11 +7,11 @@ import { updateDynamicCountSupplierGood } from "../inventories/utils/updateDynam
 
 // import interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
-import { ITable } from "@/app/lib/interface/ITable";
+import { ITable } from "@/app/lib/interface/ISalesLocation";
 
 // import models
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 
@@ -24,7 +24,7 @@ export const GET = async () => {
     await connectDb();
 
     const orders = await Order.find()
-      .populate({ path: "table", select: "tableReference", model: Table })
+      .populate({ path: "table", select: "salesLocation", model: Table })
       .populate({
         path: "user",
         select: "username allUserRoles currentShiftRole",
@@ -90,7 +90,7 @@ export const POST = async (req: Request) => {
   try {
     // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
     const {
-      dayReferenceNumber,
+      dailyReferenceNumber,
       orderPrice,
       orderNetPrice,
       orderCostPrice,
@@ -112,7 +112,7 @@ export const POST = async (req: Request) => {
 
     // check required fields
     if (
-      !dayReferenceNumber ||
+      !dailyReferenceNumber ||
       !orderPrice ||
       !orderNetPrice ||
       !orderCostPrice ||
@@ -126,7 +126,7 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "DayReferenceNumber, orderPrice, orderNetPrice, user, userRole, table, businessGoods, businessGoodsCategory and business are required fields!",
+            "DailyReferenceNumber, orderPrice, orderNetPrice, user, userRole, table, businessGoods, businessGoodsCategory and business are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -156,7 +156,7 @@ export const POST = async (req: Request) => {
 
     // create an order object with required fields
     const newOrder = {
-      dayReferenceNumber: dayReferenceNumber,
+      dailyReferenceNumber: dailyReferenceNumber,
       // order status is automatically set by the front end
       // FLOW - in case if customer pays at the time of the order
       //    - CREATE the order with billing status "Open"

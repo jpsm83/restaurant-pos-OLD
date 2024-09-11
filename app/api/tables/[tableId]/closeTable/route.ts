@@ -1,10 +1,10 @@
 import connectDb from "@/app/lib/utils/connectDb";
-import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 // @desc    Create new tables
 // @route   POST /tables/:tableId/closeTable
@@ -21,7 +21,7 @@ export const POST = async (req: Request, context: { params: { tableId: Types.Obj
     await connectDb();
 
     // get all orders from the table
-    const tableOrders: ITable[] | null = await Order.find({ table: tableId })
+    const tableOrders: ISalesLocation[] | null = await Order.find({ table: tableId })
       .select("billingStatus")
       .lean();
 

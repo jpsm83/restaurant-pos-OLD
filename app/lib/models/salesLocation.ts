@@ -1,11 +1,11 @@
 import { Schema, model, models } from "mongoose";
 import { tableStatus } from "../enums.js";
 
-const tableSchema = new Schema(
+const salesLocationSchema = new Schema(
   {
     // required fields
-    dayReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
-    tableReference: { type: String, required: true }, // reference for the table - have to match the business.salesLocation.locationReferenceName options in the business
+    dailyReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
+    salesLocationReference: { type: String, required: true }, // reference for the table - have to match the business.salesLocation.locationReferenceName options in the business
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
     status: { type: String, enum: tableStatus, default: "Occupied", required: true }, // status of the table
     openedBy: {
@@ -38,5 +38,5 @@ const tableSchema = new Schema(
   { timestamps: true, minimize: false }
 );
 
-const Table = models.Table || model("Table", tableSchema);
-export default Table;
+const SalesLocation = models.SalesLocation || model("SalesLocation", salesLocationSchema);
+export default SalesLocation;

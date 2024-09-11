@@ -1,52 +1,52 @@
 import connectDb from "@/app/lib/utils/connectDb";
 import Business from "@/app/lib/models/business";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 import { Types } from "mongoose";
 
 export const createTable = async (
-  tableReference: string,
+  salesLocationReference: string,
   guests: number,
   openedBy: Types.ObjectId,
   responsibleBy: Types.ObjectId,
   business: Types.ObjectId,
   clientName: string | undefined | null,
-  dayReferenceNumber: number
+  dailyReferenceNumber: number
 ) => {
   try {
     // check required fields
     if (
-      !tableReference ||
+      !salesLocationReference ||
       !guests ||
       !openedBy ||
       !responsibleBy ||
       !business ||
-      !dayReferenceNumber
+      !dailyReferenceNumber
     ) {
-      return "TableReference, guest, openedBy, responsibleBy, business and dayReferenceNumber are required!";
+      return "SalesLocationReference, guest, openedBy, responsibleBy, business and dailyReferenceNumber are required!";
     }
 
     // connect before first call to DB
     await connectDb();
 
-    // check if tableReference exists in the business
+    // check if salesLocationReference exists in the business
     const validateSalesLocationReference = await Business.findOne({
       _id: business,
       salesLocation: {
-        $elemMatch: { locationReferenceName: tableReference }
+        $elemMatch: { locationReferenceName: salesLocationReference }
       }
     });
 
-    // check if tableReference exists in the business (pre set tables that can be used)
+    // check if salesLocationReference exists in the business (pre set tables that can be used)
     if (!validateSalesLocationReference) {
-      return "TableReference does not exist in this business!";
+      return "SalesLocationReference does not exist in this business!";
     }
 
     // create a tables object with required fields
     const tableObj = {
-      dayReferenceNumber: dayReferenceNumber,
-      tableReference,
+      dailyReferenceNumber: dailyReferenceNumber,
+      salesLocationReference,
       guests,
       openedBy,
       responsibleBy,
@@ -56,7 +56,7 @@ export const createTable = async (
 
     // check if user exists in the dailySalesReport
     const userDailySalesReport = await DailySalesReport.findOne({
-      dayReferenceNumber: dayReferenceNumber,
+      dailyReferenceNumber: dailyReferenceNumber,
       business,
       "userDailySalesReportArray.user": openedBy,
     }).lean();

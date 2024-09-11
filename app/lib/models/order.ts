@@ -5,7 +5,7 @@ import { paymentMethod } from "./paymentMethod";
 const orderSchema = new Schema(
   {
     // required fields
-    dayReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
+    dailyReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
     
     // OPEN - order is open and can be paid
     // PAID - order is paid and can't be changed

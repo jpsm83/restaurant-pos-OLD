@@ -6,7 +6,7 @@ import { Types } from "mongoose";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import models
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import Order from "@/app/lib/models/order";
 import BusinessGood from "@/app/lib/models/businessGood";
 import User from "@/app/lib/models/user";

@@ -17,7 +17,7 @@ export const addUserToDailySalesReport = async (
     // check open daily report exists
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
-        dailyReportOpen: true,
+        isDailyReportOpen: true,
         business: businessId,
       })
         .select("_id usersDailySalesReport.user")

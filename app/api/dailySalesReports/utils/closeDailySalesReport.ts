@@ -12,12 +12,12 @@ import User from "@/app/lib/models/user";
 // them it will update the whole business daily sales report
 // this is called by mananger or admin
 export const closeDailySalesReport = async (
-  dayReferenceNumber: number,
+  dailyReferenceNumber: number,
   businessId: Types.ObjectId
 ) => {
   try {
     // check required fields
-    if (!dayReferenceNumber || !businessId) {
+    if (!dailyReferenceNumber || !businessId) {
       return "Day reference number and businessId are required!";
     }
 
@@ -33,8 +33,8 @@ export const closeDailySalesReport = async (
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
         business: businessId,
-        dayReferenceNumber: dayReferenceNumber,
-        dailyReportOpen: true,
+        dailyReferenceNumber: dailyReferenceNumber,
+        isDailyReportOpen: true,
       })
         .select("_id usersDailySalesReport")
         .populate({
@@ -66,7 +66,7 @@ export const closeDailySalesReport = async (
       dailySalesReport._id,
       {
         $set: {
-          dailyReportOpen: false,
+          isDailyReportOpen: false,
         },
       },
       { new: true }

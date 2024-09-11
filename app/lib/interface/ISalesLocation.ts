@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
 
-export interface ITable {
+export interface ISalesLocation {
   billingStatus: string;
   _id?: Types.ObjectId;
-  dayReferenceNumber?: number;
-  tableReference: string;
+  dailyReferenceNumber?: number;
+  salesLocationReference: string;
   guests: number;
   status: string;
   openedBy: Types.ObjectId;

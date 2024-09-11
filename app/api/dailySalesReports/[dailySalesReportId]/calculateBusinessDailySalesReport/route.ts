@@ -87,7 +87,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
       _id: dailySalesReportId,
     })
       .select(
-        "_id dayReferenceNumber usersDailySalesReport.user usersDailySalesReport.hasOpenTables business"
+        "_id dailyReferenceNumber usersDailySalesReport.user usersDailySalesReport.hasOpenTables business"
       )
       .populate({
         path: "usersDailySalesReport.user",
@@ -118,20 +118,20 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
 
     // prepare dailySalesReportObj to update the daily report
     let dailySalesReportObj = {
-      businessPayments: [] as IPayment[],
-      businessTotalSales: 0,
-      businessTotalNetPaid: 0,
-      businessTotaltips: 0,
-      businessTotalCost: 0,
-      businessTotalProfit: 0,
-      businessTotalCustomersServed: 0,
-      businessAverageCustomersExpended: 0,
-      businessGoodsSoldArray: [] as IBusinessGood[],
-      businessGoodsVoidArray: [] as IBusinessGood[],
-      businessGoodsInvitedArray: [] as IBusinessGood[],
-      businessTotalVoidPrice: 0,
-      businessTotalInvitedPrice: 0,
-      posSystemAppComission: 0,
+      businessPaymentMethods: [] as IPayment[],
+      dailyTotalSalesBeforeAdjustments: 0,
+      dailyNetPaidAmount: 0,
+      dailyTipsReceived: 0,
+      dailyCostOfGoodsSold: 0,
+      dailyProfit: 0,
+      dailyCustomersServed: 0,
+      dailyAverageCustomerExpenditure: 0,
+      dailySoldGoods: [] as IBusinessGood[],
+      dailyVoidedGoods: [] as IBusinessGood[],
+      dailyInvitedGoods: [] as IBusinessGood[],
+      dailyTotalVoidValue: 0,
+      dailyTotalInvitedValue: 0,
+      dailyPosSystemCommission: 0,
     };
 
     // Update each user's daily sales report
@@ -142,7 +142,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
             // Get the user daily sales report object
             return await updateUserDailySalesReportGeneric(
               user.user,
-              dailySalesReport.dayReferenceNumber
+              dailySalesReport.dailyReferenceNumber
             );
           } catch (error) {
             return new NextResponse(
@@ -158,11 +158,11 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
     // Ensure updateUsersDailySalesReport is an array of IUserDailySalesReport
     if (Array.isArray(updateUsersDailySalesReport)) {
       updateUsersDailySalesReport.forEach((userReport) => {
-        // Check if userPayments is defined before iterating
-        if (userReport.userPayments) {
-          userReport.userPayments.forEach((payment: IPayment) => {
-            // Find if the payment method and branch combination already exists in the dailySalesReportObj.userPayments array
-            const existingPayment = dailySalesReportObj.businessPayments.find(
+        // Check if userPaymentMethods is defined before iterating
+        if (userReport.userPaymentMethods) {
+          userReport.userPaymentMethods.forEach((payment: IPayment) => {
+            // Find if the payment method and branch combination already exists in the dailySalesReportObj.userPaymentMethods array
+            const existingPayment = dailySalesReportObj.businessPaymentMethods.find(
               (p: IPayment) =>
                 p.paymentMethodType === payment.paymentMethodType &&
                 p.methodBranch === payment.methodBranch
@@ -172,8 +172,8 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
               // If it exists, add the current payment's methodSalesTotal to the existing one
               existingPayment.methodSalesTotal += payment.methodSalesTotal;
             } else {
-              // If it doesn't exist, create a new entry in the dailySalesReportObj.businessPayments array
-              dailySalesReportObj.businessPayments.push({
+              // If it doesn't exist, create a new entry in the dailySalesReportObj.businessPaymentMethods array
+              dailySalesReportObj.businessPaymentMethods.push({
                 paymentMethodType: payment.paymentMethodType,
                 methodBranch: payment.methodBranch,
                 methodSalesTotal: payment.methodSalesTotal,
@@ -182,14 +182,14 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
           });
         }
 
-        dailySalesReportObj.businessTotalSales +=
-          userReport.userTotalSales ?? 0;
-        dailySalesReportObj.businessTotalNetPaid +=
-          userReport.userTotalNetPaid ?? 0;
-        dailySalesReportObj.businessTotaltips += userReport.userTotalTips ?? 0;
-        dailySalesReportObj.businessTotalCost += userReport.userTotalCost ?? 0;
-        dailySalesReportObj.businessTotalCustomersServed +=
-          userReport.userCustomersServed ?? 0;
+        dailySalesReportObj.dailyTotalSalesBeforeAdjustments +=
+          userReport.totalSalesBeforeAdjustments ?? 0;
+        dailySalesReportObj.dailyNetPaidAmount +=
+          userReport.totalNetPaidAmount ?? 0;
+        dailySalesReportObj.dailyTipsReceived += userReport.totalTipsReceived ?? 0;
+        dailySalesReportObj.dailyCostOfGoodsSold += userReport.totalCostOfGoodsSold ?? 0;
+        dailySalesReportObj.dailyCustomersServed +=
+          userReport.totalCustomersServed ?? 0;
 
         const updateGoodsArray = (array: any[], good: any) => {
           const existingGood = array.find(
@@ -214,20 +214,20 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
 
         // Populate and reduce all the goods sold
         if (
-          userReport.userGoodsSoldArray &&
-          userReport.userGoodsSoldArray.length > 0
+          userReport.soldGoods &&
+          userReport.soldGoods.length > 0
         ) {
-          userReport.userGoodsSoldArray.forEach((businessGood: any) => {
+          userReport.soldGoods.forEach((businessGood: any) => {
             updateGoodsArray(businessGoodsReport.goodsSold, businessGood);
           });
         }
 
         // Populate and reduce all the goods void
         if (
-          userReport.userGoodsVoidArray &&
-          userReport.userGoodsVoidArray.length > 0
+          userReport.voidedGoods &&
+          userReport.voidedGoods.length > 0
         ) {
-          userReport.userGoodsVoidArray.forEach((businessGood: any) => {
+          userReport.voidedGoods.forEach((businessGood: any) => {
             updateGoodsArray(businessGoodsReport.goodsVoid, businessGood);
           });
         }
@@ -245,28 +245,28 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
     }
 
     // calculate business total profit
-    dailySalesReportObj.businessTotalProfit =
-      dailySalesReportObj.businessTotalNetPaid -
-      dailySalesReportObj.businessTotalCost;
+    dailySalesReportObj.dailyProfit =
+      dailySalesReportObj.dailyNetPaidAmount -
+      dailySalesReportObj.dailyCostOfGoodsSold;
 
     // calculate business average customers expended
-    dailySalesReportObj.businessAverageCustomersExpended =
-      dailySalesReportObj.businessTotalNetPaid /
-      dailySalesReportObj.businessTotalCustomersServed;
+    dailySalesReportObj.dailyAverageCustomerExpenditure =
+      dailySalesReportObj.dailyNetPaidAmount /
+      dailySalesReportObj.dailyCustomersServed;
 
-    dailySalesReportObj.businessGoodsSoldArray = businessGoodsReport.goodsSold;
-    dailySalesReportObj.businessGoodsVoidArray = businessGoodsReport.goodsVoid;
-    dailySalesReportObj.businessGoodsInvitedArray =
+    dailySalesReportObj.dailySoldGoods = businessGoodsReport.goodsSold;
+    dailySalesReportObj.dailyVoidedGoods = businessGoodsReport.goodsVoid;
+    dailySalesReportObj.dailyInvitedGoods =
       businessGoodsReport.goodsInvited;
 
-    dailySalesReportObj.businessTotalVoidPrice =
-      dailySalesReportObj.businessGoodsVoidArray.reduce(
+    dailySalesReportObj.dailyTotalVoidValue =
+      dailySalesReportObj.dailyVoidedGoods.reduce(
         (acc, curr) => acc + curr.totalPrice,
         0
       );
 
-    dailySalesReportObj.businessTotalInvitedPrice =
-      dailySalesReportObj.businessGoodsInvitedArray.reduce(
+    dailySalesReportObj.dailyTotalInvitedValue =
+      dailySalesReportObj.dailyInvitedGoods.reduce(
         (acc, curr) => acc + curr.totalPrice,
         0
       );
@@ -292,8 +292,8 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
     }
 
     // calculate the comission of the POS system app
-    dailySalesReportObj.posSystemAppComission =
-      dailySalesReportObj.businessTotalSales * comissionPercentage;
+    dailySalesReportObj.dailyPosSystemCommission =
+      dailySalesReportObj.dailyTotalSalesBeforeAdjustments * comissionPercentage;
 
     // update the document in the database
     await DailySalesReport.findOneAndUpdate(

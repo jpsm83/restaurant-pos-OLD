@@ -1,6 +1,5 @@
 import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
-import { ITable } from "@/app/lib/interface/ITable";
 import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // import utils
@@ -9,11 +8,12 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { createTable } from "./utils/createTable";
 
 // import models
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 // @desc    Get all tables
 // @route   GET /tables
@@ -75,18 +75,18 @@ export const GET = async () => {
 export const POST = async (req: Request) => {
   try {
     const {
-      tableReference,
+      salesLocationReference,
       guests,
       status,
       openedBy,
       responsibleBy,
       business,
       clientName,
-    } = (await req.json()) as ITable;
+    } = (await req.json()) as ISalesLocation;
 
     // check required fields
     if (
-      !tableReference ||
+      !salesLocationReference ||
       !guests ||
       !status ||
       !openedBy ||
@@ -96,7 +96,7 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "TableReference, guest, status, openedBy, responsibleBy and business are required!",
+            "SalesLocationReference, guest, status, openedBy, responsibleBy and business are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -108,21 +108,21 @@ export const POST = async (req: Request) => {
     // dailySalesReport is created when the first table is created
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
-        dailyReportOpen: true,
+        isDailyReportOpen: true,
         business,
       })
-        .select("dayReferenceNumber")
+        .select("dailyReferenceNumber")
         .lean();
 
-    const dayReferenceNumber = dailySalesReport
-      ? dailySalesReport.dayReferenceNumber
+    const dailyReferenceNumber = dailySalesReport
+      ? dailySalesReport.dailyReferenceNumber
       : await createDailySalesReport(business);
 
     // check if tables already exists and it is not closed
     const duplicateTable = await Table.findOne({
-      dayReferenceNumber: dayReferenceNumber,
+      dailyReferenceNumber: dailyReferenceNumber,
       business,
-      tableReference,
+      salesLocationReference,
       status: { $ne: "Closed" },
     })
       .select("_id")
@@ -131,7 +131,7 @@ export const POST = async (req: Request) => {
     if (duplicateTable) {
       return new NextResponse(
         JSON.stringify({
-          message: `Table ${tableReference} already exists and it is not closed!`,
+          message: `Table ${salesLocationReference} already exists and it is not closed!`,
         }),
         { status: 409, headers: { "Content-Type": "application/json" } }
       );
@@ -140,18 +140,18 @@ export const POST = async (req: Request) => {
     // we use a outside function to create the table because this function is used in other places
     // create new table
     await createTable(
-      tableReference,
+      salesLocationReference,
       guests,
       openedBy,
       responsibleBy,
       business,
       clientName,
-      dayReferenceNumber as number
+      dailyReferenceNumber as number
     );
 
     return new NextResponse(
       JSON.stringify({
-        message: `Table ${tableReference} created successfully!`,
+        message: `Table ${salesLocationReference} created successfully!`,
       }),
       {
         status: 201,
@@ -165,23 +165,23 @@ export const POST = async (req: Request) => {
 
 // export const POST = async (req: Request) => {
 //   try {
-//     const tableReference = "business1table1";
+//     const salesLocationReference = "business1table1";
 //     const guests = 3;
 //     const openedBy = "66758b8904c4e6f5bbaa6b81";
 //     const responsibleBy = "66758b8904c4e6f5bbaa6b81";
 //     const business = "6673fed98c45d0a0ca5f34c1";
 //     const clientName = "clienteNameField";
-//     const dayReferenceNumber = 1720908000000;
+//     const dailyReferenceNumber = 1720908000000;
 //     const tableId = "6693eb1c0693ec3374a89b41";
 
 //     const result = await createTable(
-//       tableReference,
+//       salesLocationReference,
 //       guest,
 //       openedBy,
 //       responsibleBy,
 //       business,
 //       clientName,
-//       dayReferenceNumber
+//       dailyReferenceNumber
 //     );
 
 //     return new NextResponse(JSON.stringify(result), {

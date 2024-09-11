@@ -1,11 +1,11 @@
 import { IOrder } from "@/app/lib/interface/IOrder";
-import { ITable } from "@/app/lib/interface/ITable";
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/table";
+import Table from "@/app/lib/models/salesLocation";
 import { Types } from "mongoose";
 import { createTable } from "../../tables/utils/createTable";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 // @desc    Create new orders
 // @route   POST /orders/transferOrderBetweenTables
@@ -14,20 +14,20 @@ export const POST = async (req: Request) => {
   try {
     const {
       ordersArray,
-      tableReference,
+      salesLocation,
       guests,
       user,
       clientName,
       business,
-      dayReferenceNumber,
+      dailyReferenceNumber,
     } = (await req.json()) as {
       ordersArray: Types.ObjectId[];
-      tableReference: string;
+      salesLocation: string;
       guests: number;
       user: Types.ObjectId;
       clientName: string | undefined | null;
       business: Types.ObjectId;
-      dayReferenceNumber: number;
+      dailyReferenceNumber: number;
     };
     // validate array of orders IDs
     if (!Array.isArray(ordersArray) || ordersArray.length === 0) {
@@ -53,12 +53,12 @@ export const POST = async (req: Request) => {
 
     let tableToTransferId;
 
-    // we transfer tables following its tableReference because table might not exist yet
+    // we transfer tables following its salesLocation because table might not exist yet
     // check if tables exist and it is not closed
-    const tableToTransfer: ITable | null = await Table.findOne({
-      dayReferenceNumber: dayReferenceNumber,
+    const tableToTransfer: ISalesLocation | null = await Table.findOne({
+      dailyReferenceNumber: dailyReferenceNumber,
       business,
-      tableReference: tableReference,
+      salesLocation: salesLocation,
       status: { $ne: "Closed" },
     })
       .select("_id")
@@ -68,13 +68,13 @@ export const POST = async (req: Request) => {
       tableToTransferId = tableToTransfer._id;
     } else {
       const newTable = await createTable(
-        tableReference,
+        salesLocation,
         guests,
         user,
         user,
         business,
         clientName,
-        dayReferenceNumber
+        dailyReferenceNumber
       );
       if (!newTable) {
         return new NextResponse(

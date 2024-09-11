@@ -46,7 +46,7 @@ export const GET = async () => {
 // export const POST = async (req: Request) => {
 //   try {
 //     const userId = "66758b8904c4e6f5bbaa6b81";
-//     const dayReferenceNumber = 1723974290376;
+//     const dailyReferenceNumber = 1723974290376;
 //     const businessId = "6673fed98c45d0a0ca5f34c1";
 
 //     // // @ts-ignore
@@ -56,10 +56,10 @@ export const GET = async () => {
 //     // const result = await createDailySalesReport(businessId);
 
 //     // // @ts-ignore
-//     // const result = await updateUserDailySalesReportGeneric(userId, dayReferenceNumber);
+//     // const result = await updateUserDailySalesReportGeneric(userId, dailyReferenceNumber);
 
 //     // @ts-ignore
-//     const result = await closeDailySalesReport(dayReferenceNumber, businessId);
+//     const result = await closeDailySalesReport(dailyReferenceNumber, businessId);
 
 //     return new NextResponse(JSON.stringify({ message: result }), {
 //       status: 201,
