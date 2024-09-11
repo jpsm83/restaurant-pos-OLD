@@ -2,10 +2,10 @@ import { IOrder } from "@/app/lib/interface/IOrder";
 import Order from "@/app/lib/models/order";
 import Table from "@/app/lib/models/salesLocation";
 import { Types } from "mongoose";
-import { createTable } from "../../tables/utils/createTable";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
+import { createSalesLocation } from "../../salesLocation/utils/createSalesLocation";
 
 // @desc    Create new orders
 // @route   POST /orders/transferOrderBetweenTables
@@ -67,7 +67,7 @@ export const POST = async (req: Request) => {
     if (tableToTransfer) {
       tableToTransferId = tableToTransfer._id;
     } else {
-      const newTable = await createTable(
+      const newTable = await createSalesLocation(
         salesLocation,
         guests,
         user,

@@ -1,19 +1,24 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { generateQrCode } from "../../utils/generateQrCode";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported interfaces
-import { ISalesLocation } from "@/app/lib/interface/IBusiness";
+import {
+  IBusiness,
+  IBusinessSalesLocation,
+} from "@/app/lib/interface/IBusiness";
 
 // imported models
 import Business from "@/app/lib/models/business";
 
 // this route create a sales location for the business (ex: tables, counters, etc.)
 // it will work "on click" of a button in the frontend
-// it will create a table document with its qr code
+// it will create a sale location document with its qr code
 
 // @desc    Create sales location
 // @route   POST /business/:businessId/createSalesLocation
@@ -28,12 +33,25 @@ export const POST = async (
     const businessId = context.params.businessId;
 
     const { locationReferenceName, locationType, selfOrdering } =
-      (await req.json()) as ISalesLocation;
+      (await req.json()) as IBusinessSalesLocation;
 
     // validate businessId
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (!businessId || isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // validate required fields
+    if (!locationReferenceName || !locationType) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Location reference name and type are required!",
+        }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -45,9 +63,9 @@ export const POST = async (
     await connectDb();
 
     // get the sales location from business
-    const business = (await Business.findById(businessId)
+    const business: IBusiness | null = await Business.findById(businessId)
       .select("salesLocation")
-      .lean()) as { salesLocation: ISalesLocation[] };
+      .lean();
 
     // check if business exists
     if (!business) {
@@ -60,27 +78,27 @@ export const POST = async (
       );
     }
 
-    if (business.salesLocation && business.salesLocation.length > 0) {
-      // check if the combination of locationReferenceName and locationType already exists
-      const existingSalesLocation = business.salesLocation.some(
-        (location: ISalesLocation) =>
-          location.locationReferenceName === locationReferenceName &&
-          location.locationType === locationType
-      );
+    // Check if the sales location already exists for the business
+    const existingLocation = business?.salesLocation?.some(
+      (location: IBusinessSalesLocation) =>
+        location.locationReferenceName === locationReferenceName &&
+        location.locationType === locationType
+    );
 
-      if (existingSalesLocation) {
-        return new NextResponse(
-          JSON.stringify({ message: "Sales location already exists!" }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
+    if (existingLocation) {
+      return new NextResponse(
+        JSON.stringify({ message: "Sales location already exists!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
+    // Generate QR code
     const qrCode = await generateQrCode(businessId);
 
+    // Add new sales location
     await Business.findByIdAndUpdate(
       businessId,
       {
@@ -97,16 +115,10 @@ export const POST = async (
     );
 
     return new NextResponse(
-      JSON.stringify({ message: "Sales location created!" }),
+      JSON.stringify({ message: "Sales location created" }),
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    return new NextResponse(
-      JSON.stringify({ message: "Sales location creation failed!" + error }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return handleApiError("Sales location creation failed!", error);
   }
 };

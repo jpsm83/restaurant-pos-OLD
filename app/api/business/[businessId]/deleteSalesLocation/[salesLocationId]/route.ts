@@ -1,10 +1,11 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
 // imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Business from "@/app/lib/models/business";
@@ -29,21 +30,14 @@ export const DELETE = async (
   try {
     const { businessId, salesLocationId } = context.params;
 
-    // validate businessId
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    // validate businessId and salesLocationId
+    if (
+      !businessId ||
+      !salesLocationId ||
+      isObjectIdValid([businessId, salesLocationId]) !== true
+    ) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid businessId!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // validate salesLocationId
-    if (!salesLocationId || !Types.ObjectId.isValid(salesLocationId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid salesLocationId!" }),
+        JSON.stringify({ message: "Invalid businessId or salesLocationId!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -54,24 +48,16 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if business exists
+    // Find the business and sales location
     const business = await Business.findOne(
-      {
-        _id: businessId,
-        "salesLocation._id": salesLocationId,
-    },
-    {
-        salesLocation: { $elemMatch: { _id: salesLocationId } },
-    }
-);
+      { _id: businessId, "salesLocation._id": salesLocationId },
+      { "salesLocation.$": 1 } // Only return the matching sales location
+    );
 
-    if (!business) {
+    if (!business || !business.salesLocation.length) {
       return new NextResponse(
-        JSON.stringify({ message: "Sales location not found!" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
+        JSON.stringify({ message: "Business or sales location not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -95,13 +81,18 @@ export const DELETE = async (
     // Extract cloudinaryPublicId using regex
     // example of a publicId
     // "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b"
-    let cloudinaryPublicId = business.salesLocation[0].qrCode.match(
-      /restaurant-pos\/[^.]+/
-    );
+    // Extract the QR code public ID
+    const qrCode = business.salesLocation[0].qrCode;
+    const cloudinaryPublicIdMatch = qrCode.match(/restaurant-pos\/[^.]+/);
+    const cloudinaryPublicId = cloudinaryPublicIdMatch
+      ? cloudinaryPublicIdMatch[0]
+      : "";
 
-    await cloudinary.uploader.destroy(cloudinaryPublicId?.[0] ?? "", {
-      resource_type: "image",
-    });
+    if (cloudinaryPublicId) {
+      await cloudinary.uploader.destroy(cloudinaryPublicId, {
+        resource_type: "image",
+      });
+    }
 
     return new NextResponse(
       JSON.stringify({

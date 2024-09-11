@@ -1,13 +1,13 @@
 [
     {
         "_id": "6673fed98c45d0a0ca5f34c1",
-        "tradeName": "business1tradeName",
-        "legalName": "business1legalName",
+        "tradeName": "updated",
+        "legalName": "testing",
         "email": "business1@business1.com",
         "phoneNumber": "business1phoneNumber",
         "taxNumber": "business1taxNumber",
         "currencyTrade": "business1currencyTrade",
-        "subscription": "Free",
+        "subscription": "Enterprise",
         "address": {
             "country": "business1country",
             "state": "business1state",
@@ -21,16 +21,13 @@
                 1001,
                 1002
             ],
-            "_id": "6674020499e9719d5624131a"
+            "_id": "66cde01e296555e7eb8985e2"
         },
         "createdAt": "2024-06-20T10:05:13.920Z",
-        "updatedAt": "2024-06-20T10:18:44.426Z",
+        "updatedAt": "2024-09-01T11:01:26.349Z",
         "__v": 0,
-        "businessTables": [
-            "business1table1",
-            "business1table2"
-        ],
-        "contactPerson": "business1contactPerson"
+        "contactPerson": "business1contactPerson",
+        "salesLocation": []
     },
     {
         "_id": "6673fef88c45d0a0ca5f34c5",
@@ -51,27 +48,8 @@
             "region": "business2region",
             "_id": "667402b553d2489c1798c013"
         },
-        "salesLocation": [
-            {
-            "locationReferenceName": "100",
-            "locationType": "Table"
-            },
-            {
-            "locationReferenceName": "101",
-            "locationType": "Table"
-            },
-            {
-            "locationReferenceName": "10",
-            "locationType": "Bar"
-            },
-            {
-                "locationReferenceName": "B101 // user input required", 
-                "locationType": "Bar // user input not required", 
-                "selfOrdering": "false // user input not required - default false",
-                "qrCode": "http:.... // auto created - url to qr code", 
-                "qrEnabled": "true // auto updated - default true", 
-                "qrLastScanned": "2024-12-07.... // auto updated - date of last scan"
-              }
-            ]
+        "createdAt": "2024-06-20T10:05:44.029Z",
+        "updatedAt": "2024-06-20T10:21:41.671Z",
+        "__v": 0
     }
 ]

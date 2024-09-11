@@ -1,23 +1,28 @@
 [
     {
         "_id": "66803987d9aaa4219f274618",
-        "dailyReferenceNumber": 1714285649454,
-        "billingStatus": "Invitation",
+        "dayReferenceNumber": 1714285649454,
+        "billingStatus": "Paid",
         "orderStatus": "Done",
         "orderPrice": 200,
         "orderNetPrice": 0,
         "orderCostPrice": 20,
-        "user": "667412df373ad7f1a285534e",
-        "table": {
-            "_id": "6693eb1c0693ec3374a89b41",
-            "salesLocationReference": "business1table3"
+        "user": {
+            "_id": "667412df373ad7f1a285534e",
+            "username": "user1",
+            "allUserRoles": [
+                "Manager",
+                "Bartender"
+            ],
+            "currentShiftRole": "Manager"
         },
+        "table": null,
         "businessGoods": [
             {
                 "_id": "667c0761b1f9de2be3a80e17",
                 "name": "Cheeseburger with Fries",
-                "mainCategory": "Food",
-                "subCategory": "Burger set",
+                "mainCategory": "Set Menu",
+                "subCategory": "Burger Menu",
                 "sellingPrice": 12.5,
                 "allergens": [
                     "Gluten",
@@ -28,30 +33,42 @@
         ],
         "business": "6673fed98c45d0a0ca5f34c1",
         "createdAt": "2024-06-29T16:42:47.150Z",
-        "updatedAt": "2024-07-14T15:13:32.442Z",
+        "updatedAt": "2024-07-16T16:34:13.904Z",
         "__v": 0,
         "discountPercentage": 50,
-        "orderTips": 0
+        "paymentMethod": [
+            {
+                "method": "Card",
+                "card": "Visa",
+                "paymentMethodAmount": 0,
+                "_id": "6696a105135ccc7a3a777042"
+            }
+        ]
     },
     {
         "_id": "6693c0fd0693ec3374a899b5",
-        "dailyReferenceNumber": 1714285649454,
+        "dayReferenceNumber": 1723974290376,
         "billingStatus": "Paid",
         "orderStatus": "Done",
         "orderPrice": 200,
         "orderNetPrice": 200,
         "orderCostPrice": 20,
-        "user": "667412df373ad7f1a285534e",
-        "table": {
-            "_id": "6693eb1c0693ec3374a89b41",
-            "salesLocationReference": "business1table3"
+        "user": {
+            "_id": "66758b8904c4e6f5bbaa6b81",
+            "username": "user3",
+            "allUserRoles": [
+                "Manager",
+                "Bartender"
+            ],
+            "currentShiftRole": "Manager"
         },
+        "table": null,
         "businessGoods": [
             {
                 "_id": "667bfc0c5d50be40f0c7b065",
                 "name": "Cheeseburger",
-                "mainCategory": "Beverage",
-                "subCategory": "Drinks",
+                "mainCategory": "Food",
+                "subCategory": "Burger",
                 "sellingPrice": 16.45,
                 "allergens": [
                     "Gluten",
@@ -62,33 +79,88 @@
         ],
         "business": "6673fed98c45d0a0ca5f34c1",
         "createdAt": "2024-07-14T12:13:49.342Z",
-        "updatedAt": "2024-07-14T15:14:12.013Z",
+        "updatedAt": "2024-08-17T19:26:51.826Z",
         "__v": 0,
         "discountPercentage": 20,
-        "orderTips": 10,
+        "orderTips": 40,
         "paymentMethod": [
             {
-                "method": "Card",
-                "card": "Visa",
-                "paymentMethodAmount": 40,
-                "_id": "6693c57a0693ec3374a899e4"
+                "paymentMethodType": "Card",
+                "methodBranch": "Visa",
+                "methodSalesTotal": 20,
+                "_id": "66c0f97b86c56fde9866122c"
             },
             {
-                "method": "Cash",
-                "paymentMethodAmount": 60,
-                "_id": "6693c57a0693ec3374a899e5"
+                "paymentMethodType": "Card",
+                "methodBranch": "Mastercard",
+                "methodSalesTotal": 100,
+                "_id": "66c0f97b86c56fde9866122d"
             },
             {
-                "method": "Cripto",
-                "paymentMethodAmount": 60,
-                "_id": "6693c57a0693ec3374a899e6"
-            },
-            {
-                "method": "Other",
-                "other": "Voucher",
-                "paymentMethodAmount": 50,
-                "_id": "6693c57a0693ec3374a899e7"
+                "paymentMethodType": "Cash",
+                "methodBranch": "Cash",
+                "methodSalesTotal": 80,
+                "_id": "66c0f97b86c56fde9866122e"
             }
         ]
+    },
+    {
+        "_id": "669642706e92805872dbfb3e",
+        "dayReferenceNumber": 1723974290376,
+        "billingStatus": "Paid",
+        "orderStatus": "Done",
+        "orderPrice": 200,
+        "orderNetPrice": 200,
+        "orderCostPrice": 20,
+        "user": {
+            "_id": "66758b8904c4e6f5bbaa6b81",
+            "username": "user3",
+            "allUserRoles": [
+                "Manager",
+                "Bartender"
+            ],
+            "currentShiftRole": "Manager"
+        },
+        "table": null,
+        "businessGoods": [
+            {
+                "_id": "667bfc0c5d50be40f0c7b065",
+                "name": "Cheeseburger",
+                "mainCategory": "Food",
+                "subCategory": "Burger",
+                "sellingPrice": 16.45,
+                "allergens": [
+                    "Gluten",
+                    "Eggs",
+                    "Milk"
+                ]
+            }
+        ],
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "createdAt": "2024-07-14T12:13:49.342Z",
+        "updatedAt": "2024-08-17T19:26:51.880Z",
+        "__v": 0,
+        "discountPercentage": 20,
+        "paymentMethod": [
+            {
+                "paymentMethodType": "Cash",
+                "methodBranch": "Cash",
+                "methodSalesTotal": 20,
+                "_id": "66c0f97b86c56fde98661233"
+            },
+            {
+                "paymentMethodType": "Crypto",
+                "methodBranch": "Bitcoin",
+                "methodSalesTotal": 80,
+                "_id": "66c0f97b86c56fde98661234"
+            },
+            {
+                "paymentMethodType": "Other",
+                "methodBranch": "Voucher",
+                "methodSalesTotal": 110,
+                "_id": "66c0f97b86c56fde98661235"
+            }
+        ],
+        "orderTips": 10
     }
 ]

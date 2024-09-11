@@ -1,58 +1,21 @@
 [
     {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be443"
-        },
-        "name": "Bun bread",
-        "keyword": "Bun bread",
-        "mainCategory": "Food",
-        "subCategory": "Bread",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "allergens": [
-            "Gluten",
-            "Eggs",
-            "Milk"
-        ],
-        "budgetImpact": "Mediun",
-        "description": "Burger bread",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "unit",
-        "totalQuantityPerUnit": 12,
-        "minimumQuantityRequired": 12,
-        "parLevel": 120,
-        "wholeSalePrice": 12,
-        "pricePerUnit": 1,
-        "saleUnit": "Packet",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-07-21T11:01:54.619Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be444"
-        },
+        "_id": "667bfac8d28a7ee19d9be444",
         "name": "Cheddar cheese",
         "keyword": "Cheese",
         "mainCategory": "Food",
         "subCategory": "Dairy",
         "currentlyInUse": true,
         "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
+        "business": "6673fed98c45d0a0ca5f34c1",
         "image": "../public/images/default_img.png",
         "allergens": [
             "Milk"
         ],
+        "dynamicCountFromLastInventory": 2,
         "budgetImpact": "Mediun",
         "description": "Cheese for burger",
         "inventorySchedule": "weekly",
@@ -64,115 +27,24 @@
         "pricePerUnit": 13.5,
         "saleUnit": "Block",
         "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-07-21T11:01:54.619Z",
-        "__v": 0
+        "updatedAt": "2024-08-28T17:45:14.112Z",
+        "__v": 0,
+        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
     },
     {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be445"
-        },
-        "name": "Hamburger patty 400g",
-        "keyword": "Hamburger",
-        "mainCategory": "Food",
-        "subCategory": "Bread",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "budgetImpact": "High",
-        "description": "Hamburge for burger",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "unit",
-        "totalQuantityPerUnit": 1,
-        "minimumQuantityRequired": 20,
-        "parLevel": 120,
-        "wholeSalePrice": 1.8,
-        "pricePerUnit": 1.8,
-        "saleUnit": "Unit",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be446"
-        },
-        "name": "Tomato",
-        "keyword": "Tomato",
-        "mainCategory": "Food",
-        "subCategory": "Fuit",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "budgetImpact": "Low",
-        "description": "Whole tomato",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "kg",
-        "totalQuantityPerUnit": 1,
-        "minimumQuantityRequired": 5,
-        "parLevel": 10,
-        "wholeSalePrice": 1,
-        "pricePerUnit": 1,
-        "saleUnit": "Case",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be447"
-        },
-        "name": "Onions",
-        "keyword": "Onions",
-        "mainCategory": "Food",
-        "subCategory": "Vegetable",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "budgetImpact": "Low",
-        "description": "Whole onion",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "kg",
-        "totalQuantityPerUnit": 1,
-        "minimumQuantityRequired": 6,
-        "parLevel": 12,
-        "wholeSalePrice": 1.2,
-        "pricePerUnit": 1.2,
-        "saleUnit": "Case",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be448"
-        },
+        "_id": "667bfac8d28a7ee19d9be448",
         "name": "Frozen French Fries",
         "keyword": "Fries",
         "mainCategory": "Food",
         "subCategory": "Frozen food",
         "currentlyInUse": true,
         "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
+        "business": "6673fed98c45d0a0ca5f34c1",
         "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 59.49999999999999,
         "budgetImpact": "Low",
         "description": "French fries",
         "inventorySchedule": "weekly",
@@ -188,121 +60,26 @@
         "__v": 0
     },
     {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be449"
-        },
-        "name": "Coca Cola small bottle",
-        "keyword": "Coca Cola",
-        "mainCategory": "Beverage",
-        "subCategory": "Soft Drink",
+        "_id": "667bfac8d28a7ee19d9be445",
+        "name": "Hamburger patty 400g",
+        "keyword": "Hamburger",
+        "mainCategory": "Food",
+        "subCategory": "Bread",
         "currentlyInUse": true,
         "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
+        "business": "6673fed98c45d0a0ca5f34c1",
         "image": "../public/images/default_img.png",
-        "allergens": [
-            "Sulphur dioxide"
-        ],
-        "budgetImpact": "Mediun",
-        "description": "Small bottle of coca cola",
+        "dynamicCountFromLastInventory": 120,
+        "budgetImpact": "High",
+        "description": "Hamburge for burger",
         "inventorySchedule": "weekly",
-        "measurementUnit": "ml",
+        "measurementUnit": "unit",
         "totalQuantityPerUnit": 1,
         "minimumQuantityRequired": 20,
-        "parLevel": 140,
-        "wholeSalePrice": 0.8,
-        "pricePerUnit": 0.8,
-        "saleUnit": "Crate",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be44a"
-        },
-        "name": "Beef Steak",
-        "keyword": "Beef Steak",
-        "mainCategory": "Food",
-        "subCategory": "Meat",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "budgetImpact": "Hight",
-        "description": "Whole piece of beef steak",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "kg",
-        "totalQuantityPerUnit": 5,
-        "minimumQuantityRequired": 3,
-        "parLevel": 10,
-        "wholeSalePrice": 40,
-        "pricePerUnit": 8,
-        "saleUnit": "Piece",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be44b"
-        },
-        "name": "Brocolly",
-        "keyword": "Brocolly",
-        "mainCategory": "Food",
-        "subCategory": "Vegetable",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "budgetImpact": "Low",
-        "description": "Whole brocolly",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "kg",
-        "totalQuantityPerUnit": 1,
-        "minimumQuantityRequired": 2,
-        "parLevel": 6,
-        "wholeSalePrice": 2,
-        "pricePerUnit": 2,
-        "saleUnit": "Bag",
-        "createdAt": "2024-06-26T00:00:00.000Z",
-        "updatedAt": "2024-06-26T00:00:00.000Z",
-        "__v": 0
-    },
-    {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be44c"
-        },
-        "name": "Lettuce",
-        "keyword": "Lettuce",
-        "mainCategory": "Food",
-        "subCategory": "Vegetable",
-        "currentlyInUse": true,
-        "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
-        },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
-        "image": "../public/images/default_img.png",
-        "budgetImpact": "Low",
-        "description": "Whole lettuce",
-        "inventorySchedule": "weekly",
-        "measurementUnit": "kg",
-        "totalQuantityPerUnit": 1,
-        "minimumQuantityRequired": 3,
-        "parLevel": 5,
+        "parLevel": 120,
         "wholeSalePrice": 1.8,
         "pricePerUnit": 1.8,
         "saleUnit": "Unit",
@@ -311,26 +88,52 @@
         "__v": 0
     },
     {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be44d"
+        "_id": "667bfac8d28a7ee19d9be447",
+        "name": "Onions",
+        "keyword": "Onions",
+        "mainCategory": "Food",
+        "subCategory": "Vegetable",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 12,
+        "budgetImpact": "Low",
+        "description": "Whole onion",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "kg",
+        "totalQuantityPerUnit": 1,
+        "minimumQuantityRequired": 6,
+        "parLevel": 12,
+        "wholeSalePrice": 1.2,
+        "pricePerUnit": 1.2,
+        "saleUnit": "Case",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be44d",
         "name": "Hummus",
         "keyword": "Hummus",
         "mainCategory": "Food",
         "subCategory": "Prepared Food",
         "currentlyInUse": true,
         "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
+        "business": "6673fed98c45d0a0ca5f34c1",
         "image": "../public/images/default_img.png",
         "allergens": [
             "Gluten",
             "Peanuts",
             "Nuts"
         ],
+        "dynamicCountFromLastInventory": 4,
         "budgetImpact": "Mediun",
         "description": "Hummus already prepared",
         "inventorySchedule": "weekly",
@@ -346,21 +149,78 @@
         "__v": 0
     },
     {
-        "_id": {
-            "$oid": "667bfac8d28a7ee19d9be44e"
+        "_id": "667bfac8d28a7ee19d9be449",
+        "name": "Coca Cola small bottle",
+        "keyword": "Coca Cola",
+        "mainCategory": "Beverage",
+        "subCategory": "Soft Drink",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "allergens": [
+            "Sulphur dioxide"
+        ],
+        "dynamicCountFromLastInventory": 140,
+        "budgetImpact": "Mediun",
+        "description": "Small bottle of coca cola",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "ml",
+        "totalQuantityPerUnit": 1,
+        "minimumQuantityRequired": 20,
+        "parLevel": 140,
+        "wholeSalePrice": 0.8,
+        "pricePerUnit": 0.8,
+        "saleUnit": "Crate",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be44c",
+        "name": "Lettuce",
+        "keyword": "Lettuce",
+        "mainCategory": "Food",
+        "subCategory": "Vegetable",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
+        },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 5,
+        "budgetImpact": "Low",
+        "description": "Whole lettuce",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "kg",
+        "totalQuantityPerUnit": 1,
+        "minimumQuantityRequired": 3,
+        "parLevel": 5,
+        "wholeSalePrice": 1.8,
+        "pricePerUnit": 1.8,
+        "saleUnit": "Unit",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be44e",
         "name": "Water small bottle",
         "keyword": "Water",
         "mainCategory": "Beverage",
         "subCategory": "Non-Alcoholic",
         "currentlyInUse": true,
         "supplier": {
-            "$oid": "6674414e36e26dff0dc4ee8f"
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
         },
-        "business": {
-            "$oid": "6673fed98c45d0a0ca5f34c1"
-        },
+        "business": "6673fed98c45d0a0ca5f34c1",
         "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 240,
         "budgetImpact": "Small",
         "description": "Small bottle of water",
         "inventorySchedule": "weekly",
@@ -373,6 +233,170 @@
         "saleUnit": "Box",
         "createdAt": "2024-06-26T00:00:00.000Z",
         "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be443",
+        "name": "Bun bread",
+        "keyword": "Bun bread",
+        "mainCategory": "Food",
+        "subCategory": "Bread",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
+        },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "allergens": [
+            "Gluten",
+            "Eggs",
+            "Milk"
+        ],
+        "dynamicCountFromLastInventory": 50,
+        "budgetImpact": "Mediun",
+        "description": "Burger bread",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "unit",
+        "totalQuantityPerUnit": 12,
+        "minimumQuantityRequired": 12,
+        "parLevel": 120,
+        "wholeSalePrice": 12,
+        "pricePerUnit": 1,
+        "saleUnit": "Packet",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-07-21T11:01:54.619Z",
+        "__v": 0,
+        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be446",
+        "name": "Tomato",
+        "keyword": "Tomato",
+        "mainCategory": "Food",
+        "subCategory": "Fuit",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
+        },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 10,
+        "budgetImpact": "Low",
+        "description": "Whole tomato",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "kg",
+        "totalQuantityPerUnit": 1,
+        "minimumQuantityRequired": 5,
+        "parLevel": 10,
+        "wholeSalePrice": 1,
+        "pricePerUnit": 1,
+        "saleUnit": "Case",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be44a",
+        "name": "Beef Steak",
+        "keyword": "Beef Steak",
+        "mainCategory": "Food",
+        "subCategory": "Meat",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
+        },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 10,
+        "budgetImpact": "Hight",
+        "description": "Whole piece of beef steak",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "kg",
+        "totalQuantityPerUnit": 5,
+        "minimumQuantityRequired": 3,
+        "parLevel": 10,
+        "wholeSalePrice": 40,
+        "pricePerUnit": 8,
+        "saleUnit": "Piece",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfac8d28a7ee19d9be44b",
+        "name": "Brocolly",
+        "keyword": "Brocolly",
+        "mainCategory": "Food",
+        "subCategory": "Vegetable",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
+        },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "dynamicCountFromLastInventory": 6,
+        "budgetImpact": "Low",
+        "description": "Whole brocolly",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "kg",
+        "totalQuantityPerUnit": 1,
+        "minimumQuantityRequired": 2,
+        "parLevel": 6,
+        "wholeSalePrice": 2,
+        "pricePerUnit": 2,
+        "saleUnit": "Bag",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-06-26T00:00:00.000Z",
+        "__v": 0
+    },
+    {
+        "_id": "66cb6e9b2761a8a89da9ecf3",
+        "name": "testing",
+        "keyword": "Cheese",
+        "mainCategory": "Food",
+        "subCategory": "Dairy",
+        "currentlyInUse": true,
+        "supplier": null,
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "image": "../public/images/default_img.png",
+        "allergens": [
+            "Milk"
+        ],
+        "dynamicCountFromLastInventory": 2,
+        "budgetImpact": "Mediun",
+        "description": "Cheese for burger",
+        "inventorySchedule": "weekly",
+        "measurementUnit": "kg",
+        "totalQuantityPerUnit": 3,
+        "minimumQuantityRequired": 3,
+        "parLevel": 9,
+        "wholeSalePrice": 40.5,
+        "pricePerUnit": 13.5,
+        "saleUnit": "Block",
+        "createdAt": "2024-06-26T00:00:00.000Z",
+        "updatedAt": "2024-07-21T11:01:54.619Z",
+        "__v": 0,
+        "lastInventoryCountDate": "2024-07-21T11:01:54.619Z"
+    },
+    {
+        "_id": "66ddad5d8232e0d81f40629c",
+        "name": "paper a4",
+        "keyword": "paper",
+        "mainCategory": "Office",
+        "subCategory": "paper",
+        "currentlyInUse": true,
+        "supplier": {
+            "_id": "6674414e36e26dff0dc4ee8f",
+            "tradeName": "supplier1tradeName"
+        },
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "pricePerUnit": 10,
+        "createdAt": "2024-09-08T13:57:49.714Z",
+        "updatedAt": "2024-09-08T13:57:49.714Z",
         "__v": 0
     }
 ]

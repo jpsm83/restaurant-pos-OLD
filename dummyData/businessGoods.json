@@ -1,6 +1,43 @@
 [
     {
-        "_id":{"$oid":"667bfc0c5d50be40f0c7b065"},
+        "_id": "667c0761b1f9de2be3a80e17",
+        "name": "Cheeseburger with Fries",
+        "keyword": "Burger",
+        "mainCategory": "Set Menu",
+        "subCategory": "Burger Menu",
+        "onMenu": true,
+        "available": true,
+        "sellingPrice": 12.5,
+        "business": "6673fed98c45d0a0ca5f34c1",
+        "setMenu": [
+            {
+                "_id": "667bfc0c5d50be40f0c7b065",
+                "name": "Cheeseburger",
+                "mainCategory": "Food",
+                "subCategory": "Burger",
+                "sellingPrice": 16.45
+            },
+            {
+                "_id": "667bfddd5d50be40f0c7b079",
+                "name": "Fried french fries",
+                "mainCategory": "Food",
+                "subCategory": "Sides",
+                "sellingPrice": 3.5
+            }
+        ],
+        "costPrice": 3.14575,
+        "allergens": [
+            "Gluten",
+            "Eggs",
+            "Milk"
+        ],
+        "image": "../public/images/default_img.png",
+        "createdAt": "2024-06-26T12:19:45.023Z",
+        "updatedAt": "2024-08-28T18:29:18.081Z",
+        "__v": 0
+    },
+    {
+        "_id": "667bfc0c5d50be40f0c7b065",
         "name": "Cheeseburger",
         "keyword": "burger",
         "mainCategory": "Food",
@@ -8,21 +45,31 @@
         "onMenu": true,
         "available": true,
         "sellingPrice": 16.45,
-        "business": {"$oid":"6673fed98c45d0a0ca5f34c1"},
+        "business": "6673fed98c45d0a0ca5f34c1",
         "ingredients": [
             {
-                "ingredient": {"$oid":"667bfac8d28a7ee19d9be443"},
                 "measurementUnit": "unit",
                 "requiredQuantity": 2,
                 "costOfRequiredQuantity": 2,
-                "_id": {"$oid":"667c13f2f22bdc543f105885"}
+                "_id": "667c13f2f22bdc543f105885",
+                "supplierGood": {
+                    "_id": "667bfac8d28a7ee19d9be443",
+                    "name": "Bun bread",
+                    "mainCategory": "Food",
+                    "subCategory": "Bread"
+                }
             },
             {
-                "ingredient": {"$oid":"667bfac8d28a7ee19d9be444"},
                 "measurementUnit": "g",
                 "requiredQuantity": 0.5,
                 "costOfRequiredQuantity": 0.00675,
-                "_id": {"$oid":"667c13f2f22bdc543f105886"}
+                "_id": "667c13f2f22bdc543f105886",
+                "supplierGood": {
+                    "_id": "667bfac8d28a7ee19d9be444",
+                    "name": "Cheddar cheese",
+                    "mainCategory": "Food",
+                    "subCategory": "Dairy"
+                }
             }
         ],
         "costPrice": 2.00675,
@@ -37,7 +84,7 @@
         "__v": 0
     },
     {
-        "_id": {"$oid":"667bfddd5d50be40f0c7b079"},
+        "_id": "667bfddd5d50be40f0c7b079",
         "name": "Fried french fries",
         "keyword": "Fries",
         "mainCategory": "Food",
@@ -45,42 +92,25 @@
         "onMenu": true,
         "available": true,
         "sellingPrice": 3.5,
-        "business": {"$oid":"6673fed98c45d0a0ca5f34c1"},
+        "business": "6673fed98c45d0a0ca5f34c1",
         "ingredients": [
             {
-                "ingredient": {"$oid":"667bfac8d28a7ee19d9be448"},
                 "measurementUnit": "g",
                 "requiredQuantity": 100,
                 "costOfRequiredQuantity": 0.27999999999999997,
-                "_id": {"$oid":"667bfddd5d50be40f0c7b07b"}
+                "_id": "667bfddd5d50be40f0c7b07b",
+                "supplierGood": {
+                    "_id": "667bfac8d28a7ee19d9be448",
+                    "name": "Frozen French Fries",
+                    "mainCategory": "Food",
+                    "subCategory": "Frozen food"
+                }
             }
         ],
         "costPrice": 0.27999999999999997,
         "image": "../public/images/default_img.png",
         "createdAt": "2024-06-26T11:39:09.683Z",
         "updatedAt": "2024-06-26T11:39:09.683Z",
-        "__v": 0
-    },
-    {
-        "_id": {"$oid":"667c0761b1f9de2be3a80e17"},
-        "name": "Cheeseburger with Fries",
-        "keyword": "Burger",
-        "mainCategory": "Set Menu",
-        "subCategory": "Burger Menu",
-        "onMenu": true,
-        "available": true,
-        "sellingPrice": 12.5,
-        "business": {"$oid":"6673fed98c45d0a0ca5f34c1"},
-        "setMenu": [{"$oid":"667bfc0c5d50be40f0c7b065"}, {"$oid":"667bfddd5d50be40f0c7b079"}],
-        "costPrice": 3.14575,
-        "allergens": [
-            "Gluten",
-            "Eggs",
-            "Milk"
-        ],
-        "image": "../public/images/default_img.png",
-        "createdAt": "2024-06-26T12:19:45.023Z",
-        "updatedAt": "2024-06-26T12:19:45.023Z",
         "__v": 0
     }
 ]

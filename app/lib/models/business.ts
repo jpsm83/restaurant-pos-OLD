@@ -2,13 +2,28 @@ import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
 import { subscription, locationTypes } from "../enums.js";
 
-const salesLocation = new Schema({
+const salesLocationSchema = new Schema({
   locationReferenceName: { type: String, required: true }, // name of the location sale reference - ex: 101
   locationType: { type: String }, // table, room, bar, seat, etc - ex: Table101
   selfOrdering: { type: Boolean, default: false }, // manager decision if location can order by itself using QR code
   qrCode: { type: String, required: true }, // auto created QR code for the location
   qrEnabled: { type: Boolean, default: true }, // QR code enabled or disabled - when QR is scanned, it will be disabled and a timer on the frontend will set, if the timer expires, the frontend page will close and the QR code will be enabled again - only if selfOrdering is true
   qrLastScanned: { type: Date }, // last time the QR code was scanned
+});
+
+const metricsSchema = new Schema({
+  foodCostPercentage: { type: Number, default: 30 }, // Food cost percentage acceptable - 28-35% of sales average
+  beverageCostPercentage: { type: Number, default: 20 }, // Beverage cost percentage acceptable - 18-24% of sales average
+  laborCostPercentage: { type: Number, default: 30 }, // Labor cost percentage acceptable - 28-35% of sales average
+  fixedCostPercentage: { type: Number, default: 20 }, // Fixed cost percentage acceptable - 18-24% of sales average
+  // the sun of the cost percentage above should be 100%
+  supplierGoodWastePercentage: {
+    veryLowBudgetImpact: { type: Number, default: 9 }, // Food waste percentage acceptable - 8-12% of sales average
+    lowBudgetImpact: { type: Number, default: 7 }, // Food waste percentage acceptable - 6-10% of sales average
+    mediumBudgetImpact: { type: Number, default: 5 }, // Food waste percentage acceptable - 4-8% of sales average
+    hightBudgetImpact: { type: Number, default: 3 }, // Food waste percentage acceptable - 2-5% of sales average
+    veryHightBudgetImpact: { type: Number, default: 1 }, // Food waste percentage acceptable - 0-2% of sales average
+  }, // Food waste percentage acceptable - 3-7% of sales average
 });
 
 const businessSchema = new Schema(
@@ -21,7 +36,7 @@ const businessSchema = new Schema(
     password: { type: String, required: true }, // Password of the company pos account
     phoneNumber: { type: String, required: true }, // Phone number of the company
     taxNumber: { type: String, required: true, unique: true }, // Tax number of the company
-    currencyTrade: { type: String, default: "EUR", required: true }, // currency of the price
+    currencyTrade: { type: String, required: true }, // currency of the price
     subscription: {
       type: String,
       enum: subscription,
@@ -29,24 +44,11 @@ const businessSchema = new Schema(
       required: true,
     }, // Subscription plan for the company
     address: { type: addressSchema, required: true }, // Address of the company
-    metrics: {
-      foodCostPercentage: { type: Number, default: 30 }, // Food cost percentage acceptable - 28-35% of sales average
-      beverageCostPercentage: { type: Number, default: 20 }, // Beverage cost percentage acceptable - 18-24% of sales average
-      laborCostPercentage: { type: Number, default: 30 }, // Labor cost percentage acceptable - 28-35% of sales average
-      fixedCostPercentage: { type: Number, default: 20 }, // Fixed cost percentage acceptable - 18-24% of sales average
-      // the sun of the cost percentage above should be 100%
-      supplierGoodWastePercentage: {
-        veryLowBudgetImpact: { type: Number, default: 9 }, // Food waste percentage acceptable - 8-12% of sales average
-        lowBudgetImpact: { type: Number, default: 7 }, // Food waste percentage acceptable - 6-10% of sales average
-        mediumBudgetImpact: { type: Number, default: 5 }, // Food waste percentage acceptable - 4-8% of sales average
-        hightBudgetImpact: { type: Number, default: 3 }, // Food waste percentage acceptable - 2-5% of sales average
-        veryHightBudgetImpact: { type: Number, default: 1 }, // Food waste percentage acceptable - 0-2% of sales average
-      }, // Food waste percentage acceptable - 3-7% of sales average
-    },
+    metrics: { type: metricsSchema }, // Metrics of the company
 
     // optional fields
-    contactPerson: { type: String, default: "Table", enum: locationTypes }, // Contact person of the company
-    salesLocation: [salesLocation], // tables reference and qr code of the company
+    contactPerson: { type: String }, // Contact person of the company
+    salesLocation: [salesLocationSchema], // sales location reference and qr code of the company
   },
   {
     timestamps: true,

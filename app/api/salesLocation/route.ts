@@ -5,7 +5,7 @@ import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 // import utils
 import { createDailySalesReport } from "../dailySalesReports/utils/createDailySalesReport";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { createTable } from "./utils/createTable";
+import { createSalesLocation } from "./utils/createSalesLocation";
 
 // import models
 import Table from "@/app/lib/models/salesLocation";
@@ -139,7 +139,7 @@ export const POST = async (req: Request) => {
 
     // we use a outside function to create the table because this function is used in other places
     // create new table
-    await createTable(
+    await createSalesLocation(
       salesLocationReference,
       guests,
       openedBy,
@@ -174,7 +174,7 @@ export const POST = async (req: Request) => {
 //     const dailyReferenceNumber = 1720908000000;
 //     const tableId = "6693eb1c0693ec3374a89b41";
 
-//     const result = await createTable(
+//     const result = await createSalesLocation(
 //       salesLocationReference,
 //       guest,
 //       openedBy,

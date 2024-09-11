@@ -1,6 +1,19 @@
-- update all POST and PATCH with the siyntax of PURCHASE routes, it is more efficienty, less DB calls
-
-- for the future, everything name with "table" supose to be rename because we dont create tables, we creata "salesLocation" - ex ITable / model table / createTable
+- refact all the code and change all the references names adding "Id" to its end in all models and logic / follow the order
+business - ALMOST DONE - just createSalesLocation and deleteSalesLocation to be tested
+printers
+users
+schedules
+suppliers
+supplierGoods
+businessGoods
+promotions
+salesLocation
+orders
+purchaeses
+inventories
+dailySalesReports
+notifications
+cloudinaryActions
 
 - find out all notifications scenario and update notification routes
 

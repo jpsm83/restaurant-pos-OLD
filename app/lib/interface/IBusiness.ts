@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { IAddress } from "./IAddress";
 
-interface ISalesLocation {
+export interface IBusinessSalesLocation {
   _id?: Types.ObjectId;
   locationReferenceName: string;
   locationType?: string;
@@ -38,5 +38,5 @@ export interface IBusiness {
   address: IAddress;
   metrics?: IMetrics;
   contactPerson?: string;
-  salesLocation?: ISalesLocation[];
+  salesLocation?: IBusinessSalesLocation[];
 }

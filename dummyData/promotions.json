@@ -15,13 +15,14 @@
         ],
         "activePromotion": true,
         "promotionType": {
-            "twoForOne": true,
-            "_id": "6675225f1a4081cb67c6f65d"
+            "fullComplimentary": true,
+            "_id": "667c1fd8f22bdc543f10591c"
         },
         "business": "6673fed98c45d0a0ca5f34c1",
         "createdAt": "2024-06-21T06:49:03.082Z",
-        "updatedAt": "2024-06-21T06:49:03.082Z",
-        "__v": 0
+        "updatedAt": "2024-06-26T14:08:47.083Z",
+        "__v": 0,
+        "businessGoodsToApply": []
     },
     {
         "_id": "667522901a4081cb67c6f662",

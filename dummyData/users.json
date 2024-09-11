@@ -21,12 +21,11 @@
         "taxNumber": "user1TaxNumber",
         "joinDate": "2014-10-10T14:48:00.000Z",
         "active": true,
-        "onDuty": false,
+        "onDuty": true,
         "vacationDaysPerYear": 21,
         "business": "6673fed98c45d0a0ca5f34c1",
-        "photo": "../public/images/avatar.png",
         "createdAt": "2024-06-20T11:30:39.302Z",
-        "updatedAt": "2024-06-21T09:33:07.961Z",
+        "updatedAt": "2024-08-28T17:11:13.415Z",
         "__v": 0,
         "address": {
             "country": "business1country",
@@ -40,19 +39,14 @@
         },
         "comments": "user1comments",
         "contractHoursWeek": 11,
-        "currentShiftRole": "user1currentShiftRole",
+        "currentShiftRole": "Manager",
         "grossMonthlySalary": 11,
         "netMonthlySalary": 11,
         "terminatedDate": "2024-06-20T10:05:13.920Z",
         "notifications": [
             {
-                "notification": "6675475e3bfefbb6373c7158",
-                "readFlag": false,
-                "_id": "6675475e3bfefbb6373c715a"
-            },
-            {
                 "notification": "6675476e3bfefbb6373c715c",
-                "readFlag": false,
+                "readFlag": true,
                 "_id": "6675476e3bfefbb6373c715e"
             },
             {
@@ -89,15 +83,9 @@
         "business": "6673fef88c45d0a0ca5f34c5",
         "photo": "../public/images/avatar.png",
         "createdAt": "2024-06-20T12:16:59.465Z",
-        "updatedAt": "2024-06-21T09:26:54.705Z",
+        "updatedAt": "2024-06-23T10:50:17.342Z",
         "__v": 0,
-        "notifications": [
-            {
-                "notification": "6675475e3bfefbb6373c7158",
-                "readFlag": false,
-                "_id": "6675475e3bfefbb6373c715a"
-            }
-        ]
+        "notifications": []
     },
     {
         "_id": "66758b8904c4e6f5bbaa6b81",
@@ -121,7 +109,7 @@
         "taxNumber": "user3TaxNumber",
         "joinDate": "2024-06-10T14:48:00.000Z",
         "active": true,
-        "onDuty": false,
+        "onDuty": true,
         "vacationDaysPerYear": 21,
         "vacationDaysLeft": 2,
         "business": "6673fef88c45d0a0ca5f34c5",
@@ -131,6 +119,7 @@
         "grossHourlySalary": 12.5,
         "createdAt": "2024-06-21T14:17:45.730Z",
         "updatedAt": "2024-06-22T09:23:15.786Z",
-        "__v": 0
+        "__v": 0,
+        "currentShiftRole": "Manager"
     }
 ]

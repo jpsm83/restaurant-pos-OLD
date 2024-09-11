@@ -14,12 +14,12 @@ cloudinary.config({
 export const generateQrCode = async (businessId: Types.ObjectId) => {
   try {
     // generate randomUniqueId
-    const randomUniqueId = new ObjectId();
+    const randomUniqueId = new Types.ObjectId().toString();
 
     // this QR will redirect to a page where user can order and pay - to be developed
     //    scan QR
     //    select language
-    //    createTable function will be called so user will fill the necessary inputs
+    //    createSalesLocation function will be called so user will fill the necessary inputs
     //      salesLocation - auto generated
     //      guests - user input
     //      openedBy - auto generated
@@ -48,16 +48,16 @@ export const generateQrCode = async (businessId: Types.ObjectId) => {
     const response = await cloudinary.uploader.upload(fileUri, {
       invalidate: true,
       upload_preset: uploadPreset,
-      public_id: randomUniqueId.toString(), // Optional: use the ID as the public ID
+      public_id: randomUniqueId, // use the ID as the public ID
       // businessId is used as a folder name
-      folder: `restaurant-pos/${businessId}/salesLocationQrCodes`, // Optional: specify a folder in Cloudinary
+      folder: `restaurant-pos/${businessId}/salesLocationQrCodes`, // specify a folder in Cloudinary
     });
 
     // Return the Cloudinary URL
     return response.secure_url;
     // example of a return
     // "https://res.cloudinary.com/jpsm83/image/upload/v1724503727/restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
-  } catch (err) {
-    return "Failed to generate QR code";
+  } catch (error) {
+    return "Failed to generate QR code: " + error;
   }
 };

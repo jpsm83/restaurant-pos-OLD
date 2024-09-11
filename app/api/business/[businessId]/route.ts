@@ -1,13 +1,16 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import { Types } from "mongoose";
-import { IBusiness } from "@/app/lib/interface/IBusiness";
+import mongoose, { Types } from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 
-// import functions
+// import utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// import interfaces
+import { IBusiness } from "@/app/lib/interface/IBusiness";
 
 // imported models
 import Business from "@/app/lib/models/business";
@@ -24,6 +27,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Inventory from "@/app/lib/models/inventory";
 import Purchase from "@/app/lib/models/purchase";
+import validateBusinessMetrics from "../utils/validateBusinessMetrics";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -39,7 +43,7 @@ export const GET = async (
   try {
     const businessId = context.params.businessId;
 
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (!businessId || isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
         {
@@ -55,6 +59,7 @@ export const GET = async (
     const business = await Business.findById(businessId)
       .select("-password")
       .lean();
+
     return !business
       ? new NextResponse(JSON.stringify({ message: "No business found!" }), {
           status: 404,
@@ -80,17 +85,6 @@ export const PATCH = async (
 ) => {
   try {
     const businessId = context.params.businessId;
-
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid businessId!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
     const {
       tradeName,
       legalName,
@@ -101,98 +95,110 @@ export const PATCH = async (
       currencyTrade,
       subscription,
       address,
+      metrics,
       contactPerson,
     } = (await req.json()) as IBusiness;
 
-    // check email format
-    if (email && !emailRegex.test(email)) {
+    // validate businessId
+    if (!businessId || isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid email format!" }),
-        { status: 400 }
-      );
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
-    // check if business exists
-    const business: IBusiness | null = await Business.findById(
-      businessId
-    ).lean();
-
-    if (!business) {
-      return new NextResponse(
-        JSON.stringify({ message: "Business not found!" }),
+        JSON.stringify({ message: "Invalid businessId!" }),
         {
-          status: 404,
+          status: 400,
           headers: { "Content-Type": "application/json" },
         }
       );
     }
 
+    // check email format
+    if (email && !emailRegex.test(email)) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid email format!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // validate the metrics
+    if (metrics) {
+      const validateBusinessMetricsResult = validateBusinessMetrics(metrics);
+      if (validateBusinessMetricsResult !== true) {
+        return new NextResponse(
+          JSON.stringify({ message: validateBusinessMetricsResult }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // connect before first call to DB
+    await connectDb();
+
     // check for duplicate legalName, email or taxNumber
     const duplicateBusiness = await Business.findOne({
       _id: { $ne: businessId },
       $or: [{ legalName }, { email }, { taxNumber }],
-    });
+    }).lean();
 
     if (duplicateBusiness) {
       return new NextResponse(
         JSON.stringify({
           message: `Business legalname, email or taxNumber already exists!`,
         }),
-        { status: 409 }
+        { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // prepare update address object
-    const updatedAddress = {
-      country: address?.country || business.address.country,
-      state: address?.state || business.address.state,
-      city: address?.city || business.address.city,
-      street: address?.street || business.address.street,
-      buildingNumber:
-        address?.buildingNumber || business.address.buildingNumber,
-      postCode: address?.postCode || business.address.postCode,
-      region: address?.region || business.address.region,
-      additionalDetails:
-        address?.additionalDetails || business.address.additionalDetails,
-      coordinates: address?.coordinates || business.address.coordinates,
-    };
+    // Prepare updated fields only if they exist (partial update)
+    const updateFields: Partial<IBusiness> = {};
 
-    // add address fields
+    if (tradeName) updateFields.tradeName = tradeName;
+    if (legalName) updateFields.legalName = legalName;
+    if (email) updateFields.email = email;
+    if (phoneNumber) updateFields.phoneNumber = phoneNumber;
+    if (taxNumber) updateFields.taxNumber = taxNumber;
+    if (currencyTrade) updateFields.currencyTrade = currencyTrade;
+    if (subscription) updateFields.subscription = subscription;
+    if (contactPerson) updateFields.contactPerson = contactPerson;
+    if (metrics) updateFields.metrics = metrics;
+
+    // Password hash only if password is provided
+    if (password) {
+      updateFields.password = await hash(password, 10);
+    }
+
+    // Handle address updates with validation
     if (address) {
-      const validAddress = addressValidation(updatedAddress);
+      // validate the updated address
+      const validAddress = addressValidation(address);
+
       if (validAddress !== true) {
-        return new NextResponse(validAddress, {
-          status: 400,
+        return new NextResponse(JSON.stringify({ message: validAddress }), {
+          status: 404,
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      updateFields.address = address;
     }
 
-    // prepare update business object
-    const updatedBusiness = {
-      tradeName: tradeName || business.tradeName,
-      legalName: legalName || business.legalName,
-      email: email || business.email,
-      password: password ? await hash(password, 10) : business.password,
-      phoneNumber: phoneNumber || business.phoneNumber,
-      taxNumber: taxNumber || business.taxNumber,
-      currencyTrade: currencyTrade || business.currencyTrade,
-      subscription: subscription || business.subscription,
-      address: updatedAddress,
-      contactPerson: contactPerson || business.contactPerson,
-    };
+    // Perform update using $set to modify only specified fields
+    const updatedBusiness = await Business.findByIdAndUpdate(
+      businessId,
+      { $set: updateFields },
+      { new: true, lean: true }
+    );
 
-    // save the updated business
-    await Business.findByIdAndUpdate(businessId, updatedBusiness, {
-      new: true,
-    });
+    // If business not found after update
+    if (!updatedBusiness) {
+      return new NextResponse(
+        JSON.stringify({ message: "Business not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return new NextResponse(
       JSON.stringify({
-        message: `Business ${updatedBusiness.legalName} updated`,
+        message: "Business updated successfully",
+        updatedBusiness,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -218,11 +224,15 @@ export const DELETE = async (
     secure: true,
   });
 
+  // ensure multiple operations are atomic
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const businessId = context.params.businessId;
 
     // validate businessId
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (!businessId || isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
         {
@@ -236,47 +246,58 @@ export const DELETE = async (
     await connectDb();
 
     // delete business and check if it exists
-    const result = await Business.deleteOne({ _id: businessId });
+    const result = await Business.deleteOne({ _id: businessId }).session(
+      session
+    );
 
     if (result.deletedCount === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return new NextResponse(
-        JSON.stringify({ message: "Business not found!" }),
+        JSON.stringify({
+          message: "Business not found or atomic deletation failed!",
+        }),
         {
           status: 404,
           headers: { "Content-Type": "application/json" },
         }
       );
-    } else {
-      // Delete all related data in parallel
-      await Promise.all([
-        BusinessGood.deleteMany({ business: businessId }),
-        DailySalesReport.deleteMany({ business: businessId }),
-        Inventory.deleteMany({ business: businessId }),
-        Notification.deleteMany({ business: businessId }),
-        Order.deleteMany({ business: businessId }),
-        Printer.deleteMany({ business: businessId }),
-        Promotion.deleteMany({ business: businessId }),
-        Purchase.deleteMany({ business: businessId }),
-        Schedule.deleteMany({ business: businessId }),
-        SupplierGood.deleteMany({ business: businessId }),
-        Supplier.deleteMany({ business: businessId }),
-        Table.deleteMany({ business: businessId }),
-        User.deleteMany({ business: businessId }),
-      ]);
     }
 
-    const deleteBusinessFolderOnCloudinary = cloudinary.api.delete_folder(
-      `restaurant-pos/${businessId}/`
-    );
+    // Delete related data in parallel and the Cloudinary folder
+    await Promise.all([
+      BusinessGood.deleteMany({ business: businessId }).session(session),
+      DailySalesReport.deleteMany({ business: businessId }).session(session),
+      Inventory.deleteMany({ business: businessId }).session(session),
+      Notification.deleteMany({ business: businessId }).session(session),
+      Order.deleteMany({ business: businessId }).session(session),
+      Printer.deleteMany({ business: businessId }).session(session),
+      Promotion.deleteMany({ business: businessId }).session(session),
+      Purchase.deleteMany({ business: businessId }).session(session),
+      Schedule.deleteMany({ business: businessId }).session(session),
+      SupplierGood.deleteMany({ business: businessId }).session(session),
+      Supplier.deleteMany({ business: businessId }).session(session),
+      Table.deleteMany({ business: businessId }).session(session),
+      User.deleteMany({ business: businessId }).session(session),
+    ]);
+
+    
+    const cloudinaryFolder = await cloudinary.api.sub_folders("restaurant-pos/");
+    
+    let subfoldersArr: string[] = []; 
+    
+    cloudinaryFolder.folders.forEach((folder: any) => subfoldersArr.push(folder.name));
+    
+    if(subfoldersArr.includes(businessId.toString())) {
+      await cloudinary.api.delete_folder(`restaurant-pos/${businessId}/`);
+    }
+
+    await session.commitTransaction();
+    session.endSession();
 
     return new NextResponse(
-      JSON.stringify({
-        message: `Business ${businessId} deleted successfully`,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      JSON.stringify({ message: "Business deleted successfully" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError("Delete business failed!", error);

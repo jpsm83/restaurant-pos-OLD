@@ -5,7 +5,7 @@ import Table from "@/app/lib/models/salesLocation";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 import { Types } from "mongoose";
 
-export const createTable = async (
+export const createSalesLocation = async (
   salesLocationReference: string,
   guests: number,
   openedBy: Types.ObjectId,
