@@ -31,6 +31,7 @@ const deleteCloudinaryImage = async (imageUrl: string) => {
     if (deletionResponse.result !== "ok") {
       return "DeleteCloudinaryImage failed!";
     }
+    return true;
   } catch (error) {
     return error;
   }

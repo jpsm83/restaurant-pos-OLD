@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -9,14 +8,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Business from "@/app/lib/models/business";
-
-// Cloudinary ENV variables
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+import deleteCloudinaryImage from "@/app/api/cloudinaryActions/utils/deleteCloudinaryImage";
 
 // @desc    Delete sales location
 // @route   DELETE /business/:businessId/deleteSalesLocation/:salesLocationId
@@ -61,6 +53,10 @@ export const DELETE = async (
       );
     }
 
+    // example of a cloudinary image url
+    // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
+    const qrCode = business.salesLocation[0].qrCode;
+
     // delete location from salesLocation array
     await Business.updateOne(
       {
@@ -75,28 +71,18 @@ export const DELETE = async (
       }
     );
 
-    // example of a cloudinary image url
-    // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
+    const deleteCloudinaryImageResult = await deleteCloudinaryImage(qrCode);
 
-    // Extract cloudinaryPublicId using regex
-    // example of a publicId
-    // "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b"
-    // Extract the QR code public ID
-    const qrCode = business.salesLocation[0].qrCode;
-    const cloudinaryPublicIdMatch = qrCode.match(/restaurant-pos\/[^.]+/);
-    const cloudinaryPublicId = cloudinaryPublicIdMatch
-      ? cloudinaryPublicIdMatch[0]
-      : "";
-
-    if (cloudinaryPublicId) {
-      await cloudinary.uploader.destroy(cloudinaryPublicId, {
-        resource_type: "image",
-      });
+    if (deleteCloudinaryImageResult !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: deleteCloudinaryImageResult }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     return new NextResponse(
       JSON.stringify({
-        message: `Sales location ${business.salesLocation[0].locationReferenceName} deleted successfully`,
+        message: "Sales location deleted successfully",
       }),
       {
         status: 200,

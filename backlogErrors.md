@@ -1,5 +1,5 @@
 - refact all the code and change all the references names adding "Id" to its end in all models and logic / follow the order
-business - ALMOST DONE - just createSalesLocation and deleteSalesLocation to be tested
+business - DONE
 printers
 users
 schedules

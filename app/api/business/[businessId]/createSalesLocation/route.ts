@@ -8,10 +8,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported interfaces
-import {
-  IBusiness,
-  IBusinessSalesLocation,
-} from "@/app/lib/interface/IBusiness";
+import { IBusinessSalesLocation } from "@/app/lib/interface/IBusiness";
 
 // imported models
 import Business from "@/app/lib/models/business";
@@ -30,7 +27,7 @@ export const POST = async (
   }
 ) => {
   try {
-    const businessId = context.params.businessId;
+    const { businessId } = context.params;
 
     const { locationReferenceName, locationType, selfOrdering } =
       (await req.json()) as IBusinessSalesLocation;
@@ -50,7 +47,7 @@ export const POST = async (
     if (!locationReferenceName || !locationType) {
       return new NextResponse(
         JSON.stringify({
-          message: "Location reference name and type are required!",
+          message: "LocationReferenceName and locationType are required!",
         }),
         {
           status: 400,
@@ -62,61 +59,71 @@ export const POST = async (
     // connect before first call to DB
     await connectDb();
 
-    // get the sales location from business
-    const business: IBusiness | null = await Business.findById(businessId)
-      .select("salesLocation")
-      .lean();
-
-    // check if business exists
-    if (!business) {
-      return new NextResponse(
-        JSON.stringify({ message: "Business not found!" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Check if the sales location already exists for the business
-    const existingLocation = business?.salesLocation?.some(
-      (location: IBusinessSalesLocation) =>
-        location.locationReferenceName === locationReferenceName &&
-        location.locationType === locationType
-    );
-
-    if (existingLocation) {
-      return new NextResponse(
-        JSON.stringify({ message: "Sales location already exists!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Generate QR code
-    const qrCode = await generateQrCode(businessId);
-
-    // Add new sales location
-    await Business.findByIdAndUpdate(
-      businessId,
+    // Attempt to add sales location in a single query
+    const updatedBusiness = await Business.findOneAndUpdate(
+      {
+        _id: businessId,
+        // Only prevent the update if both locationReferenceName and locationType already exist together
+        salesLocation: {
+          $not: {
+            $elemMatch: {
+              locationReferenceName,
+              locationType,
+            },
+          },
+        },
+      },
       {
         $push: {
           salesLocation: {
             locationReferenceName,
             locationType,
             selfOrdering,
-            qrCode,
           },
         },
       },
-      { new: true }
+      { new: true, fields: { salesLocation: 1 } } // Return updated salesLocation
     );
 
-    return new NextResponse(
-      JSON.stringify({ message: "Sales location created" }),
-      { status: 201, headers: { "Content-Type": "application/json" } }
+    // Check if the update was successful
+    if (!updatedBusiness) {
+      return NextResponse.json(
+        { message: "Sales location already exists or business not found!" },
+        { status: 400 }
+      );
+    }
+
+    // Generate QR code after successful update
+    const qrCode = await generateQrCode(businessId);
+    if (!qrCode || qrCode.includes("Failed")) {
+      // if QR code generation fails, remove the newly created sales location
+      await Business.findOneAndUpdate(
+        { _id: businessId },
+        {
+          $pull: {
+            salesLocation: { locationReferenceName, locationType },
+          },
+        }
+      );
+      return NextResponse.json(
+        { message: "Failed to generate QR code, rollback applied" },
+        { status: 500 }
+      );
+    }
+
+    // Update the new sales location with the QR code
+    await Business.updateOne(
+      {
+        _id: businessId,
+        "salesLocation.locationReferenceName": locationReferenceName,
+        "salesLocation.locationType": locationType,
+      },
+      { $set: { "salesLocation.$.qrCode": qrCode } }
+    );
+
+    return NextResponse.json(
+      { message: "Sales location created" },
+      { status: 201 }
     );
   } catch (error) {
     return handleApiError("Sales location creation failed!", error);
