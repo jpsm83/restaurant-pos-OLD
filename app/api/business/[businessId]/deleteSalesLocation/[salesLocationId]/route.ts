@@ -11,9 +11,9 @@ import Business from "@/app/lib/models/business";
 import deleteCloudinaryImage from "@/app/api/cloudinaryActions/utils/deleteCloudinaryImage";
 
 // @desc    Delete sales location
-// @route   DELETE /business/:businessId/deleteSalesLocation/:salesLocationId
+// @route   POST /business/:businessId/deleteSalesLocation/:salesLocationId
 // @access  Private
-export const DELETE = async (
+export const POST = async (
   req: Request,
   context: {
     params: { businessId: Types.ObjectId; salesLocationId: Types.ObjectId };

@@ -3,7 +3,7 @@ import { IMetrics } from "@/app/lib/interface/IBusiness";
 const validateBusinessMetrics = (metrics: IMetrics) => {
   // check metrics is an object
   if (typeof metrics !== "object" || metrics === null)
-    return "Address must be an object!";
+    return "Metrics must be an object!";
 
   const validKeys = [
     "foodCostPercentage",

@@ -1,6 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
-import { subscription, locationTypes } from "../enums.js";
+import { subscription, mainCategories } from "../enums.js";
 
 const salesLocationSchema = new Schema({
   locationReferenceName: { type: String, required: true }, // name of the location sale reference - ex: 101
@@ -9,6 +9,20 @@ const salesLocationSchema = new Schema({
   qrCode: { type: String, required: true }, // auto created QR code for the location
   qrEnabled: { type: Boolean, default: true }, // QR code enabled or disabled - when QR is scanned, it will be disabled and a timer on the frontend will set, if the timer expires, the frontend page will close and the QR code will be enabled again - only if selfOrdering is true
   qrLastScanned: { type: Date }, // last time the QR code was scanned
+  printFor: [
+    {
+      mainCategory: {
+        type: String,
+        enum: mainCategories,
+        required: true,
+      }, // this will dictate what the printer will print as main category
+      subCategories: {
+        type: [String],
+        required: true,
+      }, // this will dictate what the printer will print as sub category from the main category
+      printerId: { type: Schema.Types.ObjectId, ref: "Printer", required: true }, // printer reference
+    },
+  ], // what and where the location sales can print for and which printer
 });
 
 const metricsSchema = new Schema({

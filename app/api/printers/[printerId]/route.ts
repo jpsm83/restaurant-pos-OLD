@@ -8,7 +8,6 @@ import { IPrinter } from "@/app/lib/interface/IPrinter";
 // imported utils
 import { checkPrinterConnection } from "../utils/checkPrinterConnection";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { printForValidation } from "../utils/printForValidation";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
@@ -78,17 +77,6 @@ export const PATCH = async (
 
     const { printerName, ipAddress, port, printFor, location, description } =
       (await req.json()) as IPrinter;
-
-    // check printFor validation
-    if (printFor) {
-      const validPrintFor = printForValidation(printFor);
-      if (validPrintFor !== true) {
-        return new NextResponse(JSON.stringify({ message: validPrintFor }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
 
     // connect before first call to DB
     await connectDb();

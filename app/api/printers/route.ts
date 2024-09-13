@@ -1,22 +1,22 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 // imported interfaces
 import { IPrinter } from "@/app/lib/interface/IPrinter";
 
 // imported utils
-import { printForValidation } from "./utils/printForValidation";
+import connectDb from "@/app/lib/utils/connectDb";
 import { checkPrinterConnection } from "./utils/checkPrinterConnection";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import user model
 import User from "@/app/lib/models/user";
 import Printer from "@/app/lib/models/printer";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get all printers
 // @route   GET /printers
 // @access  Private
-export const GET = async (req: Request,) => {
+export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
@@ -25,23 +25,17 @@ export const GET = async (req: Request,) => {
       .populate({ path: "printFor.usersId", select: "username", model: User })
       .lean(); // Converts Mongoose document to plain JavaScript object
 
-    if (!printers.length) {
-      return new NextResponse(
-        JSON.stringify({ message: "No printers found!" }),
-        {
+    return !printers.length
+      ? new NextResponse(JSON.stringify({ message: "No printers found!" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Return the populated printers data
-    return new NextResponse(JSON.stringify(printers), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+        })
+      : new NextResponse(JSON.stringify(printers), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
   } catch (error) {
     return handleApiError("Get all printers failed!", error);
   }
@@ -67,21 +61,10 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "printerName, ipAddress, port and businessId are required fields!",
+            "PrinterName, ipAddress, port and businessId are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
-    }
-
-    // check printFor validation
-    if (printFor) {
-      const validPrintFor = printForValidation(printFor);
-      if (validPrintFor !== true) {
-        return new NextResponse(JSON.stringify({ message: validPrintFor }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
     }
 
     // connect before first call to DB
