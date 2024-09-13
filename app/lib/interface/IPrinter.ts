@@ -1,10 +1,9 @@
 import { Types } from "mongoose";
 
 export interface IPrintFor {
-    [key: string]: string[] | Types.ObjectId[] | undefined;
-    user?: Types.ObjectId[];
-    category?: string[];
-    subCategory?: string[];
+    userId?: Types.ObjectId[];
+    mainCategories?: string[];
+    subCategories?: string[];
 }
 
 export interface IPrinter {
@@ -12,7 +11,7 @@ export interface IPrinter {
     connected: boolean;
     ipAddress: string;
     port: number;
-    business: Types.ObjectId;
+    businessId: Types.ObjectId;
     printFor: IPrintFor;
     location?: string;
     description?: string;

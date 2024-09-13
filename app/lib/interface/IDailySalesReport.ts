@@ -1,9 +1,5 @@
 import { Types } from "mongoose";
-import { IPayment } from "./IPayment";
-
-export interface IBaseSales {
-  [key: string]: any;
-}
+import { IPaymentMethod } from "./IPaymentMethod";
 
 export interface IUserGoods {
   good: Types.ObjectId;
@@ -12,10 +8,10 @@ export interface IUserGoods {
   totalCostPrice: number;
 }
 
-export interface IUserDailySalesReport extends IBaseSales {
-  user: Types.ObjectId;
+export interface IUserDailySalesReport {
+  userId: Types.ObjectId;
   hasOpenTables?: boolean;
-  userPaymentMethods?: IPayment[];
+  userPaymentMethods?: IPaymentMethod[];
   totalSalesBeforeAdjustments?: number;
   totalNetPaidAmount?: number;
   totalTipsReceived?: number;
@@ -29,14 +25,14 @@ export interface IUserDailySalesReport extends IBaseSales {
   totalInvitedValue?: number;
 }
 
-export interface IDailySalesReport extends IBaseSales {
+export interface IDailySalesReport {
   _id?: Types.ObjectId;
   dailyReferenceNumber: number;
   isDailyReportOpen: boolean;
   timeCountdownToClose: number;
   usersDailySalesReport: IUserDailySalesReport[];
-  business: Types.ObjectId;
-  businessPaymentMethods?: IPayment[];
+  businessId: Types.ObjectId;
+  businessPaymentMethods?: IPaymentMethod[];
   dailyTotalSalesBeforeAdjustments?: number;
   dailyNetPaidAmount?: number;
   dailyTipsReceived?: number;

@@ -2,7 +2,6 @@ import { Types } from "mongoose";
 import { IAddress } from "./IAddress";
 
 export interface IPersonalDetails {
-  [key: string]: string | undefined | Date;
   firstName: string;
   lastName: string;
   nationality: string;
@@ -25,7 +24,7 @@ export interface IUser {
   onDuty: boolean;
   vacationDaysPerYear: number;
   vacationDaysLeft: number;
-  business: Types.ObjectId;
+  businessId: Types.ObjectId;
   currentShiftRole?: string;
   address?: IAddress;
   imageUrl?: string;
@@ -34,6 +33,6 @@ export interface IUser {
   grossHourlySalary?: number;
   netMonthlySalary?: number;
   terminatedDate?: Date;
-  //   notifications?: { notification: Types.ObjectId; readFlag: boolean }[];
+  notifications?: { notificationId: Types.ObjectId; readFlag: boolean }[];
   comments?: string;
 }

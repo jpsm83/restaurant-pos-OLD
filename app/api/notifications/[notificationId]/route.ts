@@ -30,7 +30,7 @@ export const GET = async (
     }
 
     const notification = await Notification.findById(notificationId)
-      .populate("recipients", "username")
+      .populate("userRecipientsId", "username")
       .lean();
 
     return !notification
@@ -66,7 +66,7 @@ export const PATCH = async (
       );
     }
 
-    const { notificationType, message, recipients, sender } =
+    const { notificationType, message, userRecipientsId, userSenderId } =
       (await req.json()) as INotification;
 
     // connect before first call to DB
@@ -88,8 +88,8 @@ export const PATCH = async (
     const updateObj = {
       notificationType: notificationType || notification.notificationType,
       message: message || notification.message,
-      recipients: recipients || notification.recipients,
-      sender: sender || notification.sender,
+      userRecipientsId: userRecipientsId || notification.userRecipientsId,
+      userSenderId: userSenderId || notification.userSenderId,
     };
 
     // update notification
@@ -99,19 +99,19 @@ export const PATCH = async (
       }).lean();
 
     if (updatedNotification) {
-      // find the recipients that were added
-      const addedRecipients = updateObj.recipients.filter(
-        (userId) => !notification.recipients.includes(userId)
+      // find the userRecipientsId that were added
+      const addedRecipients = updateObj.userRecipientsId.filter(
+        (userId) => !notification.userRecipientsId.includes(userId)
       );
 
-      // find the recipients that were removed
-      const removedRecipients = notification.recipients.filter(
-        (userId) => !updateObj.recipients.includes(userId)
+      // find the userRecipientsId that were removed
+      const removedRecipients = notification.userRecipientsId.filter(
+        (userId) => !updateObj.userRecipientsId.includes(userId)
       );
 
       // handle all the user updates at once
       const updateUserNotifications = await Promise.all([
-        // add the notification to each new recipients user
+        // add the notification to each new userRecipientsId user
         User.updateMany(
           { _id: { $in: addedRecipients } },
           {
@@ -124,15 +124,15 @@ export const PATCH = async (
           }
         ),
 
-        // remove the notification from each removed recipients user
+        // remove the notification from each removed userRecipientsId user
         User.updateMany(
           { _id: { $in: removedRecipients } },
           { $pull: { notifications: { notification: notificationId } } }
         ),
 
-        // update the readFlag for each new recipients
+        // update the readFlag for each new userRecipientsId
         User.updateMany(
-          { _id: { $in: recipients }, "notifications._id": notificationId },
+          { _id: { $in: userRecipientsId }, "notifications._id": notificationId },
           { $set: { "notifications.$.readFlag": false } }
         ),
       ]);
@@ -200,10 +200,10 @@ export const DELETE = async (
       );
     }
 
-    // Remove the notification from each recipients user
+    // Remove the notification from each userRecipientsId user
     await User.updateMany(
       {
-        _id: { $in: notification.recipients },
+        _id: { $in: notification.userRecipientsId },
       },
       { $pull: { notifications: { notification: notificationId } } }
     );

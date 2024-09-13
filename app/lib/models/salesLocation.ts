@@ -8,17 +8,17 @@ const salesLocationSchema = new Schema(
     salesLocationReference: { type: String, required: true }, // reference for the table - have to match the business.salesLocation.locationReferenceName options in the business
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
     status: { type: String, enum: tableStatus, default: "Occupied", required: true }, // status of the table
-    openedBy: {
+    openedById: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     }, // user that opened the table
-    responsibleBy: {
+    responsibleById: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     }, // user that is responsible for the table - one user can open, finish the shift then pass the responsability to another user
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
@@ -26,14 +26,13 @@ const salesLocationSchema = new Schema(
 
     // non required fields
     clientName: { type: String }, // name of the client that is in the table
-    // orders: [{ type: Schema.Types.ObjectId, ref: 'Order' }],
-    orders: {
+    ordersIds: {
       type: [Schema.Types.ObjectId],
       ref: "Order",
       default: undefined,
     }, // array of orders made in the table
     closedAt: { type: Date }, // date and time when the table was closed
-    closedBy: { type: Schema.Types.ObjectId, ref: "User" }, // user that closed the table, same as responsibleBy
+    closedById: { type: Schema.Types.ObjectId, ref: "User" }, // user that closed the table, same as responsibleBy
   },
   { timestamps: true, minimize: false }
 );

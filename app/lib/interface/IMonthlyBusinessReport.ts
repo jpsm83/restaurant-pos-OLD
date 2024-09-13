@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import { businessGoodReduceSchema } from "../models/businessGoodReduce";
-import { IPayment } from "./IPayment";
+import { IPaymentMethod } from "./IPaymentMethod";
 
 export interface IFinancialPercentages {
   salesPaymentCompletionPercentage: number; // Percentage of sales paid during the month
@@ -57,6 +57,6 @@ export interface IMonthlyBusinessReport {
   supplierWasteAnalysis: ISupplierWasteAnalysis; // Analysis of supplier waste percentages
   totalCustomersServed: number; // Total number of customers served
   averageSpendingPerCustomer: number; // Average spending per customer
-  paymentMethods: IPayment[]; // Array of payment methods used
+  paymentMethods: IPaymentMethod[]; // Array of payment methods used
   posSystemCommission: number; // POS system commission
 }

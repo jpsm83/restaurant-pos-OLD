@@ -28,18 +28,18 @@ const orderSchema = new Schema(
     orderPrice: { type: Number, required: true }, // final price of the sun of product being sold regardless of any discounts, voids, or cancellations
     orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions
     orderCostPrice: { type: Number, required: true }, // cost price of the sun of product being sold regardless of any discounts, voids, or cancellations
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true }, // user that made the order
-    table: {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // user that made the order
+    tableId: {
       type: Schema.Types.ObjectId,
       ref: "Table",
       required: true,
     }, // table where the order was made
-    businessGoods: {
+    businessGoodsIds: {
       type: [Schema.Types.ObjectId],
       ref: "BusinessGood",
       required: true,
     }, // can be an aray of business goods (3) "burger with extra cheese and add bacon"
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,

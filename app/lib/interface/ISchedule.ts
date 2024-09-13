@@ -22,6 +22,6 @@ export interface ISchedule {
     employees: IEmployee[];
     totalEmployeesScheduled: number;
     totalDayEmployeesCost: number;
-    business: Types.ObjectId;
+    businessId: Types.ObjectId;
     comments?: string;
 }

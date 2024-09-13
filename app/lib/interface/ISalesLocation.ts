@@ -1,16 +1,16 @@
 import { Types } from "mongoose";
 
 export interface ISalesLocation {
-  billingStatus: string;
   _id?: Types.ObjectId;
+  billingStatus: string;
   dailyReferenceNumber?: number;
   salesLocationReference: string;
   guests: number;
   status: string;
-  openedBy: Types.ObjectId;
-  responsibleBy: Types.ObjectId;
-  business: Types.ObjectId;
+  openedById: Types.ObjectId;
+  responsibleById: Types.ObjectId;
+  businessId: Types.ObjectId;
   clientName?: string;
-  orders?: Types.ObjectId[];
-  closedBy?: Types.ObjectId;
+  ordersIds?: Types.ObjectId[];
+  closedById?: Types.ObjectId;
 }

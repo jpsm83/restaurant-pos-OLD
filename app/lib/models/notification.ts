@@ -6,19 +6,19 @@ const notificationSchema = new Schema(
     // required fields
     notificationType: { type: notificationTypes, required: true }, // Type of notification "warning", "emergency", "info"
     message: { type: String, required: true }, // notification message
-    recipients: {
+    userRecipientsId: {
       type: [Schema.Types.ObjectId],
       ref: "User",
       required: true,
     }, // Reference to the user receiving the notification
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
     }, // Reference to the business where the notification was created
 
     // non required fields
-    sender: { type: Schema.Types.ObjectId, ref: "User" }, // Reference to the user who created the notification, only used on messages
+    userSenderId: { type: Schema.Types.ObjectId, ref: "User" }, // Reference to the user who created the notification, only used on messages
   },
   {
     timestamps: true,
@@ -26,5 +26,6 @@ const notificationSchema = new Schema(
   }
 );
 
-const Notification = models.Notification || model("Notification", notificationSchema);
+const Notification =
+  models.Notification || model("Notification", notificationSchema);
 export default Notification;

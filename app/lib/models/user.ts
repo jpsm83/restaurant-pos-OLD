@@ -39,7 +39,7 @@ const userSchema = new Schema(
     onDuty: { type: Boolean, required: true, default: false }, // if the user is on duty, shift working right now
     vacationDaysPerYear: { type: Number, required: true }, // days of holidays per year
     vacationDaysLeft: { type: Number, required: true }, // days of holidays left
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
@@ -57,7 +57,7 @@ const userSchema = new Schema(
     notifications: {
       type: [
         {
-          notification: {
+          notificationId: {
             type: Schema.Types.ObjectId,
             ref: "Notification",
           },

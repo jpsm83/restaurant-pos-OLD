@@ -16,12 +16,12 @@ const supplierGoodSchema = new Schema(
     mainCategory: { type: String, enum: mainCategories, required: true }, // principal category of the business good
     subCategory: { type: String, required: true }, // secondary category of the business good
     currentlyInUse: { type: Boolean, required: true, default: true }, // if the good is currently in use base on the business goods
-    supplier: {
+    supplierId: {
       type: Schema.Types.ObjectId,
       ref: "Supplier",
       required: true,
     }, // supplier of the good - it is required upon creation but it can be updated to undefined if supplier is deleted
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,

@@ -11,7 +11,7 @@ const businessGoodSchema = new Schema(
     onMenu: { type: Boolean, required: true, default: true }, // if the business good is on the menu right now
     available: { type: Boolean, required: true, default: true }, // if the business good is available for sale
     sellingPrice: { type: Number, required: true }, // price for customers
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
@@ -22,7 +22,7 @@ const businessGoodSchema = new Schema(
     ingredients: {
       type: [
         {
-          supplierGood: {
+          supplierGoodId: {
             type: Schema.Types.ObjectId,
             ref: "SupplierGood",
             required: true,
@@ -44,7 +44,7 @@ const businessGoodSchema = new Schema(
     },
 
     // set menu is a group of business goods that are sold together in a single cheaper price
-    setMenu: {
+    setMenuIds: {
       type: [Schema.Types.ObjectId],
       ref: "BusinessGood",
       default: undefined,

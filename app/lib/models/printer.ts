@@ -1,18 +1,5 @@
 import { Schema, model, models } from "mongoose";
-
-const category = ["Food", "Beverage", "Merchandise", "Info"];
-
-const subCategory = [
-  "main",
-  "side",
-  "dessert",
-  "salad",
-  "mainBar",
-  "coffee&tea",
-  "coktail",
-  "bills",
-  "receipts",
-];
+import { mainCategories, foodSubCategory, beverageSubCategory, merchandiseSubCategory, othersSubcategory} from "../enums";
 
 // {
 //   "printerName": "Desert Printer",
@@ -36,7 +23,7 @@ const printerSchema = new Schema(
     connected: { type: Boolean, required: true }, // is printer working?
     ipAddress: { type: String, required: true, unique: true }, // IP address of the printer
     port: { type: Number, required: true }, // port of the printer
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
@@ -44,17 +31,17 @@ const printerSchema = new Schema(
 
     // non-required fields
     printFor: {
-      users: {
+      usersId: {
         type: [{ type: Schema.Types.ObjectId, ref: 'User', default: undefined}],
       },
-      categories: {
+      mainCategories: {
         type: [String],
-        enum: category,
+        enum: mainCategories,
         default: undefined,
       },
       subCategories: {
         type: [String],
-        enum: subCategory,
+        enum: foodSubCategory || beverageSubCategory || merchandiseSubCategory || othersSubcategory,
         default: undefined,
       },
     }, // whon and what the printer prints for

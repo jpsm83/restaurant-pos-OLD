@@ -37,7 +37,7 @@ export const GET = async (
     await connectDb();
 
     const printer = await Printer.findById(printerId)
-      .populate({ path: "printFor.users", select: "username", model: User })
+      .populate({ path: "printFor.usersId", select: "username", model: User })
       .lean();
 
     return !printer
@@ -105,7 +105,7 @@ export const PATCH = async (
     // check duplicate printer
     const duplicatePrinter = await Printer.findOne({
       _id: { $ne: printerId },
-      business: printer.business,
+      businessId: printer.businessId,
       $or: [{ printerName }, { ipAddress }],
     });
     if (duplicatePrinter) {

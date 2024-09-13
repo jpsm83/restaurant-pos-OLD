@@ -1,7 +1,7 @@
-import { Schema, model, models } from "mongoose";
+import { Schema } from "mongoose";
 
 export const businessGoodReduceSchema = new Schema({
-  good: {
+  businessGoodId: {
     type: Schema.Types.ObjectId,
     ref: "Order",
     required: true,

@@ -9,9 +9,9 @@ export interface ISupplier {
   phoneNumber: string;
   taxNumber: string;
   currentlyInUse: boolean;
-  business: Types.ObjectId;
+  businessId: Types.ObjectId;
   address?: IAddress;
   contactPerson?: string;
-  supplierGoods?: Types.ObjectId[];
+  supplierGoodsIds?: Types.ObjectId[];
   imageUrl?: string;
 }

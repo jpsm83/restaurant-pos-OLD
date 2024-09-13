@@ -4,7 +4,7 @@ import { businessGoodReduceSchema } from "./businessGoodReduce";
 
 const userDailySalesReportSchema = new Schema({
   // required fields
-  user: {
+  userId: {
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
@@ -49,7 +49,7 @@ const dailySalesReportSchema = new Schema(
       type: [userDailySalesReportSchema],
       required: true,
     }, // array of objects with each individual sales report of the user
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,

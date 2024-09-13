@@ -9,7 +9,7 @@ import { validateIngredients } from "./utils/validateIngredients";
 import { calculateIngredientsCostPriceAndAllergies } from "./utils/calculateIngredientsCostPriceAndAllergies";
 import { calculateSetMenuCostPriceAndAllergies } from "./utils/calculateSetMenuCostPriceAndAllergies";
 
-// @desc    Get all business goods
+// @desc    Get all businessId goods
 // @route   GET /businessGoods
 // @access  Private
 export const GET = async () => {
@@ -18,11 +18,11 @@ export const GET = async () => {
     await connectDb();
     const businessGoods = await BusinessGood.find()
       .populate("ingredients.supplierGood", "name mainCategory subCategory")
-      .populate("setMenu", "name mainCategory subCategory sellingPrice")
+      .populate("setMenuIds", "name mainCategory subCategory sellingPrice")
       .lean();
     return !businessGoods.length
       ? new NextResponse(
-          JSON.stringify({ message: "No business goods found!" }),
+          JSON.stringify({ message: "No businessId goods found!" }),
           { status: 404, headers: { "Content-Type": "application/json" } }
         )
       : new NextResponse(JSON.stringify(businessGoods), {
@@ -30,11 +30,11 @@ export const GET = async () => {
           headers: { "Content-Type": "application/json" },
         });
   } catch (error) {
-    return handleApiError("Get all business goods failed!", error);
+    return handleApiError("Get all businessId goods failed!", error);
   }
 };
 
-// @desc    Create new business good
+// @desc    Create new businessId good
 // @route   POST /businessGoods
 // @access  Private
 export const POST = async (req: Request) => {
@@ -47,9 +47,9 @@ export const POST = async (req: Request) => {
       onMenu,
       available,
       sellingPrice,
-      business,
+      businessId,
       ingredients,
-      setMenu,
+      setMenuIds,
       description,
       deliveryTime,
     } = (await req.json()) as IBusinessGood;
@@ -63,22 +63,22 @@ export const POST = async (req: Request) => {
       onMenu === undefined ||
       available === undefined ||
       !sellingPrice ||
-      !business
+      !businessId
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Name, keyword, mainCategory, subcategory, onMenu, available, sellingPrice and business are required!",
+            "Name, keyword, mainCategory, subcategory, onMenu, available, sellingPrice and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // one of the two fields should be present (ingredients or setMenu)
-    if (ingredients && setMenu) {
+    // one of the two fields should be present (ingredients or setMenuIds)
+    if (ingredients && setMenuIds) {
       return new NextResponse(
         JSON.stringify({
-          message: "Only one of ingredients or setMenu can be asigned!",
+          message: "Only one of ingredients or setMenuIds can be asigned!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -87,16 +87,16 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDb();
 
-    // check for duplicate business good
+    // check for duplicate businessId good
     const duplicateBusinessGood = await BusinessGood.findOne({
-      business,
+      businessId,
       name,
     });
 
     if (duplicateBusinessGood) {
       return new NextResponse(
         JSON.stringify({
-          message: `${name} already exists on business goods!`,
+          message: `${name} already exists on businessId goods!`,
         }),
         {
           status: 400,
@@ -105,7 +105,7 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // create a business good object
+    // create a businessId good object
     let newBusinessGood: IBusinessGood = {
       name,
       keyword,
@@ -114,7 +114,7 @@ export const POST = async (req: Request) => {
       onMenu,
       available,
       sellingPrice,
-      business,
+      businessId,
       description: description || undefined,
       deliveryTime: deliveryTime || undefined,
     };
@@ -144,13 +144,13 @@ export const POST = async (req: Request) => {
         newBusinessGood.ingredients =
           calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
-              supplierGood: ing.supplierGood,
+              supplierGoodId: ing.supplierGood,
               measurementUnit: ing.measurementUnit,
               requiredQuantity: ing.requiredQuantity ?? 0,
               costOfRequiredQuantity: ing.costOfRequiredQuantity,
             };
           });
-        newBusinessGood.setMenu = undefined;
+        newBusinessGood.setMenuIds = undefined;
         newBusinessGood.costPrice =
           calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc, curr) => acc + curr.costOfRequiredQuantity,
@@ -177,10 +177,10 @@ export const POST = async (req: Request) => {
       }
     }
 
-    // calculate the cost price and allergens for the setMenu if they exist
-    if (setMenu) {
+    // calculate the cost price and allergens for the setMenuIds if they exist
+    if (setMenuIds) {
       const calculateSetMenuCostPriceAndAllergiesResult =
-        await calculateSetMenuCostPriceAndAllergies(setMenu);
+        await calculateSetMenuCostPriceAndAllergies(setMenuIds);
       if (typeof calculateSetMenuCostPriceAndAllergiesResult !== "object") {
         return new NextResponse(
           JSON.stringify({
@@ -193,7 +193,7 @@ export const POST = async (req: Request) => {
         );
       } else {
         newBusinessGood.ingredients = undefined;
-        newBusinessGood.setMenu = setMenu;
+        newBusinessGood.setMenuIds = setMenuIds;
         newBusinessGood.costPrice =
           calculateSetMenuCostPriceAndAllergiesResult.costPrice;
         newBusinessGood.allergens =
@@ -204,12 +204,12 @@ export const POST = async (req: Request) => {
       }
     }
 
-    // create the new business good
+    // create the new businessId good
     await BusinessGood.create(newBusinessGood);
 
     return new NextResponse(
       JSON.stringify({
-        message: `Business good ${name} created successfully!`,
+        message: `BusinessId good ${name} created successfully!`,
       }),
       {
         status: 201,
@@ -217,7 +217,7 @@ export const POST = async (req: Request) => {
       }
     );
   } catch (error) {
-    return handleApiError("Create business good failed!", error);
+    return handleApiError("Create businessId good failed!", error);
   }
 };
 
@@ -271,8 +271,8 @@ export const POST = async (req: Request) => {
 //     // });
 
 //     // @ts-ignore
-//     const setMenu = await calculateSetMenuCostPriceAndAllergies(setMenuArr);
-//     return new NextResponse(JSON.stringify(setMenu), {
+//     const setMenuIds = await calculateSetMenuCostPriceAndAllergies(setMenuArr);
+//     return new NextResponse(JSON.stringify(setMenuIds), {
 //       status: 201,
 //       headers: { "Content-Type": "application/json" },
 //     });

@@ -71,7 +71,7 @@ export const PATCH = async (
       available,
       sellingPrice,
       ingredients,
-      setMenu,
+      setMenuIds,
       description,
       deliveryTime,
     } = (await req.json()) as IBusinessGood;
@@ -87,11 +87,11 @@ export const PATCH = async (
       );
     }
 
-    // one of the two fields should be present (ingredients or setMenu)
-    if (ingredients && setMenu) {
+    // one of the two fields should be present (ingredients or setMenuIds)
+    if (ingredients && setMenuIds) {
       return new NextResponse(
         JSON.stringify({
-          message: "Only one of ingredients or setMenu can be asigned!",
+          message: "Only one of ingredients or setMenuIds can be asigned!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -198,13 +198,13 @@ export const PATCH = async (
             : [];
       }
       // @ts-ignore
-      updatedBusinessGood.$unset = { setMenu: "" }; // This removes the setMenu field
+      updatedBusinessGood.$unset = { setMenuIds: "" }; // This removes the setMenuIds field
     }
 
-    // calculate the cost price and allergens for the setMenu if they exist
-    if (setMenu) {
+    // calculate the cost price and allergens for the setMenuIds if they exist
+    if (setMenuIds) {
       const calculateSetMenuCostPriceAndAllergiesResult =
-        await calculateSetMenuCostPriceAndAllergies(setMenu);
+        await calculateSetMenuCostPriceAndAllergies(setMenuIds);
       if (typeof calculateSetMenuCostPriceAndAllergiesResult !== "object") {
         return new NextResponse(
           JSON.stringify({
@@ -216,7 +216,7 @@ export const PATCH = async (
           }
         );
       } else {
-        updatedBusinessGood.setMenu = setMenu;
+        updatedBusinessGood.setMenuIds = setMenuIds;
         updatedBusinessGood.costPrice =
           calculateSetMenuCostPriceAndAllergiesResult.costPrice;
         updatedBusinessGood.allergens =
@@ -294,7 +294,7 @@ export const DELETE = async (
 
     // check if the business good is used in any set menu
     const businessGoodInSetMenu = await BusinessGood.find({
-      setMenu: businessGoodId,
+      setMenuIds: businessGoodId,
     }).lean();
 
     if (businessGoodInSetMenu.length > 0) {

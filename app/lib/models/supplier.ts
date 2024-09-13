@@ -11,7 +11,7 @@ const supplierSchema = new Schema(
     phoneNumber: { type: String, required: true }, // Phone number of the suplier
     taxNumber: { type: String, required: true, unique: true }, // Tax number of the suplier
     currentlyInUse: { type: Boolean, default: true, required: true }, // currenctly dealing with the suplier
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
@@ -20,7 +20,7 @@ const supplierSchema = new Schema(
     // optional fields
     address: addressSchema, // Address of the suplier
     contactPerson: { type: String }, // Contact person of the suplier
-    supplierGoods: {
+    supplierGoodsIds: {
       type: [Schema.Types.ObjectId],
       ref: "SupplierGood",
       default: undefined,

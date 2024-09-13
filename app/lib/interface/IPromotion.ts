@@ -11,7 +11,7 @@ export interface IPromotion {
   weekDays: string[];
   activePromotion: boolean;
   promotionType: object;
-  business: Types.ObjectId;
-  businessGoodsToApply?: Types.ObjectId[];
+  businessId: Types.ObjectId;
+  businessGoodsToApplyIds?: Types.ObjectId[];
   description?: string;
 }

@@ -1,5 +1,4 @@
 export interface IAddress {
-  [key: string]: string | number | undefined | [number, number];
   country: string;
   state: string;
   city: string;

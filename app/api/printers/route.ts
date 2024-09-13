@@ -16,13 +16,13 @@ import Printer from "@/app/lib/models/printer";
 // @desc    Get all printers
 // @route   GET /printers
 // @access  Private
-export const GET = async () => {
+export const GET = async (req: Request,) => {
   try {
     // connect before first call to DB
     await connectDb();
 
     const printers = await Printer.find()
-      .populate({ path: "printFor.users", select: "username", model: User })
+      .populate({ path: "printFor.usersId", select: "username", model: User })
       .lean(); // Converts Mongoose document to plain JavaScript object
 
     if (!printers.length) {
@@ -48,7 +48,7 @@ export const GET = async () => {
 };
 
 // @desc    Create new printer
-// @desc    POST /business
+// @desc    POST /businessId
 // @access  Private
 export const POST = async (req: Request) => {
   try {
@@ -56,18 +56,18 @@ export const POST = async (req: Request) => {
       printerName,
       ipAddress,
       port,
-      business,
+      businessId,
       printFor,
       location,
       description,
     } = (await req.json()) as IPrinter;
 
     // check required fields
-    if (!printerName || !ipAddress || !port || !business) {
+    if (!printerName || !ipAddress || !port || !businessId) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "printerName, ipAddress, port and business are required fields!",
+            "printerName, ipAddress, port and businessId are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -89,7 +89,7 @@ export const POST = async (req: Request) => {
 
     //check duplicate printer
     const duplicatePrinter = await Printer.findOne({
-      business,
+      businessId,
       $or: [{ printerName }, { ipAddress }],
     });
 
@@ -113,7 +113,7 @@ export const POST = async (req: Request) => {
       printerName,
       ipAddress,
       port,
-      business,
+      businessId,
       location: location || undefined,
       description: description || undefined,
       connected: isConnected,

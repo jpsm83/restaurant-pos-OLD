@@ -7,8 +7,8 @@ export interface ISupplierGood {
   mainCategory: string;
   subCategory?: string;
   currentlyInUse: boolean;
-  supplier: Types.ObjectId;
-  business?: Types.ObjectId;
+  supplierId: Types.ObjectId;
+  businessId?: Types.ObjectId;
   description?: string;
   allergens?: string[];
   budgetImpact?: string;

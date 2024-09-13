@@ -49,7 +49,7 @@ const scheduleSchema = new Schema(
       required: true,
       default: 0,
     }, // total daily employees, sun of all employeeCost - REQUIERED FOR ANALYTICS
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,

@@ -7,27 +7,14 @@ export const printForValidation = (printFor: IPrintFor) => {
     return "Address must be an object!";
 
   // acceptable fields
-  const acceptableFields = [
-    "users",
-    "categories",
-    "subCategories",
-  ];
+  const validKeys = ["userId", "mainCategories", "subCategories"];
 
-  // check for unacceptable fields
-  const unacceptableField = Object.keys(printFor).find(
-    (key) => !acceptableFields.includes(key)
-  );
-
-  if (unacceptableField) return `${unacceptableField} is not an acceptable field!`;
-
-  // check required fields
-  const missingField = acceptableFields.find(
-    (field) =>
-      !printFor.hasOwnProperty(field) ||
-      !Array.isArray(printFor[field])
-  );
-
-  if (missingField) return `${missingField} on printFor is required and have to be an array!`;
+  // Check for any invalid keys
+  for (const key of Object.keys(validKeys)) {
+    if (!validKeys.includes(key)) {
+      return `Invalid key: ${key}`;
+    }
+  }
 
   return true;
 };

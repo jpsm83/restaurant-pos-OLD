@@ -17,7 +17,7 @@ export const GET = async () => {
     await connectDb();
 
     const notifications = await Notification.find()
-      .populate("recipients", "username")
+      .populate("userRecipientsId", "username")
       .lean();
 
     return !notifications.length
@@ -41,23 +41,23 @@ export const GET = async () => {
 // @access  Private
 export const POST = async (req: Request) => {
   try {
-    // recipients have to be an array of user IDs coming from the front end
-    const { notificationType, message, recipients, business, sender } =
+    // userRecipientsId have to be an array of user IDs coming from the front end
+    const { notificationType, message, userRecipientsId, businessId, userSenderId } =
       (await req.json()) as INotification;
 
     // check required fields
-    if (!notificationType || !message || !recipients || !business) {
+    if (!notificationType || !message || !userRecipientsId || !businessId) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "NotificationType, message, recipients and business are required!",
+            "NotificationType, message, userRecipientsId and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // validate recipients
-    if (!Array.isArray(recipients)) {
+    // validate userRecipientsId
+    if (!Array.isArray(userRecipientsId)) {
       return new NextResponse(
         JSON.stringify({
           message: "Recipients must be an array of user IDs or empty!",
@@ -73,9 +73,9 @@ export const POST = async (req: Request) => {
     const notificationObj = {
       notificationType,
       message,
-      recipients: recipients,
-      business,
-      sender: sender || undefined,
+      userRecipientsId: userRecipientsId,
+      businessId,
+      userSenderId: userSenderId || undefined,
     };
 
     // connect before first call to DB
@@ -85,9 +85,9 @@ export const POST = async (req: Request) => {
     const newNotification = await Notification.create(notificationObj);
 
     if (newNotification) {
-      // add the notification to the recipients users
+      // add the notification to the userRecipientsId users
       const sendNotifications = await User.updateMany(
-        { _id: { $in: recipients } },
+        { _id: { $in: userRecipientsId } },
         {
           $push: {
             notifications: {

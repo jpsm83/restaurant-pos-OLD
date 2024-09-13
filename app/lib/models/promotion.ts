@@ -38,14 +38,14 @@ const promotionSchema = new Schema(
       },
       required: true,
     }, // type of the promotion
-    business: {
+    businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
     },
 
     // optional fields
-    businessGoodsToApply: {
+    businessGoodsToApplyIds: {
       type: [Schema.Types.ObjectId],
       ref: "BusinessGood",
       default: undefined,

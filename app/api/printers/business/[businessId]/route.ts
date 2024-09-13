@@ -9,8 +9,8 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import Printer from "@/app/lib/models/printer";
 import User from "@/app/lib/models/user";
 
-// @desc    Get printers by business ID
-// @route   GET /printers/business/:businessId
+// @desc    Get printers by businessId ID
+// @route   GET /printers/businessId/:businessId
 // @access  Private
 export const GET = async (
   req: Request,
@@ -34,9 +34,9 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    // fetch printers with the given business ID
-    const printers = await Printer.find({ business: businessId })
-    .populate({ path: "printFor.users", select: "username", model: User })
+    // fetch printers with the given businessId ID
+    const printers = await Printer.find({ businessId: businessId })
+    .populate({ path: "printFor.usersId", select: "username", model: User })
       .lean();
 
     return !printers.length
@@ -51,6 +51,6 @@ export const GET = async (
           },
         });
   } catch (error) {
-    return handleApiError("Get printers by business id failed!", error);
+    return handleApiError("Get printers by businessId id failed!", error);
   }
 };

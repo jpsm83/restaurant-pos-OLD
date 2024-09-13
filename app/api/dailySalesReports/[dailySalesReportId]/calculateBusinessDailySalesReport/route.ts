@@ -193,7 +193,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
 
         const updateGoodsArray = (array: any[], good: any) => {
           const existingGood = array.find(
-            (item: any) => item.good === good._id
+            (item: any) => item.businessGoodId === good._id
           );
 
           if (existingGood) {
