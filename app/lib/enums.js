@@ -42,6 +42,8 @@ export const saleUnit = [
   "Gallon",
 ];
 
+export const printerStatus = ['Online', 'Offline', 'Out of paper', 'Error'];
+
 export const locationTypes = ["Table", "Room", "Seat", "Bar", "Counter", "Spot", "Other"];
 
 export const notificationTypes = ["Warning", "Emergency", "Info", "Message"];

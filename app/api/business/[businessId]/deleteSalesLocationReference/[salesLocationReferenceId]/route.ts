@@ -11,25 +11,25 @@ import Business from "@/app/lib/models/business";
 import deleteCloudinaryImage from "@/app/api/cloudinaryActions/utils/deleteCloudinaryImage";
 
 // @desc    Delete sales location
-// @route   POST /business/:businessId/deleteSalesLocation/:salesLocationId
+// @route   PATCH /business/:businessId/deleteSalesLocationReference/:salesLocationReferenceId
 // @access  Private
-export const POST = async (
+export const PATCH = async (
   req: Request,
   context: {
-    params: { businessId: Types.ObjectId; salesLocationId: Types.ObjectId };
+    params: { businessId: Types.ObjectId; salesLocationReferenceId: Types.ObjectId };
   }
 ) => {
   try {
-    const { businessId, salesLocationId } = context.params;
+    const { businessId, salesLocationReferenceId } = context.params;
 
-    // validate businessId and salesLocationId
+    // validate businessId and salesLocationReferenceId
     if (
       !businessId ||
-      !salesLocationId ||
-      isObjectIdValid([businessId, salesLocationId]) !== true
+      !salesLocationReferenceId ||
+      isObjectIdValid([businessId, salesLocationReferenceId]) !== true
     ) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid businessId or salesLocationId!" }),
+        JSON.stringify({ message: "Invalid businessId or salesLocationReferenceId!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -42,7 +42,7 @@ export const POST = async (
 
     // Find the business and sales location
     const business = await Business.findOne(
-      { _id: businessId, "salesLocation._id": salesLocationId },
+      { _id: businessId, "salesLocation._id": salesLocationReferenceId },
       { "salesLocation.$": 1 } // Only return the matching sales location
     );
 
@@ -65,7 +65,7 @@ export const POST = async (
       {
         $pull: {
           salesLocation: {
-            _id: salesLocationId,
+            _id: salesLocationReferenceId,
           },
         },
       }

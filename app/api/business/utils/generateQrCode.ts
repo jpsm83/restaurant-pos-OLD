@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 import QRCode from "qrcode";
 import { v2 as cloudinary } from "cloudinary";
-import { ObjectId } from "mongodb";
 
 // Configure Cloudinary (you should have these values in your environment variables)
 cloudinary.config({

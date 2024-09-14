@@ -4,10 +4,12 @@ import { NextResponse } from "next/server";
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
 import User from "@/app/lib/models/user";
+import Business from "@/app/lib/models/business";
 
 // @desc    Get printers by businessId ID
 // @route   GET /printers/businessId/:businessId
@@ -20,8 +22,9 @@ export const GET = async (
 ) => {
   try {
     const businessId = context.params.businessId;
+
     // check if businessId is valid
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
         {
@@ -36,7 +39,16 @@ export const GET = async (
 
     // fetch printers with the given businessId ID
     const printers = await Printer.find({ businessId: businessId })
-    .populate({ path: "printFor.usersId", select: "username", model: User })
+      .populate({
+        path: "usersAllowedToPrintDataIds",
+        select: "username",
+        model: User,
+      })
+      .populate({
+        path: "salesLocationAllowedToPrintOrder.printFromSalesLocationReferenceIds",
+        select: "salesLocation",
+        model: Business,
+      })
       .lean();
 
     return !printers.length

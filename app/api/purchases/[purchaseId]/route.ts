@@ -126,23 +126,24 @@ export const PATCH = async (
     }
 
     // Prepare the fields that need to be updated
-    const updatedPurchase: Partial<IPurchase> = {};
-    if (title) updatedPurchase.title = title;
-    if (purchaseDate) updatedPurchase.purchaseDate = purchaseDate;
+    const updatePurchaseObj: Partial<IPurchase> = {};
+    
+    if (title) updatePurchaseObj.title = title;
+    if (purchaseDate) updatePurchaseObj.purchaseDate = purchaseDate;
     if (purchasedByUserId)
-      updatedPurchase.purchasedByUserId = purchasedByUserId;
-    if (totalAmount) updatedPurchase.totalAmount = totalAmount;
-    if (receiptId) updatedPurchase.receiptId = receiptId;
+      updatePurchaseObj.purchasedByUserId = purchasedByUserId;
+    if (totalAmount) updatePurchaseObj.totalAmount = totalAmount;
+    if (receiptId) updatePurchaseObj.receiptId = receiptId;
 
     // Update the purchase in a single query
-    const updatedPurchaseResult = await Purchase.findByIdAndUpdate(
+    const updatedPurchase = await Purchase.findByIdAndUpdate(
       purchaseId,
-      { $set: updatedPurchase },
+      { $set: updatePurchaseObj },
       { new: true, lean: true } // Use lean to reduce memory footprint after updating
     );
 
     // Check if the purchase was found and updated
-    if (!updatedPurchaseResult) {
+    if (!updatedPurchase) {
       return new NextResponse(
         JSON.stringify({ message: "Purchase not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }

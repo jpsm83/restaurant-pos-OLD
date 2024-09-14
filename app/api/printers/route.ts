@@ -11,6 +11,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 // import user model
 import User from "@/app/lib/models/user";
 import Printer from "@/app/lib/models/printer";
+import Business from "@/app/lib/models/business";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get all printers
@@ -22,8 +23,17 @@ export const GET = async (req: Request) => {
     await connectDb();
 
     const printers = await Printer.find()
-      .populate({ path: "printFor.usersId", select: "username", model: User })
-      .lean(); // Converts Mongoose document to plain JavaScript object
+    .populate({
+      path: "usersAllowedToPrintDataIds",
+      select: "username",
+      model: User,
+    })
+    .populate({
+      path: "salesLocationAllowedToPrintOrder.printFromSalesLocationReferenceIds",
+      select: "salesLocation",
+      model: Business,
+    })
+    .lean(); // Converts Mongoose document to plain JavaScript object
 
     return !printers.length
       ? new NextResponse(JSON.stringify({ message: "No printers found!" }), {
@@ -47,25 +57,61 @@ export const GET = async (req: Request) => {
 export const POST = async (req: Request) => {
   try {
     const {
-      printerName,
+      printerAlias,
+      description,
       ipAddress,
       port,
       businessId,
-      printFor,
-      location,
-      description,
+      backupPrinterId,
+      usersAllowedToPrintDataIds,
     } = (await req.json()) as IPrinter;
 
     // check required fields
-    if (!printerName || !ipAddress || !port || !businessId) {
+    if (!printerAlias || !ipAddress || !port || !businessId) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "PrinterName, ipAddress, port and businessId are required fields!",
+            "PrinterAlias, ipAddress, port and businessId are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
+
+    // validate businessId
+    if (isObjectIdValid([businessId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid businessId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+    
+    // validate backupPrinterId if it exists
+    if(backupPrinterId) {
+      if (isObjectIdValid([backupPrinterId]) !== true) {
+        return new NextResponse(
+          JSON.stringify({ message: "Invalid backupPrinterId!" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    };
+
+    // validate usersAllowedToPrintDataIds if it exists
+    if (usersAllowedToPrintDataIds) {
+      if (!Array.isArray(usersAllowedToPrintDataIds) || isObjectIdValid(usersAllowedToPrintDataIds) !== true) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "UsersAllowedToPrintDataIds have to be an array of valid Ids!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }    
 
     // connect before first call to DB
     await connectDb();
@@ -73,34 +119,31 @@ export const POST = async (req: Request) => {
     //check duplicate printer
     const duplicatePrinter = await Printer.findOne({
       businessId,
-      $or: [{ printerName }, { ipAddress }],
+      $or: [{ printerAlias }, { ipAddress }],
     });
 
     if (duplicatePrinter) {
       return new NextResponse(
         JSON.stringify({
-          message: `Printer already exists with same name or ip address!`,
+          message: `Printer already exists with printerAlias or ipAddress!`,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // check printer connection
-    const isConnected = (await checkPrinterConnection(
-      ipAddress,
-      port
-    )) as boolean;
+    // printerStatus is auto check on the backend
+    const isOnline = (await checkPrinterConnection(ipAddress, port)) as boolean;
 
     // create printer object with required fields
-    const newPrinter: IPrinter = {
-      printerName,
+    const newPrinter = {
+      printerAlias,
+      description: description || null,
+      printerStatus: isOnline ? "Online" : "Offline",
       ipAddress,
       port,
       businessId,
-      location: location || undefined,
-      description: description || undefined,
-      connected: isConnected,
-      printFor: printFor || undefined,
+      backupPrinterId: backupPrinterId || null,
+      usersAllowedToPrintDataIds: usersAllowedToPrintDataIds || [],
     };
 
     // create a new printer
@@ -109,7 +152,7 @@ export const POST = async (req: Request) => {
     // confirm printer was created
     return new NextResponse(
       JSON.stringify({
-        message: `Printer ${printerName} created successfully`,
+        message: `Printer ${printerAlias} created successfully`,
       }),
       {
         status: 201,

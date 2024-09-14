@@ -8,10 +8,12 @@ import { IPrinter } from "@/app/lib/interface/IPrinter";
 // imported utils
 import { checkPrinterConnection } from "../utils/checkPrinterConnection";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
 import User from "@/app/lib/models/user";
+import Business from "@/app/lib/models/business";
 
 // @desc    Get printer by ID
 // @route   GET /printers/:printerId
@@ -23,7 +25,7 @@ export const GET = async (
   try {
     const printerId = context.params.printerId;
     // check if printerId is valid
-    if (!printerId || !Types.ObjectId.isValid(printerId)) {
+    if (isObjectIdValid([printerId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid printerId!" }),
         {
@@ -36,7 +38,16 @@ export const GET = async (
     await connectDb();
 
     const printer = await Printer.findById(printerId)
-      .populate({ path: "printFor.usersId", select: "username", model: User })
+      .populate({
+        path: "usersAllowedToPrintDataIds",
+        select: "username",
+        model: User,
+      })
+      .populate({
+        path: "salesLocationAllowedToPrintOrder.printFromSalesLocationReferenceIds",
+        select: "salesLocation",
+        model: Business,
+      })
       .lean();
 
     return !printer
@@ -64,8 +75,18 @@ export const PATCH = async (
 ) => {
   try {
     const printerId = context.params.printerId;
+
+    const {
+      printerAlias,
+      ipAddress,
+      port,
+      description,
+      usersAllowedToPrintDataIds,
+      backupPrinterId,
+    } = (await req.json()) as IPrinter;
+
     // check if printerId is valid
-    if (!printerId || !Types.ObjectId.isValid(printerId)) {
+    if (isObjectIdValid([printerId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid printerId!" }),
         {
@@ -75,14 +96,42 @@ export const PATCH = async (
       );
     }
 
-    const { printerName, ipAddress, port, printFor, location, description } =
-      (await req.json()) as IPrinter;
+    // validate backupPrinterId if it exists
+    if (backupPrinterId) {
+      if (isObjectIdValid([backupPrinterId]) !== true) {
+        return new NextResponse(
+          JSON.stringify({ message: "Invalid backupPrinterId!" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // validate usersAllowedToPrintDataIds if it exists
+    if (usersAllowedToPrintDataIds) {
+      if (
+        !Array.isArray(usersAllowedToPrintDataIds) ||
+        isObjectIdValid(usersAllowedToPrintDataIds) !== true
+      ) {
+        return new NextResponse(
+          JSON.stringify({
+            message:
+              "UsersAllowedToPrintDataIds have to be an array of valid Ids!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // connect before first call to DB
     await connectDb();
 
     // fetch the printer with the given ID
-    const printer: IPrinter | null = await Printer.findById(printerId).lean();
+    const printer: IPrinter | null = await Printer.findById(printerId)
+      .select("businessId")
+      .lean();
     if (!printer) {
       return new NextResponse(
         JSON.stringify({ message: "Printer not found!" }),
@@ -94,8 +143,9 @@ export const PATCH = async (
     const duplicatePrinter = await Printer.findOne({
       _id: { $ne: printerId },
       businessId: printer.businessId,
-      $or: [{ printerName }, { ipAddress }],
+      $or: [{ printerAlias }, { ipAddress }],
     });
+
     if (duplicatePrinter) {
       return new NextResponse(
         JSON.stringify({ message: `Printer already exists!` }),
@@ -103,31 +153,42 @@ export const PATCH = async (
       );
     }
 
-    // check printer connection
-    const isConnected = (await checkPrinterConnection(
-      ipAddress || printer.ipAddress,
-      port || printer.port
-    )) as boolean;
+    // printerStatus is auto check on the backend
+    const isOnline = (await checkPrinterConnection(ipAddress, port)) as boolean;
 
-    // create printer object with required fields
-    const updatedPrinter = {
-      printerName: printerName || printer.printerName,
-      connected: isConnected,
-      ipAddress: ipAddress || printer.ipAddress,
-      port: port || printer.port,
-      location: location || undefined,
-      description: description || undefined,
-      printFor: printFor || printer.printFor,
+    // create updated printer object
+    const updatePrinterObj: Partial<IPrinter> = {
+      printerStatus: isOnline ? "Online" : "Offline",
     };
 
+    // populate updated fields
+    if (printerAlias) updatePrinterObj.printerAlias = printerAlias;
+    if (description) updatePrinterObj.description = description;
+    if (ipAddress) updatePrinterObj.ipAddress = ipAddress;
+    if (port) updatePrinterObj.port = port;
+    if (backupPrinterId) updatePrinterObj.backupPrinterId = backupPrinterId;
+    if (usersAllowedToPrintDataIds) updatePrinterObj.usersAllowedToPrintDataIds = usersAllowedToPrintDataIds;
+
     // update the printer
-    await Printer.findByIdAndUpdate(printerId, updatedPrinter, {
-      new: true,
-    });
+    const updatedPrinter = await Printer.findByIdAndUpdate(
+      printerId,
+      { $set: updatePrinterObj },
+      {
+        new: true,
+        lean: true,
+      }
+    );
+
+    if (!updatedPrinter) {
+      return new NextResponse(
+        JSON.stringify({ message: "Printer not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return new NextResponse(
       JSON.stringify({
-        message: `Printer ${updatedPrinter.printerName} updated successfully`,
+        message: `Printer ${updatePrinterObj.printerAlias} updated successfully`,
       }),
       {
         status: 200,
@@ -148,8 +209,9 @@ export const DELETE = async (
 ) => {
   try {
     const printerId = context.params.printerId;
+
     // check if printerId is valid
-    if (!printerId || !Types.ObjectId.isValid(printerId)) {
+    if (isObjectIdValid([printerId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid printerId!" }),
         {

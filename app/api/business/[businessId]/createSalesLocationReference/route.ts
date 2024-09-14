@@ -18,7 +18,7 @@ import Business from "@/app/lib/models/business";
 // it will create a sale location document with its qr code
 
 // @desc    Create sales location
-// @route   POST /business/:businessId/createSalesLocation
+// @route   POST /business/:businessId/createSalesLocationReference
 // @access  Private
 export const POST = async (
   req: Request,

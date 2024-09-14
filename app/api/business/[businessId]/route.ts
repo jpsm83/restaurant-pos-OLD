@@ -148,21 +148,21 @@ export const PATCH = async (
     }
 
     // Prepare updated fields only if they exist (partial update)
-    const updateFields: Partial<IBusiness> = {};
+    const updateBusinessObj: Partial<IBusiness> = {};
 
-    if (tradeName) updateFields.tradeName = tradeName;
-    if (legalName) updateFields.legalName = legalName;
-    if (email) updateFields.email = email;
-    if (phoneNumber) updateFields.phoneNumber = phoneNumber;
-    if (taxNumber) updateFields.taxNumber = taxNumber;
-    if (currencyTrade) updateFields.currencyTrade = currencyTrade;
-    if (subscription) updateFields.subscription = subscription;
-    if (contactPerson) updateFields.contactPerson = contactPerson;
-    if (metrics) updateFields.metrics = metrics;
+    if (tradeName) updateBusinessObj.tradeName = tradeName;
+    if (legalName) updateBusinessObj.legalName = legalName;
+    if (email) updateBusinessObj.email = email;
+    if (phoneNumber) updateBusinessObj.phoneNumber = phoneNumber;
+    if (taxNumber) updateBusinessObj.taxNumber = taxNumber;
+    if (currencyTrade) updateBusinessObj.currencyTrade = currencyTrade;
+    if (subscription) updateBusinessObj.subscription = subscription;
+    if (contactPerson) updateBusinessObj.contactPerson = contactPerson;
+    if (metrics) updateBusinessObj.metrics = metrics;
 
     // Password hash only if password is provided
     if (password) {
-      updateFields.password = await hash(password, 10);
+      updateBusinessObj.password = await hash(password, 10);
     }
 
     // Handle address updates with validation
@@ -177,13 +177,13 @@ export const PATCH = async (
         });
       }
 
-      updateFields.address = address;
+      updateBusinessObj.address = address;
     }
 
     // Perform update using $set to modify only specified fields
     const updatedBusiness = await Business.findByIdAndUpdate(
       businessId,
-      { $set: updateFields },
+      { $set: updateBusinessObj },
       { new: true, lean: true }
     );
 

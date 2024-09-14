@@ -1,12 +1,6 @@
 import { Types } from "mongoose";
 import { IAddress } from "./IAddress";
 
-export interface IPrintFor {
-  mainCategory: string;
-  subCategories: string[];
-  printerId: Types.ObjectId;
-}
-
 export interface IBusinessSalesLocation {
   _id?: Types.ObjectId;
   locationReferenceName: string;
@@ -15,7 +9,6 @@ export interface IBusinessSalesLocation {
   qrCode: string;
   qrEnabled: boolean;
   qrLastScanned?: Date;
-  printFor: IPrintFor[];
 }
 
 export interface IMetrics {

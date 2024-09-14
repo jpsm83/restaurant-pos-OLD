@@ -1,22 +1,33 @@
 import { Schema, model, models } from "mongoose";
+import { mainCategories, printerStatus } from "../enums";
 
 // {
-//   "printerName": "Desert Printer",
-//   "connected": true,
+//   "printerAlias": "Desert Printer",
+//   "description": "This printer is used for printing dessert orders"
+//   "printerStatus": "Online",
 //   "ipAddress": "192.168.1.100",
 //   "port": 9100,
 //   "business": "60d5ecb8b3920c56aef7e633",
-//   "ifErrorPrintAt": "60d5ecb8b3333356aef7e633",
-//   "location": "Kitchen",
-//   "description": "This printer is used for printing dessert orders"
+//   "backupPrinter": "60d5ecb8b3333356aef7e633",
+//   "usersAllowedToPrintDataIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"],
+//   "salesLocationAllowedToPrintOrder": [
+//     {
+//       "printFromSalesLocation": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"],
+//       "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"],
+//       "mainCategory": "Food",
+//       "subCategories": ["Ice Cream", "Cake"]
 // }
 
 const printerSchema = new Schema(
   {
     // required fields
-    printerName: { type: String, required: true }, // name of the printer "Desert Printer"
+    printerAlias: { type: String, required: true }, // name of the printer "Desert Printer"
     description: { type: String }, // description of the printer
-    connected: { type: Boolean, required: true }, // is printer working?
+    printerStatus: { 
+      type: String, 
+      enum: printerStatus,
+      default: "Offline",
+    }, // enhanced printer status
     ipAddress: { type: String, required: true, unique: true }, // IP address of the printer
     port: { type: Number, required: true }, // port of the printer
     businessId: {
@@ -24,7 +35,26 @@ const printerSchema = new Schema(
       ref: "Business",
       required: true,
     }, // business that owns the printer
-    backupPrinter: { type: Schema.Types.ObjectId, ref: "Printer" }, // printer reference to print if this printer has an error
+    backupPrinterId: { type: Schema.Types.ObjectId, ref: "Printer" }, // printer reference to print if this printer has an error
+    usersAllowedToPrintDataIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users can print data - users are allowed to print from one printer only
+    salesLocationAllowedToPrintOrder: [
+      {
+        printFromSalesLocationReferenceIds: {
+          type: [Schema.Types.ObjectId],
+          ref: "SalesLocation",
+          required: true,
+        }, // which sales location can print orders here
+        excludeUserIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users are not allowed to print from this printer
+        mainCategory: {
+          type: String,
+          enum: mainCategories,
+          required: true,
+        }, // this will dictate what the printer will print as main category
+        subCategories: {
+          type: [String],
+        }, // this will dictate what the printer will print as sub category from the main category
+      },
+    ], // array of objects that will dictate what the printer will print and from wich sales location, it can be multiple variations of prints, thats why it is an array
   },
   { timestamps: true, minimize: false }
 );

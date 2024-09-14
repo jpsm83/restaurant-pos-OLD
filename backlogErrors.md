@@ -1,13 +1,13 @@
 - refact all the code and change all the references names adding "Id" to its end in all models and logic / follow the order
 business - all printers routes to be tested
-printers
 users
+salesLocation
+printers
 schedules
 suppliers
 supplierGoods
 businessGoods
 promotions
-salesLocation
 orders
 purchaeses
 inventories
