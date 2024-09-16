@@ -9,29 +9,29 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 // imported models
 import Printer from "@/app/lib/models/printer";
 
-// this route will delete individual salesLocationAllowedToPrintOrder references from the printer
+// this route will delete individual configurationSetupToPrintOrders references from the printer
 // @desc    Delete sales location
-// @route   PATCH /printers/:printerId/deleteReferenceFromPrinter/:salesLocationAllowedToPrintOrderId
+// @route   PATCH /printers/:printerId/deleteConfigurationSetupFromPrinter/:configurationSetupToPrintOrdersId
 // @access  Private
 export const PATCH = async (
   req: Request,
   context: {
     params: {
       printerId: Types.ObjectId;
-      salesLocationAllowedToPrintOrderId: Types.ObjectId;
+      configurationSetupToPrintOrdersId: Types.ObjectId;
     };
   }
 ) => {
   try {
-    const { printerId, salesLocationAllowedToPrintOrderId } = context.params;
+    const { printerId, configurationSetupToPrintOrdersId } = context.params;
 
     // Validate input
     if (
-      isObjectIdValid([printerId, salesLocationAllowedToPrintOrderId]) !== true
+      isObjectIdValid([printerId, configurationSetupToPrintOrdersId]) !== true
     ) {
       return new NextResponse(
         JSON.stringify({
-          message: "Invalid printerId or salesLocationAllowedToPrintOrderId!",
+          message: "Invalid printerId or configurationSetupToPrintOrdersId!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -47,8 +47,8 @@ export const PATCH = async (
       },
       {
         $pull: {
-          salesLocationAllowedToPrintOrder: {
-            _id: salesLocationAllowedToPrintOrderId,
+          configurationSetupToPrintOrders: {
+            _id: configurationSetupToPrintOrdersId,
           },
         },
       },
@@ -62,7 +62,7 @@ export const PATCH = async (
     if (!updatedPrinter) {
       return new NextResponse(
         JSON.stringify({
-          message: "Sales location allowed to print order not found!",
+          message: "Configuration setup to print orders not found!",
         }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
@@ -70,11 +70,14 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Sales location allowed to print order successfully deleted!",
+        message: "Configuration setup to print orders successfully deleted!",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    return handleApiError("Delete printFor entry failed!", error);
+    return handleApiError(
+      "Delete configuration setup to print orders failed!",
+      error
+    );
   }
 };

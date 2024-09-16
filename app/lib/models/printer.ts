@@ -10,7 +10,7 @@ import { mainCategories, printerStatus } from "../enums";
 //   "business": "60d5ecb8b3920c56aef7e633",
 //   "backupPrinter": "60d5ecb8b3333356aef7e633",
 //   "usersAllowedToPrintDataIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"],
-//   "salesLocationAllowedToPrintOrder": [
+//   "configurationSetupToPrintOrders": [
 //     {
 //       "printFromSalesLocation": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"],
 //       "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"],
@@ -37,13 +37,13 @@ const printerSchema = new Schema(
     }, // business that owns the printer
     backupPrinterId: { type: Schema.Types.ObjectId, ref: "Printer" }, // printer reference to print if this printer has an error
     usersAllowedToPrintDataIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users can print data - users are allowed to print from one printer only
-    salesLocationAllowedToPrintOrder: [
+    configurationSetupToPrintOrders: [
       {
-        printFromSalesLocationReferenceIds: {
+        salesLocationReferenceIds: {
           type: [Schema.Types.ObjectId],
           ref: "SalesLocation",
           required: true,
-        }, // which sales location can print orders here
+        }, // which sales location will use this print with this configuration
         excludeUserIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users are not allowed to print from this printer
         mainCategory: {
           type: String,

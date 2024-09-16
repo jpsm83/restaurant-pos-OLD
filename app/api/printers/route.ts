@@ -29,7 +29,7 @@ export const GET = async (req: Request) => {
       model: User,
     })
     .populate({
-      path: "salesLocationAllowedToPrintOrder.printFromSalesLocationReferenceIds",
+      path: "configurationSetupToPrintOrders.salesLocationReferenceIds",
       select: "salesLocation",
       model: Business,
     })

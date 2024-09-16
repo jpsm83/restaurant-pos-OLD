@@ -10,53 +10,54 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import Printer from "@/app/lib/models/printer";
 
 // imported interfaces
-import { ISalesLocationAllowedToPrintOrder } from "@/app/lib/interface/IPrinter";
+import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 
-// this route will edit individual salesLocationAllowedToPrintOrder references from the printer
+// this route will edit individual configurationSetupToPrintOrders references from the printer
 // @desc    Delete sales location
-// @route   PATCH /printers/:printerId/editReferenceFromPrinter/:salesLocationAllowedToPrintOrderId
+// @route   PATCH /printers/:printerId/editConfigurationSetupFromPrinter/:configurationSetupToPrintOrdersId
 // @access  Private
 export const PATCH = async (
   req: Request,
   context: {
     params: {
       printerId: Types.ObjectId;
-      salesLocationAllowedToPrintOrderId: Types.ObjectId;
+      configurationSetupToPrintOrdersId: Types.ObjectId;
     };
   }
 ) => {
   try {
-    const { printerId, salesLocationAllowedToPrintOrderId } = context.params;
+    const { printerId, configurationSetupToPrintOrdersId } = context.params;
     const {
-      printFromSalesLocationReferenceIds,
+      salesLocationReferenceIds,
       excludeUserIds,
       mainCategory,
       subCategories,
-    } = (await req.json()) as ISalesLocationAllowedToPrintOrder;
+    } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // Validate input
     if (
-      isObjectIdValid([printerId, salesLocationAllowedToPrintOrderId]) !== true
+      isObjectIdValid([printerId, configurationSetupToPrintOrdersId]) !== true
     ) {
       return new NextResponse(
         JSON.stringify({
-          message: "Invalid printerId or salesLocationAllowedToPrintOrderId!",
+          message: "Invalid printerId or configurationSetupToPrintOrdersId!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // check printFromSalesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check salesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !printFromSalesLocationReferenceIds ||
-      !Array.isArray(printFromSalesLocationReferenceIds) ||
-      isObjectIdValid(printFromSalesLocationReferenceIds) !== true ||
+      !salesLocationReferenceIds ||
+      salesLocationReferenceIds.length === 0 ||
+      !Array.isArray(salesLocationReferenceIds) ||
+      isObjectIdValid(salesLocationReferenceIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "printFromSalesLocationReferenceIds is required and must be an array of ObjectIds!",
+            "salesLocationReferenceIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -68,7 +69,8 @@ export const PATCH = async (
     // if excludeUserIds is provided, check if it is a valid array of ObjectIds
     if (excludeUserIds) {
       if (
-        !Array.isArray(excludeUserIds) || excludeUserIds.length === 0 ||
+        !Array.isArray(excludeUserIds) ||
+        excludeUserIds.length === 0 ||
         isObjectIdValid(excludeUserIds) !== true
       ) {
         return new NextResponse(
@@ -104,9 +106,9 @@ export const PATCH = async (
     // Check if the combination of mainCategory and any of the subCategories already exists
     const existingCombination = await Printer.findOne({
       _id: printerId,
-      salesLocationAllowedToPrintOrder: {
+      configurationSetupToPrintOrders: {
         $elemMatch: {
-          _id: { $ne: salesLocationAllowedToPrintOrderId }, // Exclude current salesLocationAllowedToPrintOrderId
+          _id: { $ne: configurationSetupToPrintOrdersId }, // Exclude current configurationSetupToPrintOrdersId
           mainCategory,
           $or: [
             { subCategories: { $exists: false } },
@@ -116,7 +118,7 @@ export const PATCH = async (
         },
       },
     }).lean();
-    
+
     if (existingCombination) {
       return new NextResponse(
         JSON.stringify({
@@ -131,16 +133,18 @@ export const PATCH = async (
     const updatedPrinter = await Printer.findOneAndUpdate(
       {
         _id: printerId,
-        "salesLocationAllowedToPrintOrder._id":
-          salesLocationAllowedToPrintOrderId,
+        "configurationSetupToPrintOrders._id":
+          configurationSetupToPrintOrdersId,
       },
       {
         $set: {
-          "salesLocationAllowedToPrintOrder.$.printFromSalesLocationReferenceIdss":
-            printFromSalesLocationReferenceIds, // Update printFromSalesLocationReferenceIds
-          "salesLocationAllowedToPrintOrder.$.excludeUserIds": excludeUserIds, // Update excludeUserIds
-          "salesLocationAllowedToPrintOrder.$.mainCategories": mainCategory, // Update mainCategories
-          "salesLocationAllowedToPrintOrder.$.subCategories": subCategories, // Update subCategories
+          "configurationSetupToPrintOrders.$.salesLocationReferenceIds":
+            salesLocationReferenceIds, // Update salesLocationReferenceIds
+          "configurationSetupToPrintOrders.$.excludeUserIds": excludeUserIds, // Update excludeUserIds
+          "configurationSetupToPrintOrders.$.mainCategory": mainCategory, // Update mainCategories
+          "configurationSetupToPrintOrders.$.subCategories": subCategories
+            ? subCategories
+            : [], // Update subCategories
         },
       },
       {
@@ -152,8 +156,7 @@ export const PATCH = async (
     if (!updatedPrinter) {
       return new NextResponse(
         JSON.stringify({
-          message:
-            "Printer or sales location allowed to print order not found!",
+          message: "Printer or configuration setup to print orders not found!",
         }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
@@ -161,13 +164,13 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Sales location allowed to print order updated successfully",
+        message: "Configuration setup to print orders updated successfully",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError(
-      "Update sales location allowed to print order failed!",
+      "Update configuration setup to print orders failed!",
       error
     );
   }

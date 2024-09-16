@@ -10,11 +10,20 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import Printer from "@/app/lib/models/printer";
 
 // imported interfaces
-import { ISalesLocationAllowedToPrintOrder } from "@/app/lib/interface/IPrinter";
+import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 
-// this route will add individual salesLocationAllowedToPrintOrder references to the printer
+// this route will add individual configurationSetupToPrintOrders configuration to the printer with their properties and the users that will apply to
+// [
+//   {
+//     "salesLocationReferenceIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the location that this configuration will apply
+//     "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the users that this configurarion wont apply
+//     "mainCategory": "Food", this will dictate what the printer will print as main category
+//     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
+//   },
+// ]
+
 // @desc    Delete sales location
-// @route   POST /printers/:printerId/addReferenceToPrinter
+// @route   POST /printers/:printerId/addConfigurationSetupToPrinter
 // @access  Private
 export const POST = async (
   req: Request,
@@ -25,11 +34,11 @@ export const POST = async (
   try {
     const printerId = context.params.printerId;
     const {
-      printFromSalesLocationReferenceIds,
-      excludeUserIds,
-      mainCategory,
-      subCategories,
-    } = (await req.json()) as ISalesLocationAllowedToPrintOrder;
+      salesLocationReferenceIds, // array of sales location ids
+      excludeUserIds, // array of user ids
+      mainCategory, // single string
+      subCategories, // array of strings
+    } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // validate printerId
     if (isObjectIdValid([printerId]) !== true) {
@@ -39,17 +48,18 @@ export const POST = async (
       });
     }
 
-    // check printFromSalesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check salesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !printFromSalesLocationReferenceIds ||
-      !Array.isArray(printFromSalesLocationReferenceIds) ||
-      isObjectIdValid(printFromSalesLocationReferenceIds) !== true ||
+      !salesLocationReferenceIds ||
+      salesLocationReferenceIds.length === 0 ||
+      !Array.isArray(salesLocationReferenceIds) ||
+      isObjectIdValid(salesLocationReferenceIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "printFromSalesLocationReferenceIds is required and must be an array of ObjectIds!",
+            "salesLocationReferenceIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -62,11 +72,12 @@ export const POST = async (
     if (excludeUserIds) {
       if (
         !Array.isArray(excludeUserIds) ||
+        excludeUserIds.length === 0 ||
         isObjectIdValid(excludeUserIds) !== true
       ) {
         return new NextResponse(
           JSON.stringify({
-            message: "excludeUserIds must be an array of ObjectIds!",
+            message: "ExcludeUserIds must be an array of ObjectIds!",
           }),
           {
             status: 400,
@@ -78,10 +89,10 @@ export const POST = async (
 
     // if subCategories is provided, check if it is an array of strings
     if (subCategories) {
-      if (!Array.isArray(subCategories)) {
+      if (!Array.isArray(subCategories) || subCategories.length === 0) {
         return new NextResponse(
           JSON.stringify({
-            message: "subCategories must be an array of strings!",
+            message: "SubCategories must be an array of strings!",
           }),
           {
             status: 400,
@@ -97,7 +108,7 @@ export const POST = async (
     // Check if the combination of mainCategory and any of the subCategories already exists
     const existingCombination = await Printer.findOne({
       _id: printerId,
-      salesLocationAllowedToPrintOrder: {
+      configurationSetupToPrintOrders: {
         $elemMatch: {
           mainCategory,
           $or: [
@@ -126,8 +137,8 @@ export const POST = async (
       },
       {
         $push: {
-          salesLocationAllowedToPrintOrder: {
-            printFromSalesLocationReferenceIds,
+          configurationSetupToPrintOrders: {
+            salesLocationReferenceIds,
             excludeUserIds,
             mainCategory,
             subCategories,
@@ -148,7 +159,7 @@ export const POST = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Sales location allowed add to printer successfully",
+        message: "Configuration setup to print orders add to printer successfully",
       }),
       {
         status: 201,
@@ -156,6 +167,6 @@ export const POST = async (
       }
     );
   } catch (error) {
-    return handleApiError("Sales location creation failed!", error);
+    return handleApiError("Configuration setup to print orders creation failed!", error);
   }
 };

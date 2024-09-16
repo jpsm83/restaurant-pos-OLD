@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 
-export interface ISalesLocationAllowedToPrintOrder {
-    printFromSalesLocationReferenceIds: Types.ObjectId[];
+export interface IConfigurationSetupToPrintOrders {
+    salesLocationReferenceIds: Types.ObjectId[];
     excludeUserIds?: Types.ObjectId[];
     mainCategory: string;
     subCategories?: string[];
@@ -16,5 +16,5 @@ export interface IPrinter {
     businessId: Types.ObjectId;
     backupPrinterId?: Types.ObjectId;
     usersAllowedToPrintDataIds?: Types.ObjectId[];
-    salesLocationAllowedToPrintOrder?: ISalesLocationAllowedToPrintOrder[];
+    configurationSetupToPrintOrders?: IConfigurationSetupToPrintOrders[];
 }
