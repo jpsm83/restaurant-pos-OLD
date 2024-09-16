@@ -23,7 +23,7 @@ export const GET = async (
     const purchaseId = context.params.purchaseId;
 
     // check if the purchaseId is a valid ObjectId
-    if (!isObjectIdValid([purchaseId])) {
+    if (isObjectIdValid([purchaseId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Purchase ID not valid!" }),
         {
@@ -87,8 +87,7 @@ export const PATCH = async (
     } = (await req.json()) as IPurchase;
 
     // check if ids are valid
-    const areIdsValid = isObjectIdValid([businessId, purchasedByUserId]);
-    if (areIdsValid !== true) {
+    if (isObjectIdValid([businessId, purchasedByUserId]) !== true) {
       return new NextResponse(
         JSON.stringify({
           message: "Supplier, business or user IDs not valid!",
@@ -127,7 +126,7 @@ export const PATCH = async (
 
     // Prepare the fields that need to be updated
     const updatePurchaseObj: Partial<IPurchase> = {};
-    
+
     if (title) updatePurchaseObj.title = title;
     if (purchaseDate) updatePurchaseObj.purchaseDate = purchaseDate;
     if (purchasedByUserId)

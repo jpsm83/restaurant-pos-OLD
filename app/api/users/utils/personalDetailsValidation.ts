@@ -8,7 +8,7 @@ export const personalDetailsValidation = (
     return "Personal details must be an object";
 
   // required fields
-  const requiredFields = [
+  const validKeys = [
     "firstName",
     "lastName",
     "nationality",
@@ -17,16 +17,21 @@ export const personalDetailsValidation = (
     "phoneNumber",
   ];
 
-  // check required fields
-  const missingField = requiredFields.find(
-    (field) =>
-      !personalDetails.hasOwnProperty(field) ||
-      personalDetails[field] === undefined ||
-      personalDetails[field] === "" ||
-      personalDetails[field] === null
-  );
+  // Check for any invalid keys
+  for (const key of Object.keys(personalDetails)) {
+    if (!validKeys.includes(key)) {
+      return `Invalid key: ${key}`;
+    }
+  }
 
-  if (missingField) return `${missingField} on user personal detail is required!`;
+  // Validate each parameter
+  for (const key of Object.keys(personalDetails)) {
+    const value = personalDetails[key as keyof IPersonalDetails];
+
+    if (value === undefined || value === null || value === "") {
+      return `${key} must have a value!`;
+    }
+  }
 
   return true;
 };

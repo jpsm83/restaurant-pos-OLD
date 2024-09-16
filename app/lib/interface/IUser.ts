@@ -22,16 +22,18 @@ export interface IUser {
   joinDate: Date;
   active: boolean;
   onDuty: boolean;
-  vacationDaysPerYear: number;
+  vacationDaysPerYear?: number;
   vacationDaysLeft: number;
   businessId: Types.ObjectId;
   currentShiftRole?: string;
   address?: IAddress;
   imageUrl?: string;
   contractHoursWeek?: number;
-  grossMonthlySalary?: number;
-  grossHourlySalary?: number;
-  netMonthlySalary?: number;
+  salary?: {
+    payFrequency: string;
+    grossSalary: number;
+    netSalary: number;
+  };
   terminatedDate?: Date;
   notifications?: { notificationId: Types.ObjectId; readFlag: boolean }[];
   comments?: string;

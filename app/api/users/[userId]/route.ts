@@ -1,20 +1,25 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
+import { Types } from "mongoose";
+
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { personalDetailsValidation } from "../utils/personalDetailsValidation";
+import { addressValidation } from "@/app/lib/utils/addressValidation";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { calculateVacationProportional } from "../utils/calculateVacationProportional";
+
+// imported interfaces
+import { IUser } from "@/app/lib/interface/IUser";
 
 // imported models
 import User from "@/app/lib/models/user";
 import Table from "@/app/lib/models/salesLocation";
 import Order from "@/app/lib/models/order";
 import Schedule from "@/app/lib/models/schedule";
-import { Types } from "mongoose";
-import { IUser } from "@/app/lib/interface/IUser";
 import Notification from "@/app/lib/models/notification";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { personalDetailsValidation } from "../utils/personalDetailsValidation";
-import { addressValidation } from "@/app/lib/utils/addressValidation";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { calculateVacationProportional } from "../utils/calculateVacationProportional";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get user by ID
 // @route   GET /users/:userId
@@ -26,7 +31,7 @@ export const GET = async (
   try {
     const userId = context.params.userId;
 
-    if (!userId || !Types.ObjectId.isValid(userId)) {
+    if (isObjectIdValid([userId]) !== true) {
       return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -64,14 +69,6 @@ export const PATCH = async (
 ) => {
   try {
     const userId = context.params.userId;
-
-    if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
     const {
       username,
       email,
@@ -88,11 +85,63 @@ export const PATCH = async (
       currentShiftRole,
       address,
       contractHoursWeek,
-      grossMonthlySalary,
-      netMonthlySalary,
+      salary,
       terminatedDate,
       comments,
     } = (await req.json()) as IUser;
+
+    // validate userId
+    if (isObjectIdValid([userId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "User ID is not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // prepare update object
+    const updateUserObj: Partial<IUser> = {};
+
+    // add address fields
+    if (address) {
+      const validAddress = addressValidation(address);
+      if (validAddress !== true) {
+        return new NextResponse(JSON.stringify({ message: validAddress }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      updateUserObj.address = address;
+    }
+
+    // check personalDetails validation
+    if (personalDetails) {
+      const checkPersonalDetailsValidation =
+        personalDetailsValidation(personalDetails);
+      if (checkPersonalDetailsValidation !== true) {
+        return new NextResponse(
+          JSON.stringify({ message: checkPersonalDetailsValidation }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      updateUserObj.personalDetails = personalDetails;
+    }
+
+    if (salary) {
+      const { payFrequency, grossSalary, netSalary } = salary;
+      if (!payFrequency || !grossSalary || !netSalary) {
+        return new NextResponse(
+          JSON.stringify({
+            message:
+              "Pay frequency, gross salary, and net salary are required!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      updateUserObj.salary = salary;
+    }
 
     // connect before first call to DB
     await connectDb();
@@ -114,143 +163,67 @@ export const PATCH = async (
     }).lean();
 
     if (duplicateUser) {
-      if (duplicateUser.active === true) {
-        return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an active user!",
-          }),
-          { status: 409, headers: { "Content-Type": "application/json" } }
-        );
-      } else {
-        return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          }),
-          { status: 409, headers: { "Content-Type": "application/json" } }
-        );
-      }
+      const message = duplicateUser.active
+        ? "Username, email, taxNumber, or idNumber already exists and user is active!"
+        : "Username, email, taxNumber, or idNumber already exists in an inactive user!";
+
+      return new NextResponse(JSON.stringify({ message }), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Ensure user.address is an object if it's undefined or null
-    // that is because address is not required on user creation
-    // if it does not exist, it will be created as an empty object to avoid errors
-    user.address = user.address ?? {};
-
-    // prepare update address object
-    const updatedAddress = {
-      country: address?.country ?? user.address.country ?? undefined,
-      state: address?.state ?? user.address.state ?? undefined,
-      city: address?.city ?? user.address.city ?? undefined,
-      street: address?.street ?? user.address.street ?? undefined,
-      buildingNumber:
-        address?.buildingNumber ?? user.address.buildingNumber ?? undefined,
-      postCode: address?.postCode ?? user.address.postCode ?? undefined,
-      region: address?.region ?? user.address.region ?? undefined,
-      additionalDetails:
-        address?.additionalDetails ??
-        user.address.additionalDetails ??
-        undefined,
-      coordinates:
-        address?.coordinates ?? user.address.coordinates ?? undefined,
-    };
-
-    // add address fields
-    if (address) {
-      const validAddress = addressValidation(updatedAddress);
-      if (validAddress !== true) {
-        return new NextResponse(JSON.stringify({ message: validAddress }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
+    // Hash password asynchronously only if it is provided
+    if (password) {
+      updateUserObj.password = await hash(password, 10);
     }
 
-    // prepare update personalDetails object
-    const updatedPersonalDetails = {
-      firstName: personalDetails?.firstName || user.personalDetails.firstName,
-      lastName: personalDetails?.lastName || user.personalDetails.lastName,
-      nationality:
-        personalDetails?.nationality || user.personalDetails.nationality,
-      gender: personalDetails?.gender || user.personalDetails.gender,
-      birthDate: personalDetails?.birthDate || user.personalDetails.birthDate,
-      phoneNumber:
-        personalDetails?.phoneNumber || user.personalDetails.phoneNumber,
-    };
-
-    // check personalDetails validation
-    const checkPersonalDetailsValidation = personalDetailsValidation(
-      updatedPersonalDetails
-    );
-    if (checkPersonalDetailsValidation !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: checkPersonalDetailsValidation }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
+    // Calculate vacationDaysLeft if relevant fields are updated
+    if (vacationDaysPerYear || joinDate) {
+      updateUserObj.vacationDaysLeft = calculateVacationProportional(
+        new Date(joinDate || user.joinDate),
+        vacationDaysPerYear || user.vacationDaysPerYear
       );
     }
 
-    // calculate vacation days if joinDate or vacationDaysPerYear are updated
-    let calculateVacationDaysPerYear: number | undefined;
-    if (
-      joinDate !== user.joinDate ||
-      vacationDaysPerYear !== user.vacationDaysPerYear
-    ) {
-      calculateVacationDaysPerYear = calculateVacationProportional(
-        new Date(joinDate),
-        vacationDaysPerYear
-      );
-    }
-
-    let grossHourlySalaryCalculation: number | undefined;
-    if (
-      typeof grossMonthlySalary === "number" &&
-      typeof contractHoursWeek === "number"
-    ) {
-      grossHourlySalaryCalculation =
-        grossMonthlySalary / (contractHoursWeek * 4);
-    } else {
-      grossHourlySalaryCalculation = undefined;
-    }
-
-    // prepare update object
-    const updatedUser = {
-      username: username || user.username,
-      email: email || user.email,
-      password: password ? await hash(password, 10) : user.password,
-      idType: idType || user.idType,
-      idNumber: idNumber || user.idNumber,
-      allUserRoles: allUserRoles || user.allUserRoles,
-      personalDetails: updatedPersonalDetails,
-      taxNumber: taxNumber || user.taxNumber,
-      joinDate: joinDate || user.joinDate,
-      active: active !== undefined ? active : user.active,
-      onDuty: onDuty !== undefined ? onDuty : user.onDuty,
-      vacationDaysPerYear: vacationDaysPerYear || user.vacationDaysPerYear,
-      vacationDaysLeft: calculateVacationDaysPerYear
-        ? calculateVacationDaysPerYear
-        : user.vacationDaysLeft,
-      currentShiftRole: currentShiftRole || user.currentShiftRole,
-      address: updatedAddress,
-      contractHoursWeek: contractHoursWeek || user.contractHoursWeek,
-      grossMonthlySalary: grossMonthlySalary || user.grossMonthlySalary,
-      grossHourlySalary: grossHourlySalaryCalculation || user.grossHourlySalary,
-      netMonthlySalary: netMonthlySalary || user.netMonthlySalary,
-      terminatedDate: terminatedDate || user.terminatedDate,
-      comments: comments || user.comments,
-    };
+    // Populate the update object with other provided fields
+    if (username) updateUserObj.username = username;
+    if (email) updateUserObj.email = email;
+    if (idType) updateUserObj.idType = idType;
+    if (idNumber) updateUserObj.idNumber = idNumber;
+    if (allUserRoles) updateUserObj.allUserRoles = allUserRoles;
+    if (taxNumber) updateUserObj.taxNumber = taxNumber;
+    if (joinDate) updateUserObj.joinDate = joinDate;
+    if (active !== undefined) updateUserObj.active = active;
+    if (onDuty !== undefined) updateUserObj.onDuty = onDuty;
+    if (vacationDaysPerYear)
+      updateUserObj.vacationDaysPerYear = vacationDaysPerYear;
+    if (currentShiftRole) updateUserObj.currentShiftRole = currentShiftRole;
+    if (contractHoursWeek) updateUserObj.contractHoursWeek = contractHoursWeek;
+    if (terminatedDate) updateUserObj.terminatedDate = terminatedDate;
+    if (comments) updateUserObj.comments = comments;
 
     // update the user
-    await User.findByIdAndUpdate(userId, updatedUser, {
-      new: true,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateUserObj },
+      {
+        new: true,
+        lean: true,
+      }
+    );
+
+    // Check if the purchase was found and updated
+    if (!updatedUser) {
+      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     return new NextResponse(
       JSON.stringify({
-        message: `User ${updatedUser.username} updated successfully!`,
+        message: `User ${updateUserObj.username} updated successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -261,6 +234,7 @@ export const PATCH = async (
 
 // delete an user shouldnt be allowed for data integrity, historical purposes and analytics
 // the only case where an user should be deleted is if the business itself is deleted
+// If you delete a user from the database and there are other documents that have a relationship with that user, those related documents may still reference the deleted user. This can lead to issues such as orphaned records, broken references, and potential errors when querying or processing those related documents.
 // @desc    Delete user
 // @route   DELETE /users/:userId
 // @access  Private
@@ -271,7 +245,8 @@ export const DELETE = async (
   try {
     const userId = context.params.userId;
 
-    if (!userId || !Types.ObjectId.isValid(userId)) {
+    // check if the userId is a valid ObjectId
+    if (!isObjectIdValid([userId])) {
       return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -289,48 +264,6 @@ export const DELETE = async (
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
-    } else {
-      // Delete all related data in parallel
-      await Promise.all([
-        // remove the user from all orders
-        Order.updateMany(
-          { user: userId },
-          { $pull: { user: userId } },
-          { new: true }
-        ),
-
-        // remove the user from all tables
-        Table.updateMany(
-          { openedBy: userId },
-          { $pull: { openedBy: userId } },
-          { new: true }
-        ),
-        Table.updateMany(
-          { $or: [{ responsableBy: userId }, { closedBy: userId }] },
-          { $pull: { responsableBy: userId, closedBy: userId } },
-          { multi: true }
-        ),
-
-        // remove the user from all schedules
-        Schedule.updateMany(
-          { "employees.employee": userId },
-          { $pull: { employees: { employee: userId } } },
-          { multi: true }
-        ),
-
-        // remove the user from all daily reports
-        DailySalesReport.updateMany(
-          { "usersDailySalesReport.user": userId },
-          { $pull: { usersDailySalesReport: { user: userId } } },
-          { multi: true }
-        ),
-
-        // Remove the user from all notifications
-        Notification.updateMany(
-          { recipient: userId },
-          { $pull: { recipient: userId } }
-        ),
-      ]);
     }
 
     return new NextResponse(

@@ -2,7 +2,6 @@ import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
 import { idTypes, userRoles } from "../enums.js";
 
-
 const personalDetailsSchema = new Schema({
   // required fields
   firstName: { type: String, required: true }, // first name
@@ -37,8 +36,8 @@ const userSchema = new Schema(
     joinDate: { type: Date, required: true }, // date when the user joined the business
     active: { type: Boolean, required: true, default: true }, // if the user is active, could be a sesonality worker
     onDuty: { type: Boolean, required: true, default: false }, // if the user is on duty, shift working right now
-    vacationDaysPerYear: { type: Number, required: true }, // days of holidays per year
-    vacationDaysLeft: { type: Number, required: true }, // days of holidays left
+    vacationDaysPerYear: { type: Number }, // days of holidays per year
+    vacationDaysLeft: { type: Number }, // days of holidays left
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
@@ -50,9 +49,15 @@ const userSchema = new Schema(
     address: addressSchema, // address of the user
     imageUrl: { type: String }, // photo of the user
     contractHoursWeek: { type: Number }, // contract hours per week
-    grossMonthlySalary: { type: Number }, // monthly user salary before taxes
-    grossHourlySalary: { type: Number }, // hourly user salary before taxes
-    netMonthlySalary: { type: Number }, // net user monthly salary after taxes
+    salary: {
+      payFrequency: {
+        type: String,
+        enum: ["Hourly", "Daily", "Weekly", "Monthly"],
+        required: true,
+      }, // frequency of the payment
+      grossSalary: { type: Number, required: true }, // hourly user salary before taxes
+      netSalary: { type: Number, required: true }, // net user salary after taxes
+    }, // net user salary after taxes
     terminatedDate: { type: Date }, // date when the user left the business
     notifications: {
       type: [
@@ -71,5 +76,5 @@ const userSchema = new Schema(
   { timestamps: true, minimize: false }
 );
 
-const User = models.User || model('User', userSchema);
+const User = models.User || model("User", userSchema);
 export default User;

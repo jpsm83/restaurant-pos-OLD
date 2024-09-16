@@ -1,19 +1,24 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 
-// imported models
-import User from "@/app/lib/models/user";
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+
+// imported interfaces
 import { IUser } from "@/app/lib/interface/IUser";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "./utils/calculateVacationProportional";
 
+// imported models
+import User from "@/app/lib/models/user";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
 // @desc    Get all users
 // @route   GET /users
 // @access  Private
-export const GET = async () => {
+export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
@@ -54,11 +59,10 @@ export const POST = async (req: Request) => {
       active,
       onDuty,
       vacationDaysPerYear,
-      business,
+      businessId,
       address,
       contractHoursWeek,
-      grossMonthlySalary,
-      netMonthlySalary,
+      salary,
       comments,
     } = (await req.json()) as IUser;
 
@@ -75,12 +79,25 @@ export const POST = async (req: Request) => {
       !joinDate ||
       active === undefined ||
       onDuty === undefined ||
-      !vacationDaysPerYear ||
-      !business
+      !businessId
     ) {
       return new NextResponse(
-        JSON.stringify({ message: "Missing required fields!" }),
+        JSON.stringify({
+          message:
+            "Username, email, password, idType, idNumber, allUserRoles, personalDetails, taxNumber, joinDate, active, onDuty and businessId are required fields!",
+        }),
         { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // validate businessId
+    if (isObjectIdValid([businessId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Business ID is not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -108,70 +125,66 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // connect before first call to DB
-    await connectDb();
-
-    // check for duplicates username, email, taxNumber and idNumber with same business ID
-    const duplicateUser: IUser | null = await User.findOne({
-      business,
-      $or: [{ username }, { email }, { taxNumber }, { idNumber }],
-    }).lean();
-
-    if (duplicateUser) {
-      if (duplicateUser.active === true) {
+    //if salary, validate fields
+    if (salary) {
+      if (!salary.payFrequency || !salary.grossSalary || !salary.netSalary) {
         return new NextResponse(
           JSON.stringify({
             message:
-              "Username, email, taxNumber or idNumber already exists in an active user!",
+              "Pay frequency, gross salary and net salary are required fields!",
           }),
-          { status: 409, headers: { "Content-Type": "application/json" } }
-        );
-      } else {
-        return new NextResponse(
-          JSON.stringify({
-            message:
-              "Username, email, taxNumber or idNumber already exists in an unactive user!",
-          }),
-          { status: 409, headers: { "Content-Type": "application/json" } }
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
     }
 
-    let grossHourlySalaryCalculation: number | undefined;
-    if (
-      typeof grossMonthlySalary === "number" &&
-      typeof contractHoursWeek === "number"
-    ) {
-      grossHourlySalaryCalculation =
-        grossMonthlySalary / (contractHoursWeek * 4);
-    } else {
-      grossHourlySalaryCalculation = undefined;
+    // connect before first call to DB
+    await connectDb();
+
+    // check for duplicates username, email, taxNumber and idNumber with same businessId ID
+    const duplicateUser: IUser | null = await User.findOne({
+      businessId,
+      $or: [{ username }, { email }, { taxNumber }, { idNumber }],
+    }).lean();
+
+    if (duplicateUser) {
+      const message = duplicateUser.active
+        ? "Username, email, taxNumber, or idNumber already exists and user is active!"
+        : "Username, email, taxNumber, or idNumber already exists in an inactive user!";
+
+      return new NextResponse(JSON.stringify({ message }), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // create user object with required fields
+    // Hash password asynchronously
+    const hashedPassword = await hash(password, 10);
+
+    // Calculate vacation days if provided
+    const vacationDaysLeft = vacationDaysPerYear
+      ? calculateVacationProportional(new Date(joinDate), vacationDaysPerYear)
+      : 0;
+
+    // Create the user object
     const newUser = {
       username,
       email,
-      password: await hash(password, 10),
+      password: hashedPassword,
       idType,
       idNumber,
-      allUserRoles,
-      personalDetails: personalDetails,
+      allUserRoles, // array
+      personalDetails, // object
       taxNumber,
       joinDate,
       active,
       onDuty,
-      vacationDaysPerYear,
-      vacationDaysLeft: calculateVacationProportional(
-        new Date(joinDate),
-        vacationDaysPerYear
-      ),
-      business,
-      address: address || undefined,
+      vacationDaysPerYear: vacationDaysPerYear || 0,
+      vacationDaysLeft,
+      businessId,
+      address: address || undefined, // object
       contractHoursWeek: contractHoursWeek || undefined,
-      grossMonthlySalary: grossMonthlySalary || undefined,
-      grossHourlySalary: grossHourlySalaryCalculation,
-      netMonthlySalary: netMonthlySalary || undefined,
+      salary: salary || undefined, // object
       comments: comments || undefined,
     };
 

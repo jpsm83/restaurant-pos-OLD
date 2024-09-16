@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import User from "@/app/lib/models/user";
 import { Types } from "mongoose";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc   Get user by bussiness ID
 // @route  GET /users/business/:businessId
@@ -18,7 +19,7 @@ export const GET = async (
   try {
     const businessId = context.params.businessId;
 
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid business ID!" }),
         {

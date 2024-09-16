@@ -228,7 +228,7 @@ export const POST = async (req: Request) => {
       purchaseDate,
       businessId,
       purchasedByUserId,
-      purchaseInventoryItems: defaultSupplierId ? null : purchaseInventoryItems,
+      purchaseInventoryItems: defaultSupplierId ? undefined : purchaseInventoryItems,
       oneTimePurchase: defaultSupplierId ? true : false,
       totalAmount,
       receiptId: receiptId || Date.now(),

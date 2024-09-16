@@ -36,15 +36,13 @@ export const addressValidation = (address: IAddress) => {
   ];
 
   // check required fields
-  const missingField = requiredFields.find(
-    (field) =>
-      !address.hasOwnProperty(field) ||
-      address[field] === undefined ||
-      address[field] === "" ||
-      address[field] === null
-  );
+  for (const key of Object.keys(address)) {
+    const value = address[key as keyof IAddress];
 
-  if (missingField) return `${missingField} on address is required!`;
+    if (value === undefined || value === null || value === "") {
+      return `${key} must have a value!`;
+    }
+  }
 
   return true;
 };

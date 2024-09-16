@@ -2,6 +2,7 @@ export const calculateVacationProportional = (
   joinDate: Date,
   vacationDaysPerYear: number
 ) => {
+  if(vacationDaysPerYear === 0) return 0;
   // Assuming joinDate is a Date object and vacationDaysPerYear is already defined
 
   const currentDate = new Date();

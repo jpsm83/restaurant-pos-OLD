@@ -1,8 +1,7 @@
-- refact all the code and change all the references names adding "Id" to its end in all models and logic / follow the order
 business - DONE
-users - reference routes to be tested, all the rest tested OK
+users - ready for testing
 salesLocation
-printers
+printers - DONE / create printers with users and sales location
 schedules
 suppliers
 supplierGoods
