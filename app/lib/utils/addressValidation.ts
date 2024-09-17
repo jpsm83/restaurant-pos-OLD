@@ -36,7 +36,7 @@ export const addressValidation = (address: IAddress) => {
   ];
 
   // check required fields
-  for (const key of Object.keys(address)) {
+  for (const key of requiredFields) {
     const value = address[key as keyof IAddress];
 
     if (value === undefined || value === null || value === "") {

@@ -1,6 +1,12 @@
 import { Types } from "mongoose";
 import { IAddress } from "./IAddress";
 
+export interface ISalary {
+  payFrequency: string;
+  grossSalary: number;
+  netSalary: number;
+}
+
 export interface IPersonalDetails {
   firstName: string;
   lastName: string;
@@ -29,11 +35,7 @@ export interface IUser {
   address?: IAddress;
   imageUrl?: string;
   contractHoursWeek?: number;
-  salary?: {
-    payFrequency: string;
-    grossSalary: number;
-    netSalary: number;
-  };
+  salary?: ISalary;
   terminatedDate?: Date;
   notifications?: { notificationId: Types.ObjectId; readFlag: boolean }[];
   comments?: string;

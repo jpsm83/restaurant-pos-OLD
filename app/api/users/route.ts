@@ -14,6 +14,7 @@ import { calculateVacationProportional } from "./utils/calculateVacationProporti
 // imported models
 import User from "@/app/lib/models/user";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import salaryValidation from "./utils/salaryValidation";
 
 // @desc    Get all users
 // @route   GET /users
@@ -77,14 +78,12 @@ export const POST = async (req: Request) => {
       !personalDetails ||
       !taxNumber ||
       !joinDate ||
-      active === undefined ||
-      onDuty === undefined ||
       !businessId
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Username, email, password, idType, idNumber, allUserRoles, personalDetails, taxNumber, joinDate, active, onDuty and businessId are required fields!",
+            "Username, email, password, idType, idNumber, allUserRoles, personalDetails, taxNumber, joinDate and businessId are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -127,12 +126,10 @@ export const POST = async (req: Request) => {
 
     //if salary, validate fields
     if (salary) {
-      if (!salary.payFrequency || !salary.grossSalary || !salary.netSalary) {
+      const salaryValidationResult = salaryValidation(salary);
+      if (salaryValidationResult !== true) {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Pay frequency, gross salary and net salary are required fields!",
-          }),
+          JSON.stringify({ message: salaryValidationResult }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }

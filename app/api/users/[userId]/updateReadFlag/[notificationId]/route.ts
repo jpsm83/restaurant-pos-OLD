@@ -36,8 +36,8 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // update the readFlag for the user notification
-    const updatedUser = await User.findByIdAndUpdate(
+    // Update the readFlag for the specific notification
+    const updatedUser = await User.findOneAndUpdate(
       {
         _id: userId,
         "notifications.notificationId": notificationId,

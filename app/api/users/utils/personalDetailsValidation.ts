@@ -4,8 +4,8 @@ export const personalDetailsValidation = (
   personalDetails: IPersonalDetails
 ) => {
   // check personalDetails is an object
-  if (typeof personalDetails !== "object" || personalDetails === null)
-    return "Personal details must be an object";
+  if (typeof personalDetails !== "object" || personalDetails === null || Object.keys(personalDetails).length !== 6)
+    return "Personal details must be an object of 6 keys!";
 
   // required fields
   const validKeys = [

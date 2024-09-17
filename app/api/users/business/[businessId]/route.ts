@@ -1,11 +1,13 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import User from "@/app/lib/models/user";
-import { Types } from "mongoose";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc   Get user by bussiness ID
 // @route  GET /users/business/:businessId
@@ -32,7 +34,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const users = await User.find({ business: businessId })
+    const users = await User.find({ businessId: businessId })
       .select("-password")
       .lean();
 

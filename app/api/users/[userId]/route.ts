@@ -20,6 +20,7 @@ import Schedule from "@/app/lib/models/schedule";
 import Notification from "@/app/lib/models/notification";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import salaryValidation from "../utils/salaryValidation";
 
 // @desc    Get user by ID
 // @route   GET /users/:userId
@@ -130,13 +131,10 @@ export const PATCH = async (
     }
 
     if (salary) {
-      const { payFrequency, grossSalary, netSalary } = salary;
-      if (!payFrequency || !grossSalary || !netSalary) {
+      const salaryValidationResult = salaryValidation(salary);
+      if (salaryValidationResult !== true) {
         return new NextResponse(
-          JSON.stringify({
-            message:
-              "Pay frequency, gross salary, and net salary are required!",
-          }),
+          JSON.stringify({ message: salaryValidationResult }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }

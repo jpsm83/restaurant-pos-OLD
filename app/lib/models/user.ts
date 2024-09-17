@@ -12,6 +12,16 @@ const personalDetailsSchema = new Schema({
   phoneNumber: { type: String, required: true }, // phone number
 });
 
+const salarySchema = new Schema({
+  payFrequency: {
+    type: String,
+    enum: ["Hourly", "Daily", "Weekly", "Monthly"],
+    required: true,
+  }, // frequency of the payment
+  grossSalary: { type: Number, required: true }, // hourly user salary before taxes
+  netSalary: { type: Number, required: true }, // net user salary after taxes
+});
+
 const userSchema = new Schema(
   {
     // required fields
@@ -49,15 +59,7 @@ const userSchema = new Schema(
     address: addressSchema, // address of the user
     imageUrl: { type: String }, // photo of the user
     contractHoursWeek: { type: Number }, // contract hours per week
-    salary: {
-      payFrequency: {
-        type: String,
-        enum: ["Hourly", "Daily", "Weekly", "Monthly"],
-        required: true,
-      }, // frequency of the payment
-      grossSalary: { type: Number, required: true }, // hourly user salary before taxes
-      netSalary: { type: Number, required: true }, // net user salary after taxes
-    }, // net user salary after taxes
+    salary: { type: salarySchema }, // salary of the user
     terminatedDate: { type: Date }, // date when the user left the business
     notifications: {
       type: [
