@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 import { createSalesLocation } from "../../salesLocation/utils/createSalesLocation";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // @desc    Create new orders
 // @route   POST /orders/transferOrderBetweenTables
@@ -53,6 +54,10 @@ export const POST = async (req: Request) => {
 
     let tableToTransferId;
 
+        // connect before first call to DB
+        await connectDb();
+
+    
     // we transfer tables following its salesLocation because table might not exist yet
     // check if tables exist and it is not closed
     const tableToTransfer: ISalesLocation | null = await Table.findOne({
@@ -64,18 +69,22 @@ export const POST = async (req: Request) => {
       .select("_id")
       .lean();
 
+         // create new salesLocation
+    const salesLocationObj = {
+      dailyReferenceNumber,
+      salesLocationReference,
+      guests,
+      status: status || "Occupied",
+      openedById,
+      responsibleById: openedById,
+      businessId,
+      clientName,
+    };
+
     if (tableToTransfer) {
       tableToTransferId = tableToTransfer._id;
     } else {
-      const newTable = await createSalesLocation(
-        salesLocation,
-        guests,
-        user,
-        user,
-        business,
-        clientName,
-        dailyReferenceNumber
-      );
+      const newTable = await createSalesLocation(salesLocationObj);
       if (!newTable) {
         return new NextResponse(
           JSON.stringify({ message: "Table creation for transfer failed!" }),

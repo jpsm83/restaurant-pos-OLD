@@ -4,76 +4,54 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import Table from "@/app/lib/models/salesLocation";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 import { Types } from "mongoose";
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 export const createSalesLocation = async (
-  salesLocationReference: string,
-  guests: number,
-  openedBy: Types.ObjectId,
-  responsibleBy: Types.ObjectId,
-  business: Types.ObjectId,
-  clientName: string | undefined | null,
-  dailyReferenceNumber: number
+  newSalesLocationObj: ISalesLocation
 ) => {
   try {
+    const requiredKeys = [
+      "dailyReferenceNumber",
+      "salesLocationReference",
+      "guests",
+      "status",
+      "openedById",
+      "responsibleById",
+      "businessId",
+    ];
+
     // check required fields
-    if (
-      !salesLocationReference ||
-      !guests ||
-      !openedBy ||
-      !responsibleBy ||
-      !business ||
-      !dailyReferenceNumber
-    ) {
-      return "SalesLocationReference, guest, openedBy, responsibleBy, business and dailyReferenceNumber are required!";
+    for (const key of requiredKeys) {
+      if (!(key in newSalesLocationObj)) {
+        return `${key} is missing!`;
+      }
     }
+
+    const {
+      dailyReferenceNumber,
+      openedById,
+      businessId,
+    } = newSalesLocationObj;
 
     // connect before first call to DB
     await connectDb();
 
-    // check if salesLocationReference exists in the business
-    const validateSalesLocationReference = await Business.findOne({
-      _id: business,
-      salesLocation: {
-        $elemMatch: { locationReferenceName: salesLocationReference }
-      }
-    });
-
-    // check if salesLocationReference exists in the business (pre set tables that can be used)
-    if (!validateSalesLocationReference) {
-      return "SalesLocationReference does not exist in this business!";
+    // Check if the user exists in the dailySalesReport
+    if (
+      !(await DailySalesReport.exists({
+        dailyReferenceNumber: dailyReferenceNumber,
+        businessId: businessId,
+        "usersDailySalesReport.userId": openedById,
+      }))
+    ) {
+      await addUserToDailySalesReport(openedById, businessId);
     }
 
-    // create a tables object with required fields
-    const tableObj = {
-      dailyReferenceNumber: dailyReferenceNumber,
-      salesLocationReference,
-      guests,
-      openedBy,
-      responsibleBy,
-      business,
-      clientName: clientName || undefined,
-    };
+    // Create the sales location and return it
+    const newSalesLocation = await Table.create(newSalesLocationObj);
 
-    // check if user exists in the dailySalesReport
-    const userDailySalesReport = await DailySalesReport.findOne({
-      dailyReferenceNumber: dailyReferenceNumber,
-      business,
-      "userDailySalesReportArray.user": openedBy,
-    }).lean();
-
-    // if user does not exist in the dailySalesReport, create it
-    if (!userDailySalesReport) {
-      await addUserToDailySalesReport(openedBy, tableObj.business);
-    }
-
-    // create the table
-    const newTable = await Table.create(tableObj);
-
-    if (newTable) {
-      return newTable;
-    } else {
-      return "Table not created!";
-    }
+    // transferOrderBetweenTables needs the table object to transfer orders
+    return newSalesLocation;
   } catch (error) {
     return "Create table failed!";
   }

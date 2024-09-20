@@ -64,7 +64,7 @@ export const POST = async (
       {
         _id: businessId,
         // Only prevent the update if both locationReferenceName and locationType already exist together
-        salesLocation: {
+        businessSalesLocation: {
           $not: {
             $elemMatch: {
               locationReferenceName,
@@ -75,14 +75,14 @@ export const POST = async (
       },
       {
         $push: {
-          salesLocation: {
+          businessSalesLocation: {
             locationReferenceName,
             locationType,
             selfOrdering,
           },
         },
       },
-      { new: true, fields: { salesLocation: 1 } } // Return updated salesLocation
+      { new: true, fields: { businessSalesLocation: 1 } } // Return updated businessSalesLocation
     );
 
     // Check if the update was successful
@@ -101,7 +101,7 @@ export const POST = async (
         { _id: businessId },
         {
           $pull: {
-            salesLocation: { locationReferenceName, locationType },
+            businessSalesLocation: { locationReferenceName, locationType },
           },
         }
       );
@@ -115,10 +115,10 @@ export const POST = async (
     await Business.updateOne(
       {
         _id: businessId,
-        "salesLocation.locationReferenceName": locationReferenceName,
-        "salesLocation.locationType": locationType,
+        "businessSalesLocation.locationReferenceName": locationReferenceName,
+        "businessSalesLocation.locationType": locationType,
       },
-      { $set: { "salesLocation.$.qrCode": qrCode } }
+      { $set: { "businessSalesLocation.$.qrCode": qrCode } }
     );
 
     return NextResponse.json(

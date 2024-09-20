@@ -38,5 +38,5 @@ export interface IBusiness {
   address: IAddress;
   metrics?: IMetrics;
   contactPerson?: string;
-  salesLocation?: IBusinessSalesLocation[];
+  businessSalesLocation?: IBusinessSalesLocation[];
 }

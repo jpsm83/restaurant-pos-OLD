@@ -48,7 +48,6 @@ export const GET = async (req: Request) => {
 export const POST = async (req: Request) => {
   // metrics is created upon updating the business
   // imageUrl are create or delete using cloudinaryActions routes
-  // salesLocation are created or deleted using createSalesLocation and deleteSalesLocation routes
   try {
     const {
       tradeName,

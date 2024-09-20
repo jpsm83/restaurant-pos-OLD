@@ -29,7 +29,7 @@ const orderSchema = new Schema(
     orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions
     orderCostPrice: { type: Number, required: true }, // cost price of the sun of product being sold regardless of any discounts, voids, or cancellations
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // user that made the order
-    tableId: {
+    salesLocationId: {
       type: Schema.Types.ObjectId,
       ref: "Table",
       required: true,

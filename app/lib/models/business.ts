@@ -48,7 +48,7 @@ const businessSchema = new Schema(
 
     // optional fields
     contactPerson: { type: String }, // Contact person of the company
-    salesLocation: [salesLocationSchema], // sales location reference and qr code of the company
+    businessSalesLocation: [salesLocationSchema], // sales location reference and qr code of the company
   },
   {
     timestamps: true,

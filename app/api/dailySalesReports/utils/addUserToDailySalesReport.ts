@@ -1,7 +1,6 @@
-import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { Types } from "mongoose";
-import { NextResponse } from "next/server";
 
 // add user to daily sales report
 export const addUserToDailySalesReport = async (
@@ -9,45 +8,29 @@ export const addUserToDailySalesReport = async (
   businessId: Types.ObjectId
 ) => {
   try {
-    // check required fields
-    if (!userId || !businessId) {
-      return "UserId, and businessId are required!";
+    // validate ids
+    if (isObjectIdValid([userId, businessId]) !== true) {
+      return "Invalid user or business ID!";
     }
 
-    // check open daily report exists
-    const dailySalesReport: IDailySalesReport | null =
-      await DailySalesReport.findOne({
+    // Find the open daily sales report and add the user in one operation
+    const updatedDailySalesReport = await DailySalesReport.findOneAndUpdate(
+      {
         isDailyReportOpen: true,
         business: businessId,
-      })
-        .select("_id usersDailySalesReport.user")
-        .lean();
+      },
+      {
+        $addToSet: { usersDailySalesReport: { userId } }, // Avoid duplicates
+      },
+      { new: true } // Return the updated document
+    ).lean();
 
-    if (!dailySalesReport) {
+    // If no daily sales report found
+    if (!updatedDailySalesReport) {
       return "Daily report not found!";
     }
 
-    // check if user already exists in the daily report
-    const userExists = dailySalesReport.usersDailySalesReport.find(
-      (username) => username.user == userId
-    );
-
-    if (userExists) {
-      return "User already exists in the daily report!";
-    }
-
-    // add user to the daily report
-    const userDailySalesReportObj = {
-      user: userId,
-    };
-
-    // update the document in the database
-    await DailySalesReport.findOneAndUpdate(
-      { _id: dailySalesReport._id },
-      { $push: { usersDailySalesReport: userDailySalesReportObj } },
-      { new: true }
-    );
-
+    // no need to return the updated document - just for testing purposes
     return "User added to daily report successfully!";
   } catch (error) {
     return "Failed to add user to daily report! " + error;

@@ -1,57 +1,64 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // import utils
-import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
+
+// import interfaces
+import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 
 // import models
-import SalesLocation from "@/app/lib/models/salesLocation";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
-import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
+import SalesLocation from "@/app/lib/models/salesLocation";
 
-// @desc    Get tables by ID
-// @route   GET /tables/:tableId
+// @desc    Get salesLocations by ID
+// @route   GET /salesLocations/:salesLocationId
 // @access  Private
 export const GET = async (
   req: Request,
-  context: { params: { tableId: Types.ObjectId } }
+  context: { params: { salesLocationId: Types.ObjectId } }
 ) => {
   try {
-    const tableId = context.params.tableId;
-    // validate tableId
-    if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid tableId!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    const salesLocationId = context.params.salesLocationId;
+
+    // validate salesLocationId
+    if (isObjectIdValid([salesLocationId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid salesLocationId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
     await connectDb();
 
-    const tables = await SalesLocation.findById(tableId)
+    const salesLocations = await SalesLocation.findById(salesLocationId)
       .populate({
-        path: "openedBy",
+        path: "openedById",
         select: "username currentShiftRole",
         model: User,
       })
       .populate({
-        path: "responsibleBy",
+        path: "responsibleById",
         select: "username currentShiftRole",
         model: User,
       })
       .populate({
-        path: "closedBy",
+        path: "closedById",
         select: "username currentShiftRole",
         model: User,
       })
       .populate({
-        path: "orders",
+        path: "ordersIds",
         select:
           "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoods",
         populate: {
@@ -63,12 +70,15 @@ export const GET = async (
       })
       .lean();
 
-    return !tables
-      ? new NextResponse(JSON.stringify({ message: "SalesLocation not found!" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        })
-      : new NextResponse(JSON.stringify(tables), {
+    return !salesLocations
+      ? new NextResponse(
+          JSON.stringify({ message: "SalesLocation not found!" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      : new NextResponse(JSON.stringify(salesLocations), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
@@ -77,80 +87,63 @@ export const GET = async (
   }
 };
 
-// @desc    Update tables
-// @route   PATCH /tables/:tableId
+// salesLocationReference and ordersIds doesnt get updated here, we got separate routes for that
+// @desc    Update salesLocations
+// @route   PATCH /salesLocations/:salesLocationId
 // @access  Private
 export const PATCH = async (
   req: Request,
-  context: { params: { tableId: Types.ObjectId } }
+  context: { params: { salesLocationId: Types.ObjectId } }
 ) => {
   try {
-    const tableId = context.params.tableId;
-    // validate tableId
-    if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid tableId!" }), {
+    const salesLocationId = context.params.salesLocationId;
+
+    // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so user can see the total price, net price, net paid and tips in real time
+    const { guests, status, responsibleById, clientName, closedById } =
+      (await req.json()) as ISalesLocation;
+
+    // Validate ObjectIds in one step for better performance
+    const idsToValidate = [salesLocationId];
+    if (responsibleById) idsToValidate.push(responsibleById);
+    if (closedById) idsToValidate.push(closedById);
+
+    // validate ids
+    if (!isObjectIdValid(idsToValidate)) {
+      return new NextResponse(JSON.stringify({ message: "Invalid IDs!" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so user can see the total price, net price, net paid and tips in real time
-    const {
-      guests,
-      status,
-      responsibleBy,
-      clientName,
-      closedBy,
-    } = (await req.json()) as ISalesLocation;
-
     // connect before first call to DB
     await connectDb();
 
-    // check if salesLocation exists
-    const salesLocation: ISalesLocation | null = await SalesLocation.findById(tableId).lean();
+    // get the salesLocation
+    const salesLocation: ISalesLocation | null = await SalesLocation.findById(
+      salesLocationId
+    )
+      .select("openedById businessId status ordersIds")
+      .lean();
+
     if (!salesLocation) {
-      return new NextResponse(JSON.stringify({ message: "SalesLocation not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "SalesLocation not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    // prepare the tableObj to update
-    let updatedTable = {
-      guests: guests || salesLocation.guests,
-      status: status || salesLocation.status,
-      responsibleBy: responsibleBy || salesLocation.responsibleBy,
-      clientName: clientName || salesLocation.clientName,
-    };
-
-    // The order controller would handle the creation of orders and updating the relevant salesLocation's order array. The salesLocation controller would then only be responsible for reading and managing salesLocation data, not order data. This separation of concerns makes the code easier to maintain and understand.
-
-    // function closeOrders will automaticaly close the salesLocation once all OPEN orders are closed
-
-    // if salesLocation is transferred to another user, and that is the first salesLocation from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
-    if (responsibleBy && responsibleBy !== salesLocation.openedBy) {
-      // check if user exists in the dailySalesReport
-      const userDailySalesReport = await DailySalesReport.findOne({
-        isDailyReportOpen: true,
-        business: salesLocation.business,
-        "usersDailySalesReport.user": responsibleBy,
-      }).lean();
-
-      // if user does not exist in the dailySalesReport, create it
-      if (!userDailySalesReport) {
-        await addUserToDailySalesReport(responsibleBy, salesLocation.business);
-      }
-    }
-
-    // if salesLocation is occupied and no orders, delete the salesLocation
+    // Handle deletion for occupied salesLocation without orders
     if (
       salesLocation.status === "Occupied" &&
-      (!salesLocation.orders || salesLocation.orders.length === 0)
+      (!salesLocation.ordersIds || salesLocation.ordersIds.length === 0)
     ) {
-      await SalesLocation.deleteOne({ _id: tableId });
+      await SalesLocation.deleteOne({ _id: salesLocationId });
       return new NextResponse(
         JSON.stringify({
-          message: "Occupied salesLocation with no orders been deleted!",
+          message: "Occupied salesLocation with no orders has been deleted!",
         }),
         {
           status: 200,
@@ -159,14 +152,51 @@ export const PATCH = async (
       );
     }
 
+    // prepare the tableObj to update
+    let updatedSalesLocationObj: Partial<ISalesLocation> = {};
+
+    if (guests) updatedSalesLocationObj.guests = guests;
+    if (status) updatedSalesLocationObj.status = status;
+    if (clientName) updatedSalesLocationObj.clientName = clientName;
+    if (closedById) {
+      updatedSalesLocationObj.closedById = closedById;
+    }
+    if (responsibleById) {
+      updatedSalesLocationObj.responsibleById = responsibleById;
+      // if salesLocation is transferred to another user, and that is the first salesLocation from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
+      if (responsibleById !== salesLocation?.openedById) {
+        // check if user exists in the dailySalesReport
+        if (
+          !(await DailySalesReport.findOne({
+            isDailyReportOpen: true,
+            business: salesLocation?.businessId,
+            "usersDailySalesReport.userId": responsibleById,
+          }).lean())
+        ) {
+          if (salesLocation?.businessId) {
+            await addUserToDailySalesReport(
+              responsibleById,
+              salesLocation.businessId
+            );
+          }
+        }
+      }
+    }
+
+    // The order controller would handle the creation of orders and updating the relevant salesLocation's order array. The salesLocation controller would then only be responsible for reading and managing salesLocation data, not order data. This separation of concerns makes the code easier to maintain and understand.
+
+    // function closeOrders will automaticaly close the salesLocation once all OPEN orders are closed
+
     // save the updated salesLocation
-    await SalesLocation.findOneAndUpdate({ _id: tableId }, updatedTable, {
-      new: true,
-    });
+    await SalesLocation.findOneAndUpdate(
+      { _id: salesLocationId },
+      { $set: updatedSalesLocationObj },
+      { new: true }
+    );
 
     return new NextResponse(
       JSON.stringify({
-        message: `SalesLocation ${salesLocation.salesLocationReference} updated successfully!`,
+        message: "SalesLocation updated successfully!",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -179,38 +209,19 @@ export const PATCH = async (
 // the only case where a salesLocation should be deleted is if the business itself is deleted
 // or if the salesLocation was created by mistake and it has no orders
 // @desc    Delete salesLocation
-// @route   DELETE /salesLocation/:tableId
+// @route   DELETE /salesLocation/:salesLocationId
 // @access  Private
 export const DELETE = async (
   req: Request,
-  context: { params: { tableId: Types.ObjectId } }
+  context: { params: { salesLocationId: Types.ObjectId } }
 ) => {
   try {
-    const tableId = context.params.tableId;
-    // validate tableId
-    if (!tableId || !Types.ObjectId.isValid(tableId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid tableId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+    const salesLocationId = context.params.salesLocationId;
 
-    // connect before first call to DB
-    await connectDb();
-
-    const salesLocation: ISalesLocation | null = await SalesLocation.findById(tableId).lean();
-
-    if (!salesLocation) {
-      return new NextResponse(JSON.stringify({ message: "SalesLocation not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // do not allow delete if salesLocation has orders
-    if ((salesLocation?.orders ?? []).length > 0) {
+    // validate salesLocationId
+    if (isObjectIdValid([salesLocationId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Cannot delete SALESLOCATION with orders!" }),
+        JSON.stringify({ message: "Invalid salesLocationId" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -218,12 +229,33 @@ export const DELETE = async (
       );
     }
 
+    // connect before first call to DB
+    await connectDb();
+
+    // do not allow delete if salesLocation has orders
     // delete the salesLocation
-    await SalesLocation.deleteOne({ _id: tableId });
+    const result = await SalesLocation.deleteOne({
+      _id: salesLocationId,
+      ordersIds: {
+        $or: [
+          { ordersIds: { $size: 0 } },
+          { ordersIds: { $exists: false } },
+        ],
+      },
+    });
+
+    if (result.deletedCount === 0) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Sales location not found or it has orders!",
+        }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     return new NextResponse(
       JSON.stringify({
-        message: `SalesLocation ${salesLocation.salesLocationReference} deleted successfully!`,
+        message: "Sales location deleted successfully!",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

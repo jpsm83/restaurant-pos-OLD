@@ -42,11 +42,11 @@ export const PATCH = async (
 
     // Find the business and sales location
     const business = await Business.findOne(
-      { _id: businessId, "salesLocation._id": salesLocationReferenceId },
-      { "salesLocation.$": 1 } // Only return the matching sales location
+      { _id: businessId, "businessSalesLocation._id": salesLocationReferenceId },
+      { "businessSalesLocation.$": 1 } // Only return the matching sales location
     );
 
-    if (!business || !business.salesLocation.length) {
+    if (!business || !business.businessSalesLocation.length) {
       return new NextResponse(
         JSON.stringify({ message: "Business or sales location not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -55,16 +55,16 @@ export const PATCH = async (
 
     // example of a cloudinary image url
     // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
-    const qrCode = business.salesLocation[0].qrCode;
+    const qrCode = business.businessSalesLocation[0].qrCode;
 
-    // delete location from salesLocation array
+    // delete location from businessSalesLocation array
     await Business.updateOne(
       {
         _id: businessId,
       },
       {
         $pull: {
-          salesLocation: {
+          businessSalesLocation: {
             _id: salesLocationReferenceId,
           },
         },
