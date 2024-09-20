@@ -9,7 +9,7 @@ import SalesLocation from "@/app/lib/models/salesLocation";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Create new tables
-// @route   PATCH /salesLocations/:salesLocationId/closeSalesLocation
+// @route   PATCH /salesLocation/:salesLocationId/closeSalesLocation
 // @access  Private
 export const PATCH = async (
   req: Request,

@@ -1,10 +1,13 @@
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import Business from "@/app/lib/models/business";
-import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import Table from "@/app/lib/models/salesLocation";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
-import { Types } from "mongoose";
+
+// imported interfaces
 import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
+
+// imported models
+import Table from "@/app/lib/models/salesLocation";
+import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 export const createSalesLocation = async (
   newSalesLocationObj: ISalesLocation
@@ -27,11 +30,8 @@ export const createSalesLocation = async (
       }
     }
 
-    const {
-      dailyReferenceNumber,
-      openedById,
-      businessId,
-    } = newSalesLocationObj;
+    const { dailyReferenceNumber, openedById, businessId } =
+      newSalesLocationObj;
 
     // connect before first call to DB
     await connectDb();

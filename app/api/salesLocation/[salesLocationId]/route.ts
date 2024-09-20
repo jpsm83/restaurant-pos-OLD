@@ -88,6 +88,7 @@ export const GET = async (
 };
 
 // salesLocationReference and ordersIds doesnt get updated here, we got separate routes for that
+// also sales locations doesnt get closed here, they get closed when all orders are closed automatically
 // @desc    Update salesLocations
 // @route   PATCH /salesLocations/:salesLocationId
 // @access  Private
@@ -99,16 +100,15 @@ export const PATCH = async (
     const salesLocationId = context.params.salesLocationId;
 
     // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so user can see the total price, net price, net paid and tips in real time
-    const { guests, status, responsibleById, clientName, closedById } =
+    const { guests, status, responsibleById, clientName } =
       (await req.json()) as ISalesLocation;
 
     // Validate ObjectIds in one step for better performance
     const idsToValidate = [salesLocationId];
     if (responsibleById) idsToValidate.push(responsibleById);
-    if (closedById) idsToValidate.push(closedById);
 
     // validate ids
-    if (!isObjectIdValid(idsToValidate)) {
+    if (isObjectIdValid(idsToValidate) !== true) {
       return new NextResponse(JSON.stringify({ message: "Invalid IDs!" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -138,7 +138,8 @@ export const PATCH = async (
     // Handle deletion for occupied salesLocation without orders
     if (
       salesLocation.status === "Occupied" &&
-      (!salesLocation.ordersIds || salesLocation.ordersIds.length === 0)
+      (!salesLocation.ordersIds || salesLocation.ordersIds.length === 0) &&
+      status !== "Reserved"
     ) {
       await SalesLocation.deleteOne({ _id: salesLocationId });
       return new NextResponse(
@@ -158,27 +159,22 @@ export const PATCH = async (
     if (guests) updatedSalesLocationObj.guests = guests;
     if (status) updatedSalesLocationObj.status = status;
     if (clientName) updatedSalesLocationObj.clientName = clientName;
-    if (closedById) {
-      updatedSalesLocationObj.closedById = closedById;
-    }
     if (responsibleById) {
       updatedSalesLocationObj.responsibleById = responsibleById;
       // if salesLocation is transferred to another user, and that is the first salesLocation from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
       if (responsibleById !== salesLocation?.openedById) {
         // check if user exists in the dailySalesReport
         if (
-          !(await DailySalesReport.findOne({
+          !(await DailySalesReport.exists({
             isDailyReportOpen: true,
             business: salesLocation?.businessId,
             "usersDailySalesReport.userId": responsibleById,
-          }).lean())
+          }))
         ) {
-          if (salesLocation?.businessId) {
-            await addUserToDailySalesReport(
-              responsibleById,
-              salesLocation.businessId
-            );
-          }
+          await addUserToDailySalesReport(
+            responsibleById,
+            salesLocation.businessId
+          );
         }
       }
     }
@@ -236,12 +232,7 @@ export const DELETE = async (
     // delete the salesLocation
     const result = await SalesLocation.deleteOne({
       _id: salesLocationId,
-      ordersIds: {
-        $or: [
-          { ordersIds: { $size: 0 } },
-          { ordersIds: { $exists: false } },
-        ],
-      },
+      $or: [{ ordersIds: { $size: 0 } }, { ordersIds: { $exists: false } }],
     });
 
     if (result.deletedCount === 0) {

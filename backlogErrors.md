@@ -1,7 +1,12 @@
 business - DONE
 users - DONE
-salesLocation - ready for testing
+
+dailySalesReports - test everything that is open
+
+salesLocation - DONE
+
 printers - DONE / create printers with users and sales location / check the relation between business sales location and printer when you erase a printer
+
 schedules
 suppliers
 supplierGoods
@@ -10,7 +15,6 @@ promotions
 orders
 purchaeses
 inventories
-dailySalesReports
 notifications
 cloudinaryActions
 
@@ -24,3 +28,5 @@ on business model, salesLocation is not an array of strings as used to be
 now is an array of objects
 this will cause errors if code is not update
 *****************************************************************************
+
+- daily saler report have to be tested once we got all the models tested and with data

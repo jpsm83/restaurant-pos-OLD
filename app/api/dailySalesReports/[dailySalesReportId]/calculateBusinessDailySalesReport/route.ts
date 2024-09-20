@@ -2,19 +2,20 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
+// imported utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { updateUsersDailySalesReport } from "../../utils/updateUserDailySalesReport";
+
 // imported interfaces
 import { IUserDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import { IUser } from "@/app/lib/interface/IUser";
-import { IPayment } from "@/app/lib/interface/IPayment";
-
-// imported utils
-import { updateUserDailySalesReportGeneric } from "../../utils/updateUserDailySalesReportGeneric";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import Business from "@/app/lib/models/business";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 
 interface IBusinessGood {
   good: Types.ObjectId;
@@ -23,32 +24,27 @@ interface IBusinessGood {
   totalCostPrice: number;
 }
 
-// @desc    Create new notifications
-// @route   POST /dailySalesReports/:dailySalesReportId/calculateBusinessDailySalesReport
+// @desc    Calculate the business daily sales report
+// @route   PATCH /dailySalesReports/:dailySalesReportId/calculateBusinessDailySalesReport
 // @access  Private
-export const POST = async (req: Request, context: { params: { dailySalesReportId: Types.ObjectId } }) => {
+export const PATCH = async (
+  req: Request,
+  context: { params: { dailySalesReportId: Types.ObjectId } }
+) => {
   // this function will call the updateUserDailySalesReportGeneric function to update the user daily sales report
   // them it will update the whole business daily sales report
   // this is called by mananger or admin
   try {
+    const dailySalesReportId = context.params.dailySalesReportId;
+
     const { userId } = (await req.json()) as {
       userId: Types.ObjectId;
     };
 
-    const dailySalesReportId = context.params.dailySalesReportId;
-
-    // check if the userId is valid
-    if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid userId!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // check if the dailySalesReportId is valid
-    if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
+    // check if the ID is valid
+    if (isObjectIdValid([dailySalesReportId, userId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid dailySalesReportId!" }),
+        JSON.stringify({ message: "Invalid dailySalesReport or user ID!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -57,7 +53,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
     await connectDb();
 
     // check if the user is "General Manager", "Manager", "Assistant Manager", "MoD" or "Admin"
-    const userRoleOnDuty: IUser | null = await User.findOne({ _id: userId })
+    const userRoleOnDuty: IUser | null = await User.findById(userId)
       .select("currentShiftRole onDuty")
       .lean();
 
@@ -87,10 +83,10 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
       _id: dailySalesReportId,
     })
       .select(
-        "_id dailyReferenceNumber usersDailySalesReport.user usersDailySalesReport.hasOpenTables business"
+        "_id dailyReferenceNumber usersDailySalesReport.userId usersDailySalesReport.hasOpenTables business"
       )
       .populate({
-        path: "usersDailySalesReport.user",
+        path: "usersDailySalesReport.userId",
         select: "username",
         model: User,
       })
@@ -102,6 +98,33 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
       return new NextResponse(
         JSON.stringify({ message: "Daily report not found!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const userIds = dailySalesReport.usersDailySalesReport.map(
+      (user: any) => user.userId
+    );
+
+    // Call the function to update the daily sales reports for the users
+    const updatedUsersDailySalesReport = (await updateUsersDailySalesReport(
+      userIds,
+      dailySalesReport.dailyReferenceNumber
+    )) as { updatedUsers: IUserDailySalesReport[]; errors: string[] };
+
+    // Check if there were any errors
+    if (
+      updatedUsersDailySalesReport.errors &&
+      updatedUsersDailySalesReport.errors.length > 0
+    ) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Some errors occurred while updating users!",
+          errors: updatedUsersDailySalesReport.errors,
+        }),
+        {
+          status: 207, // Multi-Status to indicate partial success
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -118,7 +141,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
 
     // prepare dailySalesReportObj to update the daily report
     let dailySalesReportObj = {
-      businessPaymentMethods: [] as IPayment[],
+      businessPaymentMethods: [] as IPaymentMethod[],
       dailyTotalSalesBeforeAdjustments: 0,
       dailyNetPaidAmount: 0,
       dailyTipsReceived: 0,
@@ -134,39 +157,19 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
       dailyPosSystemCommission: 0,
     };
 
-    // Update each user's daily sales report
-    const updateUsersDailySalesReport: IUserDailySalesReport[] =
-      await Promise.all(
-        dailySalesReport.usersDailySalesReport.map(async (user: any) => {
-          try {
-            // Get the user daily sales report object
-            return await updateUserDailySalesReportGeneric(
-              user.user,
-              dailySalesReport.dailyReferenceNumber
-            );
-          } catch (error) {
-            return new NextResponse(
-              JSON.stringify({
-                message: "Failed to update user daily sales report! " + error,
-              }),
-              { status: 400, headers: { "Content-Type": "application/json" } }
-            );
-          }
-        })
-      );
-
     // Ensure updateUsersDailySalesReport is an array of IUserDailySalesReport
     if (Array.isArray(updateUsersDailySalesReport)) {
       updateUsersDailySalesReport.forEach((userReport) => {
         // Check if userPaymentMethods is defined before iterating
         if (userReport.userPaymentMethods) {
-          userReport.userPaymentMethods.forEach((payment: IPayment) => {
+          userReport.userPaymentMethods.forEach((payment: IPaymentMethod) => {
             // Find if the payment method and branch combination already exists in the dailySalesReportObj.userPaymentMethods array
-            const existingPayment = dailySalesReportObj.businessPaymentMethods.find(
-              (p: IPayment) =>
-                p.paymentMethodType === payment.paymentMethodType &&
-                p.methodBranch === payment.methodBranch
-            );
+            const existingPayment =
+              dailySalesReportObj.businessPaymentMethods.find(
+                (p: IPaymentMethod) =>
+                  p.paymentMethodType === payment.paymentMethodType &&
+                  p.methodBranch === payment.methodBranch
+              );
 
             if (existingPayment) {
               // If it exists, add the current payment's methodSalesTotal to the existing one
@@ -186,8 +189,10 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
           userReport.totalSalesBeforeAdjustments ?? 0;
         dailySalesReportObj.dailyNetPaidAmount +=
           userReport.totalNetPaidAmount ?? 0;
-        dailySalesReportObj.dailyTipsReceived += userReport.totalTipsReceived ?? 0;
-        dailySalesReportObj.dailyCostOfGoodsSold += userReport.totalCostOfGoodsSold ?? 0;
+        dailySalesReportObj.dailyTipsReceived +=
+          userReport.totalTipsReceived ?? 0;
+        dailySalesReportObj.dailyCostOfGoodsSold +=
+          userReport.totalCostOfGoodsSold ?? 0;
         dailySalesReportObj.dailyCustomersServed +=
           userReport.totalCustomersServed ?? 0;
 
@@ -213,20 +218,14 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
         };
 
         // Populate and reduce all the goods sold
-        if (
-          userReport.soldGoods &&
-          userReport.soldGoods.length > 0
-        ) {
+        if (userReport.soldGoods && userReport.soldGoods.length > 0) {
           userReport.soldGoods.forEach((businessGood: any) => {
             updateGoodsArray(businessGoodsReport.goodsSold, businessGood);
           });
         }
 
         // Populate and reduce all the goods void
-        if (
-          userReport.voidedGoods &&
-          userReport.voidedGoods.length > 0
-        ) {
+        if (userReport.voidedGoods && userReport.voidedGoods.length > 0) {
           userReport.voidedGoods.forEach((businessGood: any) => {
             updateGoodsArray(businessGoodsReport.goodsVoid, businessGood);
           });
@@ -256,8 +255,7 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
 
     dailySalesReportObj.dailySoldGoods = businessGoodsReport.goodsSold;
     dailySalesReportObj.dailyVoidedGoods = businessGoodsReport.goodsVoid;
-    dailySalesReportObj.dailyInvitedGoods =
-      businessGoodsReport.goodsInvited;
+    dailySalesReportObj.dailyInvitedGoods = businessGoodsReport.goodsInvited;
 
     dailySalesReportObj.dailyTotalVoidValue =
       dailySalesReportObj.dailyVoidedGoods.reduce(
@@ -293,7 +291,8 @@ export const POST = async (req: Request, context: { params: { dailySalesReportId
 
     // calculate the comission of the POS system app
     dailySalesReportObj.dailyPosSystemCommission =
-      dailySalesReportObj.dailyTotalSalesBeforeAdjustments * comissionPercentage;
+      dailySalesReportObj.dailyTotalSalesBeforeAdjustments *
+      comissionPercentage;
 
     // update the document in the database
     await DailySalesReport.findOneAndUpdate(

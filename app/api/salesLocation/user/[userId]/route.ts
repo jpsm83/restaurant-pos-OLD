@@ -22,54 +22,57 @@ export const GET = async (
   try {
     const userId = context.params.userId;
 
-        // validate salesLocationId
-        if (isObjectIdValid([userId]) !== true) {
-          return new NextResponse(
-            JSON.stringify({ message: "Invalid salesLocationId!" }),
-            {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+    // validate salesLocationId
+    if (isObjectIdValid([userId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid salesLocationId!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
         }
-        
+      );
+    }
+
     // connect before first call to DB
     await connectDb();
 
     const salesLocations = await SalesLocation.find({ responsibleById: userId })
-    .populate({
-      path: "openedById",
-      select: "username currentShiftRole",
-      model: User,
-    })
-    .populate({
-      path: "responsibleById",
-      select: "username currentShiftRole",
-      model: User,
-    })
-    .populate({
-      path: "closedById",
-      select: "username currentShiftRole",
-      model: User,
-    })
-    .populate({
-      path: "ordersIds",
-      select:
-        "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoods",
-      populate: {
-        path: "businessGoods",
-        select: "name mainCategory subCategory allergens sellingPrice",
-        model: BusinessGood,
-      },
-      model: Order,
-    })
-    .lean();
+      .populate({
+        path: "openedById",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "responsibleById",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "closedById",
+        select: "username currentShiftRole",
+        model: User,
+      })
+      .populate({
+        path: "ordersIds",
+        select:
+          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoods",
+        populate: {
+          path: "businessGoods",
+          select: "name mainCategory subCategory allergens sellingPrice",
+          model: BusinessGood,
+        },
+        model: Order,
+      })
+      .lean();
 
     return !salesLocations.length
-      ? new NextResponse(JSON.stringify({ message: "No salesLocations found!" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        })
+      ? new NextResponse(
+          JSON.stringify({ message: "No salesLocations found!" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
       : new NextResponse(JSON.stringify(salesLocations), {
           status: 200,
           headers: { "Content-Type": "application/json" },

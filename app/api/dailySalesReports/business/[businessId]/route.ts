@@ -1,12 +1,13 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get daily reports by business ID, startDate and endDate
 // @route   GET /dailySalesReports/business/:businessId?startDate=<date>&endDate=<date>
@@ -21,7 +22,7 @@ export const GET = async (
     const businessId = context.params.businessId;
 
     // check if the ID is valid
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid business ID!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -47,9 +48,9 @@ export const GET = async (
 
     // Build query based on the presence of startDate and endDate
     let query: {
-      business: Types.ObjectId;
+      businessId: Types.ObjectId;
       createdAt?: { $gte?: Date | null; $lte?: Date | null };
-    } = { business: businessId };
+    } = { businessId: businessId };
 
     if (startDate && endDate) {
       if (startDate > endDate) {
@@ -74,7 +75,7 @@ export const GET = async (
 
     // fetch daily reports with the given business ID and date
     const dailySalesReports = await DailySalesReport.find(query)
-      .populate("usersDailySalesReport.user", "username")
+      .populate("usersDailySalesReport.userId", "username")
       .lean();
 
     return !dailySalesReports.length

@@ -1,28 +1,27 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
+
+// import utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { addUserToDailySalesReport } from "./utils/addUserToDailySalesReport";
+import { createDailySalesReport } from "./utils/createDailySalesReport";
 
 // import models
 import User from "@/app/lib/models/user";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-
-// import utils
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { addUserToDailySalesReport } from "./utils/addUserToDailySalesReport";
-import { createDailySalesReport } from "./utils/createDailySalesReport";
-import { updateUserDailySalesReportGeneric } from "./utils/updateUserDailySalesReportGeneric";
-import { closeDailySalesReport } from "./utils/closeDailySalesReport";
+import { updateUsersDailySalesReport } from "./utils/updateUserDailySalesReport";
 
 // @desc    Get all daily reports
 // @route   GET /dailySalesReports
 // @access  Private
-export const GET = async () => {
+export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
 
     const dailySalesReports = await DailySalesReport.find()
       .populate({
-        path: "usersDailySalesReport.user",
+        path: "usersDailySalesReport.userId",
         select: "username",
         model: User,
       })
@@ -45,21 +44,18 @@ export const GET = async () => {
 // // POST request for helper funtions
 // export const POST = async (req: Request) => {
 //   try {
-//     const userId = "66758b8904c4e6f5bbaa6b81";
-//     const dailyReferenceNumber = 1723974290376;
-//     const businessId = "6673fed98c45d0a0ca5f34c1";
+//     const userId = "66e92e066a5cfcc2a707696b";
+//     const dailyReferenceNumber = 1726831208559;
+//     const businessId = "66e169a709901431386c97cb";
 
-//     // // @ts-ignore
-//     // const result = await addUserToDailySalesReport(userId, businessId);
+//     // @ts-ignore
+//     const result = await addUserToDailySalesReport(userId, businessId);
 
 //     // // @ts-ignore
 //     // const result = await createDailySalesReport(businessId);
 
 //     // // @ts-ignore
-//     // const result = await updateUserDailySalesReportGeneric(userId, dailyReferenceNumber);
-
-//     // @ts-ignore
-//     const result = await closeDailySalesReport(dailyReferenceNumber, businessId);
+//     // const result = await updateUsersDailySalesReport([userId], dailyReferenceNumber);
 
 //     return new NextResponse(JSON.stringify({ message: result }), {
 //       status: 201,

@@ -37,6 +37,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
 
     const dailySalesReport = await DailySalesReport.create(dailySalesReportObj);
 
+    // return daily reference number
     return dailySalesReport.dailyReferenceNumber;
   } catch (error) {
     return "Fail to create a deily sales report! " + error;

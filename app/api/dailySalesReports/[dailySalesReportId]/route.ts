@@ -1,13 +1,14 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
 // imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get daily report by ID
 // @route   GET /dailySalesReports/:dailySalesReportId
@@ -20,7 +21,7 @@ export const GET = async (
     const dailySalesReportId = context.params.dailySalesReportId;
 
     // check if the ID is valid
-    if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
+    if (isObjectIdValid([dailySalesReportId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid daily report ID!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -32,7 +33,7 @@ export const GET = async (
 
     const dailySalesReport = await DailySalesReport.findById(dailySalesReportId)
       .populate({
-        path: "usersDailySalesReport.user",
+        path: "usersDailySalesReport.userId",
         select: "username",
         model: User,
       })
@@ -65,7 +66,7 @@ export const DELETE = async (
     const dailySalesReportId = context.params.dailySalesReportId;
 
     // check if the ID is valid
-    if (!dailySalesReportId || !Types.ObjectId.isValid(dailySalesReportId)) {
+    if (isObjectIdValid([dailySalesReportId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid daily report ID!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }

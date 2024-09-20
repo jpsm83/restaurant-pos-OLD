@@ -17,7 +17,7 @@ export const addUserToDailySalesReport = async (
     const updatedDailySalesReport = await DailySalesReport.findOneAndUpdate(
       {
         isDailyReportOpen: true,
-        business: businessId,
+        businessId: businessId,
       },
       {
         $addToSet: { usersDailySalesReport: { userId } }, // Avoid duplicates
