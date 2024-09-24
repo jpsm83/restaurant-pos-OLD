@@ -7,6 +7,7 @@ import { ISchedule } from "@/app/lib/interface/ISchedule";
 
 // imported utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
@@ -22,7 +23,7 @@ export const GET = async (
   try {
     const scheduleId = context.params.scheduleId;
     // check if the schedule ID is valid
-    if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
+    if (isObjectIdValid([scheduleId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid schedule ID!" }),
         {
@@ -37,7 +38,7 @@ export const GET = async (
 
     const schedule = await Schedule.findById(scheduleId)
       .populate({
-        path: "employees.userId",
+        path: "employeesSchedules.userId",
         select: "username allUserRoles",
         model: User,
       })
@@ -57,6 +58,7 @@ export const GET = async (
   }
 };
 
+// the only thing we can update is the comments
 // @desc    Update a schedule
 // @route   PATCH /schedules/:scheduleId
 // @access  Private
@@ -67,7 +69,7 @@ export const PATCH = async (
   try {
     const scheduleId = context.params.scheduleId;
     // check if the schedule ID is valid
-    if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
+    if (isObjectIdValid([scheduleId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid schedule ID!" }),
         {
@@ -82,36 +84,31 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if the schedule exists
-    const schedule: ISchedule | null = await Schedule.findById(scheduleId)
-      .select("date")
-      .lean();
+    // prepare update object
+    const updateSchedule: Partial<ISchedule> = {};
 
-    if (!schedule) {
+    if (comments) {
+      updateSchedule.comments = comments;
+    }
+
+    // Update the schedule using findByIdAndUpdate
+    const updatedSchedule = await Schedule.findByIdAndUpdate(
+      scheduleId,
+      { $set: updateSchedule },
+      { new: true, lean: true }
+    );
+
+    if (!updatedSchedule) {
       return new NextResponse(
         JSON.stringify({ message: "Schedule not found!" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // prepare update object
-    const updatedSchedule = {
-      comments: comments || schedule.comments,
-    };
-
-    await Schedule.findByIdAndUpdate(scheduleId, updatedSchedule, {
-      new: true,
+    return new NextResponse(JSON.stringify({ message: "Schedule updated" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
-    return new NextResponse(
-      JSON.stringify({ message: `Schedule ${schedule.date} updated` }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
   } catch (error) {
     return handleApiError("Update schedule failed!", error);
   }
@@ -127,7 +124,7 @@ export const DELETE = async (
   try {
     const scheduleId = context.params.scheduleId;
     // check if the schedule ID is valid
-    if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
+    if (isObjectIdValid([scheduleId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid schedule ID!" }),
         {
@@ -140,6 +137,30 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
+    // check if schedule is before the current date
+    const schedule: ISchedule | null = await Schedule.findById(
+      scheduleId
+    ).lean();
+    if (!schedule) {
+      return new NextResponse(
+        JSON.stringify({ message: "Schedule not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const scheduleDate = new Date(schedule.date);
+    const currentDate = new Date();
+
+    // Reset time to midnight for comparison
+    scheduleDate.setHours(0, 0, 0, 0);
+    currentDate.setHours(0, 0, 0, 0);
+
+    if (scheduleDate <= currentDate) {
+      return new NextResponse(
+        JSON.stringify({ message: "Cannot delete past or current schedules!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
     // delete schedule and check if it existed
     const result = await Schedule.deleteOne({ _id: scheduleId });
 

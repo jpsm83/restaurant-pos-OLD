@@ -19,7 +19,7 @@ export interface ISchedule {
     _id: Types.ObjectId;
     date: Date;
     weekNumber: number;
-    employees: IEmployee[];
+    employeesSchedules: IEmployee[];
     totalEmployeesScheduled: number;
     totalDayEmployeesCost: number;
     businessId: Types.ObjectId;

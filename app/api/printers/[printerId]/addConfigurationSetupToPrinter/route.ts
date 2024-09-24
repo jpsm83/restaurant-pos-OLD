@@ -14,15 +14,15 @@ import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 
 // this route will add individual configurationSetupToPrintOrders configuration to the printer with their properties and the users that will apply to
 // [
+  //     "mainCategory": "Food", this will dictate what the printer will print as main category
+  //     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
 //   {
-//     "salesLocationReferenceNames": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the business sales location id that this configuration will apply
+//     "businessSalesLocationReferenceIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the business sales location id that this configuration will apply
 //     "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the users that this configurarion wont apply
-//     "mainCategory": "Food", this will dictate what the printer will print as main category
-//     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
 //   },
 // ]
 
-// @desc    Delete sales location
+// @desc    Add Configuration Setup To Printer
 // @route   POST /printers/:printerId/addConfigurationSetupToPrinter
 // @access  Private
 export const POST = async (
@@ -34,10 +34,10 @@ export const POST = async (
   try {
     const printerId = context.params.printerId;
     const {
-      businessSalesLocationReferenceIds, // array of sales location ids
-      excludeUserIds, // array of user ids
       mainCategory, // single string
       subCategories, // array of strings
+      businessSalesLocationReferenceIds, // array of sales location ids
+      excludeUserIds, // array of user ids
     } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // validate printerId
@@ -138,10 +138,10 @@ export const POST = async (
       {
         $push: {
           configurationSetupToPrintOrders: {
-            businessSalesLocationReferenceIds,
-            excludeUserIds,
             mainCategory,
             subCategories,
+            businessSalesLocationReferenceIds,
+            excludeUserIds,
           },
         },
       },

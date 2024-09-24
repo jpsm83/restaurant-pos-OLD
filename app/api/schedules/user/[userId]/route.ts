@@ -31,9 +31,9 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const schedules = await Schedule.find({ "employees.userId": userId })
+    const schedules = await Schedule.find({ "employeesSchedules.userId": userId })
       .populate({
-        path: "employees.employee",
+        path: "employeesSchedules.employee",
         select: "username allUserRoles",
         model: User,
       })

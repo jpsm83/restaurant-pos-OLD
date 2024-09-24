@@ -2,10 +2,10 @@ business - DONE
 users - DONE
 dailySalesReports - DONE
 salesLocation - DONE
+printers - DONE
 
-printers - DONE / create printers with users and sales location / check the relation between business sales location and printer when you erase a printer
+schedules - ready to text PATCH and DELETE
 
-schedules
 suppliers
 supplierGoods
 businessGoods

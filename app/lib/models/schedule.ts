@@ -1,6 +1,6 @@
 import { Schema, model, models } from "mongoose";
 
-const employeesScheduled = new Schema({
+const employeesScheduledSchema = new Schema({
   userId: {
     type: Schema.Types.ObjectId,
     ref: "User",
@@ -34,11 +34,7 @@ const scheduleSchema = new Schema(
       required: true,
     }, // date of the schedule without time
     weekNumber: { type: Number, required: true }, // week number of the year
-    employees: {
-      type: [employeesScheduled],
-      required: true,
-      default: [],
-    },
+    employeesSchedules:  [employeesScheduledSchema],
     totalEmployeesScheduled: {
       type: Number,
       required: true,

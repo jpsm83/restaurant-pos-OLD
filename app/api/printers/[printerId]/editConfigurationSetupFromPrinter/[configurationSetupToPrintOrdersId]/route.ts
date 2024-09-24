@@ -28,10 +28,10 @@ export const PATCH = async (
   try {
     const { printerId, configurationSetupToPrintOrdersId } = context.params;
     const {
-      businessSalesLocationReferenceIds,
-      excludeUserIds,
       mainCategory,
       subCategories,
+      businessSalesLocationReferenceIds,
+      excludeUserIds,
     } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // Validate input
@@ -104,26 +104,22 @@ export const PATCH = async (
     await connectDb();
 
     // Check if the combination of mainCategory and any of the subCategories already exists
-    const existingCombination = await Printer.findOne({
+    const existingCombination = await Printer.exists({
       _id: printerId,
       configurationSetupToPrintOrders: {
         $elemMatch: {
           _id: { $ne: configurationSetupToPrintOrdersId }, // Exclude current configurationSetupToPrintOrdersId
-          mainCategory,
-          $or: [
-            { subCategories: { $exists: false } },
-            { subCategories: { $size: 0 } },
-            { subCategories: { $in: subCategories } },
-          ],
+          mainCategory, // Ensure the mainCategory matches
+          subCategories: { $in: subCategories }, // Check if any of the provided subCategories exists
         },
       },
-    }).lean();
+    });
 
     if (existingCombination) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "A combination of these mainCategory and subCategories already exists!",
+            "A combination of this mainCategory and one of the subCategories already exists!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );

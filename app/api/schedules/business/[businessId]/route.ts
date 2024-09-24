@@ -36,7 +36,7 @@ export const GET = async (
 
     const schedules = await Schedule.find({ business: businessId })
       .populate({
-        path: "employees.userId",
+        path: "employeesSchedules.userId",
         select: "username allUserRoles",
         model: User,
       })
