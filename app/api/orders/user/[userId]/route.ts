@@ -34,7 +34,7 @@ export const GET = async (
     await connectDb();
 
     const orders = await Order.find({ user: userId })
-    .populate({ path: "table", select: "salesLocationReference", model: Table })
+    .populate({ path: "table", select: "salesLocationReferenceId", model: Table })
     .populate({
       path: "user",
       select: "username allUserRoles currentShiftRole",

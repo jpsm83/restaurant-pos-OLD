@@ -28,7 +28,7 @@ export const PATCH = async (
   try {
     const { printerId, configurationSetupToPrintOrdersId } = context.params;
     const {
-      salesLocationReferenceIds,
+      businessSalesLocationReferenceIds,
       excludeUserIds,
       mainCategory,
       subCategories,
@@ -46,18 +46,18 @@ export const PATCH = async (
       );
     }
 
-    // check salesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check businessSalesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !salesLocationReferenceIds ||
-      salesLocationReferenceIds.length === 0 ||
-      !Array.isArray(salesLocationReferenceIds) ||
-      isObjectIdValid(salesLocationReferenceIds) !== true ||
+      !businessSalesLocationReferenceIds ||
+      businessSalesLocationReferenceIds.length === 0 ||
+      !Array.isArray(businessSalesLocationReferenceIds) ||
+      isObjectIdValid(businessSalesLocationReferenceIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "salesLocationReferenceIds is required and must be an array of ObjectIds!",
+            "businessSalesLocationReferenceIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -138,8 +138,8 @@ export const PATCH = async (
       },
       {
         $set: {
-          "configurationSetupToPrintOrders.$.salesLocationReferenceIds":
-            salesLocationReferenceIds, // Update salesLocationReferenceIds
+          "configurationSetupToPrintOrders.$.businessSalesLocationReferenceIds":
+            businessSalesLocationReferenceIds, // Update businessSalesLocationReferenceIds
           "configurationSetupToPrintOrders.$.excludeUserIds": excludeUserIds, // Update excludeUserIds
           "configurationSetupToPrintOrders.$.mainCategory": mainCategory, // Update mainCategories
           "configurationSetupToPrintOrders.$.subCategories": subCategories

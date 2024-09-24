@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // import utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -36,34 +36,74 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const salesLocations = await SalesLocation.find({ businessId: businessId })
-      .populate({
-        path: "openedById",
+    // Step 1: Perform the aggregation for businessSalesLocation
+    const salesLocations = await SalesLocation.aggregate([
+      {
+        $match: { businessId: new mongoose.Types.ObjectId(businessId) }, // Ensure to convert the printerId to an ObjectId
+      },
+      {
+        // Lookup to join with the Business collection
+        $lookup: {
+          from: "businesses", // MongoDB collection name for the Business model
+          localField: "salesLocationReferenceId", // Field from SalesLocation
+          foreignField: "businessSalesLocation._id", // Field from Business
+          as: "businessData", // Output array with the joined data
+        },
+      },
+      {
+        // Unwind the array to get individual business location objects
+        $unwind: "$businessData",
+      },
+      {
+        // Project to extract relevant businessSalesLocation details
+        $addFields: {
+          salesLocationReferenceData: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: "$businessData.businessSalesLocation", // Access the array in Business
+                  as: "salesLocation",
+                  cond: {
+                    $eq: ["$$salesLocation._id", "$salesLocationReferenceId"], // Match the salesLocationReferenceId with the _id in the array
+                  },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        // Project only the locationReferenceName from the salesLocationReferenceData
+        $project: {
+          businessData: 0, // Remove the original business data
+          "salesLocationReferenceData.locationType": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
+          "salesLocationReferenceData.selfOrdering": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
+          "salesLocationReferenceData.qrCode": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
+          "salesLocationReferenceData.qrEnabled": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
+        },
+      },
+    ]);
+
+    // Step 2: Populate the user-related fields and order details
+    await SalesLocation.populate(salesLocations, [
+      {
+        path: "openedById responsibleById closedById",
         select: "username currentShiftRole",
         model: User,
-      })
-      .populate({
-        path: "responsibleById",
-        select: "username currentShiftRole",
-        model: User,
-      })
-      .populate({
-        path: "closedById",
-        select: "username currentShiftRole",
-        model: User,
-      })
-      .populate({
+      },
+      {
         path: "ordersIds",
         select:
-          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoods",
+          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
         populate: {
-          path: "businessGoods",
+          path: "businessGoodsIds",
           select: "name mainCategory subCategory allergens sellingPrice",
           model: BusinessGood,
         },
         model: Order,
-      })
-      .lean();
+      },
+    ]);
 
     return !salesLocations.length
       ? new NextResponse(

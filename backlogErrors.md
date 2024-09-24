@@ -1,8 +1,6 @@
 business - DONE
 users - DONE
-
-dailySalesReports - test everything that is open
-
+dailySalesReports - DONE
 salesLocation - DONE
 
 printers - DONE / create printers with users and sales location / check the relation between business sales location and printer when you erase a printer
@@ -11,6 +9,7 @@ schedules
 suppliers
 supplierGoods
 businessGoods
+- add a sugested price on business goods base on the calculation
 promotions
 orders
 purchaeses

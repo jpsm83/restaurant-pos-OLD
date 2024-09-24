@@ -9,6 +9,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 // imported models
 import Business from "@/app/lib/models/business";
 import deleteCloudinaryImage from "@/app/api/cloudinaryActions/utils/deleteCloudinaryImage";
+import SalesLocation from "@/app/lib/models/salesLocation";
 
 // @desc    Delete sales location
 // @route   PATCH /business/:businessId/deleteSalesLocationReference/:salesLocationReferenceId
@@ -56,6 +57,14 @@ export const PATCH = async (
     // example of a cloudinary image url
     // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
     const qrCode = business.businessSalesLocation[0].qrCode;
+
+    // check if the business sales location has any relation with the created salesLocation
+    if (await SalesLocation.exists({ salesLocationReferenceId: business.businessSalesLocation._id })) {
+      return new NextResponse(
+        JSON.stringify({ message: "Business sales location cannot be deleted because its ID is related with other models!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     // delete location from businessSalesLocation array
     await Business.updateOne(

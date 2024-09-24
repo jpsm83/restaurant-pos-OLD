@@ -21,6 +21,7 @@ import Notification from "@/app/lib/models/notification";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "../utils/salaryValidation";
+import Printer from "@/app/lib/models/printer";
 
 // @desc    Get user by ID
 // @route   GET /users/:userId
@@ -210,6 +211,25 @@ export const PATCH = async (
         lean: true,
       }
     );
+
+    // after updating user, if user id not active, delete printer related data
+    if (active === false) {
+      await Printer.updateMany(
+        {
+          businessId: user.businessId,
+          $or: [
+            { usersAllowedToPrintDataIds: userId },
+            { "configurationSetupToPrintOrders.excludeUserIds": userId },
+          ],
+        },
+        {
+          $pull: {
+            usersAllowedToPrintDataIds: userId,
+            "configurationSetupToPrintOrders.excludeUserIds": userId,
+          },
+        }
+      );
+    }
 
     // Check if the purchase was found and updated
     if (!updatedUser) {

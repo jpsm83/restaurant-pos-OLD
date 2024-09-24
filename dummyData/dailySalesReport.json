@@ -10,7 +10,7 @@
                     "_id": "66758b8904c4e6f5bbaa6b81",
                     "username": "user3"
                 },
-                "hasOpenTables": false,
+                "hasOpenSalesLocations": false,
                 "userCardsSales": {
                     "cardDetails": []
                 },
@@ -79,7 +79,7 @@
                     "_id": "66758b8904c4e6f5bbaa6b81",
                     "username": "user3"
                 },
-                "hasOpenTables": false,
+                "hasOpenSalesLocations": false,
                 "userCardsSales": {
                     "cardDetails": []
                 },

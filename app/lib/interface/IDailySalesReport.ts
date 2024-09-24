@@ -1,16 +1,16 @@
 import { Types } from "mongoose";
 import { IPaymentMethod } from "./IPaymentMethod";
 
-export interface IUserGoods {
-  good: Types.ObjectId;
-  quantity: number;
-  totalPrice: number;
-  totalCostPrice: number;
+export interface IGoodsReduced {
+  businessGoodId: Types.ObjectId; // reference to the "Order" model
+  quantity: number; // quantity of the good sold or void
+  totalPrice: number; // total price of the good sold or void
+  totalCostPrice: number; // total cost price of the good sold or void
 }
 
 export interface IUserDailySalesReport {
   userId: Types.ObjectId;
-  hasOpenTables?: boolean;
+  hasOpenSalesLocations?: boolean;
   userPaymentMethods?: IPaymentMethod[];
   totalSalesBeforeAdjustments?: number;
   totalNetPaidAmount?: number;
@@ -18,9 +18,9 @@ export interface IUserDailySalesReport {
   totalCostOfGoodsSold?: number;
   totalCustomersServed?: number;
   averageCustomerExpenditure?: number;
-  soldGoods?: IUserGoods[];
-  voidedGoods?: IUserGoods[];
-  invitedGoods?: IUserGoods[];
+  soldGoods?: IGoodsReduced[];
+  voidedGoods?: IGoodsReduced[];
+  invitedGoods?: IGoodsReduced[];
   totalVoidValue?: number;
   totalInvitedValue?: number;
 }
@@ -40,9 +40,9 @@ export interface IDailySalesReport {
   dailyProfit?: number;
   dailyCustomersServed?: number;
   dailyAverageCustomerExpenditure?: number;
-  dailySoldGoods?: IUserGoods[];
-  dailyVoidedGoods?: IUserGoods[];
-  dailyInvitedGoods?: IUserGoods[];
+  dailySoldGoods?: IGoodsReduced[];
+  dailyVoidedGoods?: IGoodsReduced[];
+  dailyInvitedGoods?: IGoodsReduced[];
   dailyTotalVoidValue?: number;
   dailyTotalInvitedValue?: number;
   dailyPosSystemCommission?: number;

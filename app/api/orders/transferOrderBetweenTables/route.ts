@@ -72,7 +72,7 @@ export const POST = async (req: Request) => {
          // create new salesLocation
     const salesLocationObj = {
       dailyReferenceNumber,
-      salesLocationReference,
+      salesLocationReferenceId,
       guests,
       status: status || "Occupied",
       openedById,

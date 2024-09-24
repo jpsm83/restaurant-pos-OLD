@@ -15,7 +15,7 @@ import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 // this route will add individual configurationSetupToPrintOrders configuration to the printer with their properties and the users that will apply to
 // [
 //   {
-//     "salesLocationReferenceIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the location that this configuration will apply
+//     "salesLocationReferenceNames": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the business sales location id that this configuration will apply
 //     "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the users that this configurarion wont apply
 //     "mainCategory": "Food", this will dictate what the printer will print as main category
 //     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
@@ -34,7 +34,7 @@ export const POST = async (
   try {
     const printerId = context.params.printerId;
     const {
-      salesLocationReferenceIds, // array of sales location ids
+      businessSalesLocationReferenceIds, // array of sales location ids
       excludeUserIds, // array of user ids
       mainCategory, // single string
       subCategories, // array of strings
@@ -48,18 +48,18 @@ export const POST = async (
       });
     }
 
-    // check salesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check businessSalesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !salesLocationReferenceIds ||
-      salesLocationReferenceIds.length === 0 ||
-      !Array.isArray(salesLocationReferenceIds) ||
-      isObjectIdValid(salesLocationReferenceIds) !== true ||
+      !businessSalesLocationReferenceIds ||
+      businessSalesLocationReferenceIds.length === 0 ||
+      !Array.isArray(businessSalesLocationReferenceIds) ||
+      isObjectIdValid(businessSalesLocationReferenceIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "salesLocationReferenceIds is required and must be an array of ObjectIds!",
+            "businessSalesLocationReferenceIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -138,7 +138,7 @@ export const POST = async (
       {
         $push: {
           configurationSetupToPrintOrders: {
-            salesLocationReferenceIds,
+            businessSalesLocationReferenceIds,
             excludeUserIds,
             mainCategory,
             subCategories,

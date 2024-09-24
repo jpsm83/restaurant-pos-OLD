@@ -4,7 +4,6 @@ import Table from "@/app/lib/models/salesLocation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
-import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
 import SalesLocation from "@/app/lib/models/salesLocation";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 

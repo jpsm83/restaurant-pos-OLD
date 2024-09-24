@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 export interface ISalesLocation {
   _id?: Types.ObjectId;
   dailyReferenceNumber?: number;
-  salesLocationReference: string;
+  salesLocationReferenceId: Types.ObjectId;
   guests: number;
   status: string;
   openedById: Types.ObjectId;

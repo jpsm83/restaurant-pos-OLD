@@ -2,7 +2,7 @@ import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
 import { subscription } from "../enums.js";
 
-const salesLocationSchema = new Schema({
+const businessSalesLocationSchema = new Schema({
   locationReferenceName: { type: String, required: true }, // name of the location sale reference - ex: 101
   locationType: { type: String }, // table, room, bar, seat, etc - ex: Table101
   selfOrdering: { type: Boolean, default: false }, // manager decision if location can order by itself using QR code
@@ -48,7 +48,7 @@ const businessSchema = new Schema(
 
     // optional fields
     contactPerson: { type: String }, // Contact person of the company
-    businessSalesLocation: [salesLocationSchema], // sales location reference and qr code of the company
+    businessSalesLocation: [businessSalesLocationSchema], // sales location reference and qr code of the company
   },
   {
     timestamps: true,

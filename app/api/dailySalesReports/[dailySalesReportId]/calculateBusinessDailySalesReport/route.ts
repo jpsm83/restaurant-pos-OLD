@@ -7,7 +7,10 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { updateUsersDailySalesReport } from "../../utils/updateUserDailySalesReport";
 
 // imported interfaces
-import { IUserDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
+import {
+  IGoodsReduced,
+  IUserDailySalesReport,
+} from "@/app/lib/interface/IDailySalesReport";
 import { IUser } from "@/app/lib/interface/IUser";
 
 // imported models
@@ -17,13 +20,6 @@ import Business from "@/app/lib/models/business";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 
-interface IBusinessGood {
-  good: Types.ObjectId;
-  quantity: number;
-  totalPrice: number;
-  totalCostPrice: number;
-}
-
 // @desc    Calculate the business daily sales report
 // @route   PATCH /dailySalesReports/:dailySalesReportId/calculateBusinessDailySalesReport
 // @access  Private
@@ -31,7 +27,7 @@ export const PATCH = async (
   req: Request,
   context: { params: { dailySalesReportId: Types.ObjectId } }
 ) => {
-  // this function will call the updateUserDailySalesReportGeneric function to update the user daily sales report
+  // this function will call the updateUserDailySalesReport function to update all users daily sales report
   // them it will update the whole business daily sales report
   // this is called by mananger or admin
   try {
@@ -83,14 +79,14 @@ export const PATCH = async (
       _id: dailySalesReportId,
     })
       .select(
-        "_id dailyReferenceNumber usersDailySalesReport.userId usersDailySalesReport.hasOpenTables business"
+        "_id dailyReferenceNumber usersDailySalesReport.userId usersDailySalesReport.hasOpenSalesLocations businessId"
       )
       .populate({
         path: "usersDailySalesReport.userId",
         select: "username",
         model: User,
       })
-      .populate({ path: "business", select: "subscription", model: Business })
+      .populate({ path: "businessId", select: "subscription", model: Business })
       .lean();
 
     // check if daily report exists
@@ -102,7 +98,7 @@ export const PATCH = async (
     }
 
     const userIds = dailySalesReport.usersDailySalesReport.map(
-      (user: any) => user.userId
+      (user: any) => user.userId._id
     );
 
     // Call the function to update the daily sales reports for the users
@@ -130,9 +126,9 @@ export const PATCH = async (
 
     // business goods sales report
     let businessGoodsReport: {
-      goodsSold: IBusinessGood[];
-      goodsVoid: IBusinessGood[];
-      goodsInvited: IBusinessGood[];
+      goodsSold: IGoodsReduced[];
+      goodsVoid: IGoodsReduced[];
+      goodsInvited: IGoodsReduced[];
     } = {
       goodsSold: [],
       goodsVoid: [],
@@ -149,17 +145,17 @@ export const PATCH = async (
       dailyProfit: 0,
       dailyCustomersServed: 0,
       dailyAverageCustomerExpenditure: 0,
-      dailySoldGoods: [] as IBusinessGood[],
-      dailyVoidedGoods: [] as IBusinessGood[],
-      dailyInvitedGoods: [] as IBusinessGood[],
+      dailySoldGoods: [] as IGoodsReduced[],
+      dailyVoidedGoods: [] as IGoodsReduced[],
+      dailyInvitedGoods: [] as IGoodsReduced[],
       dailyTotalVoidValue: 0,
       dailyTotalInvitedValue: 0,
       dailyPosSystemCommission: 0,
     };
 
     // Ensure updateUsersDailySalesReport is an array of IUserDailySalesReport
-    if (Array.isArray(updateUsersDailySalesReport)) {
-      updateUsersDailySalesReport.forEach((userReport) => {
+    if (Array.isArray(updatedUsersDailySalesReport.updatedUsers)) {
+      updatedUsersDailySalesReport.updatedUsers.forEach((userReport) => {
         // Check if userPaymentMethods is defined before iterating
         if (userReport.userPaymentMethods) {
           userReport.userPaymentMethods.forEach((payment: IPaymentMethod) => {
@@ -196,23 +192,24 @@ export const PATCH = async (
         dailySalesReportObj.dailyCustomersServed +=
           userReport.totalCustomersServed ?? 0;
 
-        const updateGoodsArray = (array: any[], good: any) => {
+        // Update goodsSold, goodsVoid, and goodsInvited for the business
+        const updateGoodsArray = (array: any[], businessGood: any) => {
           const existingGood = array.find(
-            (item: any) => item.businessGoodId === good._id
+            (item: any) => item.businessGoodId === businessGood.businessGoodId
           );
 
           if (existingGood) {
             // If the item already exists, update the quantity, totalPrice, and totalCostPrice
-            existingGood.quantity += good.quantity ?? 1;
-            existingGood.totalPrice += good.totalPrice ?? 0;
-            existingGood.totalCostPrice += good.totalCostPrice ?? 0;
+            existingGood.quantity += businessGood.quantity ?? 1;
+            existingGood.totalPrice += businessGood.totalPrice ?? 0;
+            existingGood.totalCostPrice += businessGood.totalCostPrice ?? 0;
           } else {
-            // If it doesn't exist, create a new entry
+            // If it doesn't exist, create a new entry, including businessGoodId
             array.push({
-              good: good.good,
-              quantity: good.quantity ?? 1,
-              totalPrice: good.totalPrice ?? 0,
-              totalCostPrice: good.totalCostPrice ?? 0,
+              businessGoodId: businessGood.businessGoodId, // Fixed this to include businessGoodId
+              quantity: businessGood.quantity ?? 1,
+              totalPrice: businessGood.totalPrice ?? 0,
+              totalCostPrice: businessGood.totalCostPrice ?? 0,
             });
           }
         };
@@ -232,11 +229,8 @@ export const PATCH = async (
         }
 
         // Populate and reduce all the goods invited
-        if (
-          userReport.userGoodsInviteArray &&
-          userReport.userGoodsInviteArray.length > 0
-        ) {
-          userReport.userGoodsInviteArray.forEach((businessGood: any) => {
+        if (userReport.invitedGoods && userReport.invitedGoods.length > 0) {
+          userReport.invitedGoods.forEach((businessGood: any) => {
             updateGoodsArray(businessGoodsReport.goodsInvited, businessGood);
           });
         }
@@ -271,7 +265,7 @@ export const PATCH = async (
 
     let comissionPercentage = 0;
 
-    switch (dailySalesReport.business.subscription) {
+    switch (dailySalesReport.businessId.subscription) {
       case "Free":
         comissionPercentage = 0;
         break;

@@ -42,22 +42,25 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if the user is "General Manager", "Manager", "Assistant Manager", "MoD" or "Admin"
-    const user: IUser | null = await User.findById(userId)
-      .select("currentShiftRole onDuty businessId")
-      .lean();
+    // Fetch the user and daily report details in parallel to save time
+    const [user, dailySalesReport] = await Promise.all([
+      User.findById(userId).select("currentShiftRole onDuty businessId").lean(),
+      DailySalesReport.findById(dailySalesReportId)
+        .select("dailyReferenceNumber")
+        .lean(),
+    ]);
 
-    const allowedRoles = [
-      "General Manager",
-      "Manager",
-      "Assistant Manager",
-      "MoD",
-      "Admin",
-    ];
-
+    // Validate the user's role and whether they are on duty
     if (
       !user ||
-      !allowedRoles.includes(user.currentShiftRole ?? "") ||
+      Array.isArray(user) ||
+      ![
+        "General Manager",
+        "Manager",
+        "Assistant Manager",
+        "MoD",
+        "Admin",
+      ].includes(user.currentShiftRole ?? "") ||
       !user.onDuty
     ) {
       return new NextResponse(
@@ -68,15 +71,7 @@ export const PATCH = async (
       );
     }
 
-    // get the daily sales report
-    const dailySalesReport: IDailySalesReport | null =
-      await DailySalesReport.findOne({
-        businessId: user.businessId,
-        isDailyReportOpen: true,
-      })
-        .select("dailyReferenceNumber")
-        .lean();
-
+    // Check if the daily sales report exists
     if (!dailySalesReport) {
       return new NextResponse(
         JSON.stringify({ message: "Daily sales report not found!" }),
@@ -84,35 +79,42 @@ export const PATCH = async (
       );
     }
 
-    // check if the are no open orders for the day
-    if (
-      await Order.exists({
-        businessId: user.businessId,
-        billingStatus: "Open",
-        dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
-      })
-    ) {
+    // Use a single query to check if there are open orders tied to the same business and reference number
+    const openOrdersExist = await Order.exists({
+      businessId: user.businessId,
+      billingStatus: "Open",
+      dailyReferenceNumber: Array.isArray(dailySalesReport)
+        ? undefined
+        : dailySalesReport.dailyReferenceNumber,
+    });
+
+    if (openOrdersExist) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "You cant close the daily sales because there are open orders!",
+            "You can't close the daily sales because there are open orders!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    await DailySalesReport.findByIdAndUpdate(
+    // Close the daily sales report in a single operation
+    const updatedReport = await DailySalesReport.findByIdAndUpdate(
       dailySalesReportId,
-      {
-        $set: {
-          isDailyReportOpen: false,
-        },
-      },
+      { $set: { isDailyReportOpen: false } },
       { new: true }
     );
 
+    if (!updatedReport) {
+      return new NextResponse(
+        JSON.stringify({ message: "Failed to close the daily sales report!" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Respond with success
     return new NextResponse(
-      JSON.stringify({ message: "Daily sales report closed" }),
+      JSON.stringify({ message: "Daily sales report closed successfully" }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -5,7 +5,11 @@ const salesLocationSchema = new Schema(
   {
     // required fields
     dailyReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
-    salesLocationReference: { type: String, required: true }, // reference for the table - have to match the business.salesLocation.locationReferenceName options in the business
+    salesLocationReferenceId: {
+      type: Schema.Types.ObjectId,
+      ref: "Business",
+      required: true,
+    }, // reference with the business sales location
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
     status: { type: String, enum: tableStatus, default: "Occupied" }, // status of the table
     openedById: {

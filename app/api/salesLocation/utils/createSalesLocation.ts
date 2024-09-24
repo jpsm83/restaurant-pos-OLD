@@ -15,7 +15,7 @@ export const createSalesLocation = async (
   try {
     const requiredKeys = [
       "dailyReferenceNumber",
-      "salesLocationReference",
+      "salesLocationReferenceId",
       "guests",
       "status",
       "openedById",
