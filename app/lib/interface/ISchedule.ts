@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export interface IEmployee {
+export interface IEmployeeSchedule {
     _id: Types.ObjectId;
     userId: Types.ObjectId;
     role: string;
@@ -8,18 +8,16 @@ export interface IEmployee {
         startTime: Date;
         endTime: Date;
     };
-    shiftHours: number;
-    weekHoursLeft: number;
-    employeeCost: number;
     vacation: boolean;
-    vacationDaysLeft: number;
+    shiftHours: number;
+    employeeCost: number;
 }
 
 export interface ISchedule {
     _id: Types.ObjectId;
     date: Date;
     weekNumber: number;
-    employeesSchedules: IEmployee[];
+    employeesSchedules: IEmployeeSchedule[];
     totalEmployeesScheduled: number;
     totalDayEmployeesCost: number;
     businessId: Types.ObjectId;

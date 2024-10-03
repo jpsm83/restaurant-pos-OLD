@@ -58,7 +58,9 @@ const userSchema = new Schema(
     currentShiftRole: { type: String, enum: userRoles }, // current shift role of the user
     address: addressSchema, // address of the user
     imageUrl: { type: String }, // photo of the user
-    contractHoursWeek: { type: Number }, // contract hours per week
+    // *** IMPORTANTE ***
+    // user might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
+    contractHoursWeek: { type: Number }, // contract hours per week in milliseconds
     salary: { type: salarySchema }, // salary of the user
     terminatedDate: { type: Date }, // date when the user left the business
     notifications: {

@@ -4,7 +4,7 @@ dailySalesReports - DONE
 salesLocation - DONE
 printers - DONE
 
-schedules - ready to text PATCH and DELETE
+schedules - addEmployeeToSchedule updated and tested
 
 suppliers
 supplierGoods

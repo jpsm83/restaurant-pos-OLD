@@ -34,7 +34,7 @@ export interface IUser {
   currentShiftRole?: string;
   address?: IAddress;
   imageUrl?: string;
-  contractHoursWeek?: number;
+  contractHoursWeek?: number; // in milliseconds
   salary?: ISalary;
   terminatedDate?: Date;
   notifications?: { notificationId: Types.ObjectId; readFlag: boolean }[];

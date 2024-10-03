@@ -62,7 +62,7 @@ export const POST = async (req: Request) => {
       vacationDaysPerYear,
       businessId,
       address,
-      contractHoursWeek,
+      contractHoursWeek, // in milliseconds
       salary,
       comments,
     } = (await req.json()) as IUser;
@@ -163,6 +163,13 @@ export const POST = async (req: Request) => {
       ? calculateVacationProportional(new Date(joinDate), vacationDaysPerYear)
       : 0;
 
+    // convert hours to milliseconds
+    // user might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
+    let contractHoursWeekMls;
+    if (contractHoursWeek) {
+      contractHoursWeekMls = contractHoursWeek * 3600000;
+    }
+
     // Create the user object
     const newUser = {
       username,
@@ -180,7 +187,7 @@ export const POST = async (req: Request) => {
       vacationDaysLeft,
       businessId,
       address: address || undefined, // object
-      contractHoursWeek: contractHoursWeek || undefined,
+      contractHoursWeek: contractHoursWeekMls || undefined, // in milliseconds
       salary: salary || undefined, // object
       comments: comments || undefined,
     };

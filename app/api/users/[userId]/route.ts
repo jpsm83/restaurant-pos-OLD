@@ -86,7 +86,7 @@ export const PATCH = async (
       vacationDaysPerYear,
       currentShiftRole,
       address,
-      contractHoursWeek,
+      contractHoursWeek, // in milliseconds
       salary,
       terminatedDate,
       comments,
@@ -185,6 +185,13 @@ export const PATCH = async (
       );
     }
 
+    // convert hours to milliseconds
+    // user might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
+    let contractHoursWeekMls;
+    if (contractHoursWeek) {
+      contractHoursWeekMls = contractHoursWeek * 3600000;
+    }
+
     // Populate the update object with other provided fields
     if (username) updateUserObj.username = username;
     if (email) updateUserObj.email = email;
@@ -198,7 +205,7 @@ export const PATCH = async (
     if (vacationDaysPerYear)
       updateUserObj.vacationDaysPerYear = vacationDaysPerYear;
     if (currentShiftRole) updateUserObj.currentShiftRole = currentShiftRole;
-    if (contractHoursWeek) updateUserObj.contractHoursWeek = contractHoursWeek;
+    if (contractHoursWeek) updateUserObj.contractHoursWeek = contractHoursWeekMls; // in milliseconds
     if (terminatedDate) updateUserObj.terminatedDate = terminatedDate;
     if (comments) updateUserObj.comments = comments;
 

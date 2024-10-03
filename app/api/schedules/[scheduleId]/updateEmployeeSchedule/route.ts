@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 import connectDb from "@/app/lib/utils/connectDb";
-import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
+import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
 import { employeesValidation } from "../../utils/employeesValidation";
@@ -17,7 +17,7 @@ export const POST = async (
 ) => {
   try {
     const { employeeSchedule } = (await req.json()) as {
-      employeeSchedule: IEmployee;
+      employeeSchedule: IEmployeeSchedule;
     };
 
     const scheduleId = context.params.scheduleId;
@@ -76,7 +76,7 @@ export const POST = async (
     }).lean();
 
     // employeeScheduleOnTheWeek is an array of schedules
-    let employeeScheduleToUpdate: IEmployee | null = null;
+    let employeeScheduleToUpdate: IEmployeeSchedule | null = null;
     let scheduleToUpdateId: Types.ObjectId | null = null;
 
     // Iterate over each schedule to find the employee
@@ -110,10 +110,6 @@ export const POST = async (
       (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
     // calculate the new week hours left
-    const newWeekHoursLeft =
-      employeeScheduleToUpdate.weekHoursLeft +
-      employeeScheduleToUpdate.shiftHours -
-      differenceInHours;
     const employeeCostPerHour =
       (employeeScheduleToUpdate.employeeCost ?? 0) /
       (employeeScheduleToUpdate.shiftHours ?? 0);
@@ -127,24 +123,8 @@ export const POST = async (
       },
       vacation: employeeSchedule.vacation || employeeScheduleToUpdate.vacation,
       shiftHours: differenceInHours,
-      weekHoursLeft: newWeekHoursLeft,
       employeeCost: differenceInHours * employeeCostPerHour || 0,
     };
-
-    // update all schedules where the employee is scheduled with the new week hours left
-    for (const schedule of employeeScheduleOnTheWeek) {
-      await Schedule.findByIdAndUpdate(
-        {
-          _id: schedule._id,
-          "employees.userId": employeeScheduleToUpdate.userId,
-        },
-        { $set: { "employees.$[elem].weekHoursLeft": newWeekHoursLeft } },
-        {
-          new: true,
-          arrayFilters: [{ "elem.userId": employeeScheduleToUpdate.userId }], // Correctly match the elements with the specified userId
-        }
-      );
-    }
 
     // update user vacation days left if the employee is on vacation
     if (employeeSchedule.vacation) {
@@ -169,7 +149,6 @@ export const POST = async (
             updatedUserSchedule.timeRange.endTime,
           "employees.$[elem].vacation": updatedUserSchedule.vacation,
           "employees.$[elem].shiftHours": updatedUserSchedule.shiftHours,
-          "employees.$[elem].weekHoursLeft": updatedUserSchedule.weekHoursLeft,
           "employees.$[elem].employeeCost": updatedUserSchedule.employeeCost,
         },
       },

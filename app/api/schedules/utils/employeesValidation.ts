@@ -1,21 +1,28 @@
-import { IEmployee } from "@/app/lib/interface/ISchedule";
+import { IEmployeeSchedule } from "@/app/lib/interface/ISchedule";
 
-export const employeesValidation = (employee: IEmployee) => {
+export const employeesValidation = (employee: IEmployeeSchedule) => {
   // check if the schedule is an array
   if (typeof employee !== "object" || employee === undefined) {
     return "Invalid employee object";
   }
 
-  const requiredEmployeeFields: (keyof IEmployee)[] = [
-    "userId",
-    "role",
-    "timeRange",
-  ];
+  const validKeys = ["userId", "role", "timeRange"];
 
-  // check if the required fields are present
-  for (const field of requiredEmployeeFields) {
-    if (!employee[field]) {
-      return `Missing required field: ${field}`;
+  // check required fields
+  for (const key of validKeys) {
+    const value = employee[key as keyof IEmployeeSchedule];
+
+    if (value === undefined || value === null || value === "") {
+      return `${key} must have a value!`;
+    }
+  }
+
+  // Check for any invalid keys
+  for (const key of Object.keys(employee)) {
+    if (key !== "vacation") {
+      if (!validKeys.includes(key as keyof IEmployeeSchedule)) {
+        return `Invalid key: ${key}`;
+      }
     }
   }
 
@@ -23,7 +30,8 @@ export const employeesValidation = (employee: IEmployee) => {
   if (
     !employee.timeRange.startTime ||
     !employee.timeRange.endTime ||
-    typeof employee.timeRange !== "object"
+    typeof employee.timeRange !== "object" ||
+    employee.timeRange.startTime > employee.timeRange.endTime
   ) {
     return "Invalid timeRange object";
   }

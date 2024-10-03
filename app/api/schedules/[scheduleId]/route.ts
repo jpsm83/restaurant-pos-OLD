@@ -137,7 +137,7 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if schedule is before the current date
+    // check if schedule date is before the current date
     const schedule: ISchedule | null = await Schedule.findById(
       scheduleId
     ).lean();

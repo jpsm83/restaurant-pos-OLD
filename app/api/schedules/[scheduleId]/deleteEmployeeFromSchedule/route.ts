@@ -1,10 +1,11 @@
 import connectDb from "@/app/lib/utils/connectDb";
-import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
+import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Create new schedules
 // @route   POST /schedules/:schedulesId/deleteEmployeeFromSchedule
@@ -20,25 +21,9 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
     const scheduleId = context.params.scheduleId;
 
     // check if the schedule ID is valid
-    if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
+    if (isObjectIdValid([scheduleId, userId, userScheduleId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid schedule Id!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // check if the user ID is valid
-    if (!userId || !Types.ObjectId.isValid(userId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user Id!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // check if the userScheduleId is valid
-    if (!userScheduleId || !Types.ObjectId.isValid(userScheduleId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid userScheduleId!" }),
+        JSON.stringify({ message: "Invalid schedule, user or userSchedule Id!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -49,7 +34,7 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employees._id employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft employees.employeeCost weekNumber"
+        "employees._id employees.userId employees.vacation employees.shiftHours employees.employeeCost weekNumber"
       )
       .lean();
 
@@ -60,12 +45,12 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
       );
     }
 
-    const employeeSchedule: IEmployee | null =
-      schedule.employees.find(
+    // check if the employee is in the schedule
+    const employeeSchedule: IEmployeeSchedule | null =
+      schedule.employeesSchedules.find(
         (emp) => emp._id == userScheduleId && emp.userId == userId
       ) || null;
 
-    // check if the employee is in the schedule
     if (!employeeSchedule) {
       return new NextResponse(
         JSON.stringify({ message: "Employee not found in schedule!" }),
@@ -73,46 +58,14 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
       );
     }
 
-    const weekNumber = schedule.weekNumber;
-    const weekHoursLeft =
-      (employeeSchedule?.weekHoursLeft ?? 0) +
-      (employeeSchedule?.shiftHours ?? 0);
     const vacation = employeeSchedule?.vacation;
 
-    const employeeScheduleOnTheWeek = await Schedule.find({
-      weekNumber: weekNumber,
-      "employees.userId": { $in: [userId] },
-    })
-      .select("_id employees.userId")
-      .lean();
+    // calculate the number of employees scheduled for the day
+    let countsOfUserId: Types.ObjectId[] = [];
 
-    const weeklySchedulesToUpdate = employeeScheduleOnTheWeek.flatMap(
-      (schedule) =>
-        schedule.employees
-          .filter((user: { userId: Types.ObjectId }) =>
-            user.userId.equals(userId)
-          )
-          .map(() => ({
-            scheduleId: schedule._id,
-            userId: userId,
-          }))
-    );
-
-    for (const { scheduleId } of weeklySchedulesToUpdate) {
-      await Schedule.findByIdAndUpdate(
-        scheduleId,
-        { $set: { "employees.$[elem].weekHoursLeft": weekHoursLeft } },
-        {
-          new: true,
-          arrayFilters: [{ "elem.userId": userId }],
-        }
-      );
-    }
-
-    let countsOfUserId = 0;
-    schedule.employees.forEach((employee) => {
-      if (employee.userId == userId) {
-        countsOfUserId += 1;
+    schedule.employeesSchedules.forEach((employee) => {
+      if (!employee.vacation && !countsOfUserId.includes(employee.userId)) {
+        countsOfUserId.push(employee.userId);
       }
     });
 
@@ -121,8 +74,8 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
       scheduleId, // Assuming schedule._id is the correct identifier
       {
         $pull: { employees: { _id: userScheduleId } },
+        $set: { totalEmployeesScheduled: countsOfUserId.length },
         $inc: {
-          totalEmployeesScheduled: -(countsOfUserId >= 2 ? 0 : 1),
           totalDayEmployeesCost: -(employeeSchedule?.employeeCost ?? 0),
         },
       },

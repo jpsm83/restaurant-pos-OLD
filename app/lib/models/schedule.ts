@@ -18,9 +18,6 @@ const employeesScheduledSchema = new Schema({
   shiftHours: {
     type: Number, required: true
   }, // quantity of shift hours worked , startTime - endTime
-  weekHoursLeft: {
-    type: Number, required: true
-  }, // hours left to work in the week, user.contractHoursWeek - ( sun of shiftHours of the week) - calculated in the front end
   employeeCost: {
     type: Number, required: true
   }, // cost of the employee for the shift, user.grossMonthlySalary / user.contractHoursMonth * shiftHours - calculated in the front end
@@ -36,6 +33,11 @@ const scheduleSchema = new Schema(
     weekNumber: { type: Number, required: true }, // week number of the year
     employeesSchedules:  [employeesScheduledSchema],
     totalEmployeesScheduled: {
+      type: Number,
+      required: true,
+      default: 0,
+    }, // total users scheduled
+    totalEmployeesVacation: {
       type: Number,
       required: true,
       default: 0,

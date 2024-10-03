@@ -1,26 +1,36 @@
 import { Types } from "mongoose";
 import connectDb from "@/app/lib/utils/connectDb";
-import { IEmployee, ISchedule } from "@/app/lib/interface/ISchedule";
+import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 import Schedule from "@/app/lib/models/schedule";
 import { IUser } from "@/app/lib/interface/IUser";
 import User from "@/app/lib/models/user";
 import { employeesValidation } from "../../utils/employeesValidation";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import isScheduleOverlapping from "../../utils/isScheduleOverlapping";
+import getWeekdaysInMonth from "../../utils/getWeekDaysInMonth";
 
 // @desc    Create new schedules
 // @route   POST /schedules/:schedulesId/addEmployeeToSchedule
 // @access  Private
-export const POST = async (req: Request, context: { params: { scheduleId: Types.ObjectId } }) => {
+export const POST = async (
+  req: Request,
+  context: { params: { scheduleId: Types.ObjectId } }
+) => {
   try {
     const { employeeSchedule } = (await req.json()) as {
-      employeeSchedule: IEmployee;
+      employeeSchedule: IEmployeeSchedule;
     };
 
     const scheduleId = context.params.scheduleId;
 
+    const { userId, role, timeRange, vacation } = employeeSchedule;
+    const startTime = new Date(timeRange.startTime);
+    const endTime = new Date(timeRange.endTime);
+
     // check if the schedule ID is valid
-    if (!scheduleId || !Types.ObjectId.isValid(scheduleId)) {
+    if (isObjectIdValid([scheduleId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid schedule Id!" }),
         {
@@ -33,7 +43,10 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
     // validate employee object
     const validEmployees = employeesValidation(employeeSchedule);
     if (validEmployees !== true) {
-      return validEmployees;
+      return new NextResponse(JSON.stringify({ message: validEmployees }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // connect before first call to DB
@@ -42,7 +55,7 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employees.userId employees.vacation employees.shiftHours employees.weekHoursLeft weekNumber"
+        "employeesSchedules.userId employeesSchedules.vacation employeesSchedules.timeRange weekNumber businessId totalDayEmployeesCost totalEmployeesScheduled"
       )
       .lean();
 
@@ -53,108 +66,118 @@ export const POST = async (req: Request, context: { params: { scheduleId: Types.
       );
     }
 
-    const { userId, role, vacation } = employeeSchedule;
-    const startTime = new Date(employeeSchedule.timeRange.startTime);
-    const endTime = new Date(employeeSchedule.timeRange.endTime);
-
-    // Calculate difference in milliseconds, then convert to hours
-    const differenceInHours =
-      (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-
-    const userEmployee: IUser | null = await User.findById(userId)
-      .select("contractHoursWeek grossHourlySalary vacationDaysLeft")
-      .lean();
-
-    const employeeScheduleOnTheWeek: ISchedule[] | any[] = await Schedule.find({
-      weekNumber: schedule.weekNumber,
-      "employees.userId": { $in: [userId] },
-    })
-      .select(
-        "_id employees.userId employees.weekHoursLeft employees.shiftHours date"
-      )
-      .lean();
-
-    let weekHoursLeft;
-    let totalScheduleWeekHours = differenceInHours;
-    const updates: { scheduleId: Types.ObjectId; userId: Types.ObjectId }[] =
-      [];
+    // create on object for each schedule with start and end time
+    let timeRangeArr: any[] = [];
 
     if (
-      employeeScheduleOnTheWeek !== null &&
-      employeeScheduleOnTheWeek.length > 0
+      Array.isArray(schedule.employeesSchedules) &&
+      schedule.employeesSchedules.length > 0
     ) {
-      employeeScheduleOnTheWeek.forEach((schedule) => {
-        schedule.employees.forEach(
-          (user: { userId: Types.ObjectId; shiftHours: number }) => {
-            if (user.userId == userId) {
-              totalScheduleWeekHours += user.shiftHours;
-              updates.push({ scheduleId: schedule._id, userId: userId });
-            }
-          }
-        );
-      });
-      weekHoursLeft =
-        (userEmployee?.contractHoursWeek ?? 0) - totalScheduleWeekHours;
-    } else {
-      weekHoursLeft =
-        (userEmployee?.contractHoursWeek ?? 0) - differenceInHours;
+      timeRangeArr = schedule.employeesSchedules
+        .filter((el) => el.userId.toString() === userId.toString()) // Filter by userId
+        .map((el) => {
+          return {
+            startTime: el.timeRange.startTime,
+            endTime: el.timeRange.endTime,
+          };
+        });
     }
 
-    if (updates.length > 0) {
-      for (const update of updates) {
-        await Schedule.findByIdAndUpdate(
-          update.scheduleId,
-          { $set: { "employees.$[elem].weekHoursLeft": weekHoursLeft } },
-          {
-            new: true,
-            arrayFilters: [{ "elem.userId": update.userId }], // Specify the filter condition for the array
-          }
+    // the new schedule should not start or end inside an already scheduled shift
+    if (timeRangeArr.length > 0) {
+      if (isScheduleOverlapping(startTime, endTime, timeRangeArr) === true) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Employee scheduled overlaps existing one!",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
     }
+
+    // Calculate difference in milliseconds
+    const shiftDurationMs = endTime.getTime() - startTime.getTime();
+
+    const userEmployee: IUser | null = await User.findById(userId)
+      .select(
+        "contractHoursWeek salary.grossSalary salary.payFrequency vacationDaysLeft"
+      )
+      .lean();
+
+    if (!userEmployee) {
+      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Calculate employee cost based on pay frequency
+    let employeeCost; // Convert ms to hours
+
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const weekdaysInMonth = getWeekdaysInMonth(currentYear, currentMonth);
+
+    switch (userEmployee.salary && userEmployee.salary.payFrequency) {
+      case "Monthly":
+        employeeCost =
+          userEmployee.salary &&
+          userEmployee.salary.grossSalary / weekdaysInMonth;
+        break;
+      case "Weekly":
+        employeeCost =
+          userEmployee.salary && userEmployee.salary.grossSalary / 5; // Assuming 5 working days in a week
+        break;
+      case "Daily":
+        employeeCost = userEmployee.salary && userEmployee.salary.grossSalary;
+        break;
+      default:
+        employeeCost =
+          userEmployee.salary &&
+          userEmployee.salary.grossSalary * (shiftDurationMs / 3600000);
+        break;
+    }
+
+    // prepare the user schedule update object
+    const updateUserSchedule = {
+      userId,
+      role,
+      timeRange: {
+        startTime,
+        endTime,
+      },
+      vacation: vacation !== undefined ? vacation : false,
+      shiftHours: shiftDurationMs,
+      employeeCost,
+    };
+
+    // Update the user's schedule and the schedule's total cost in a single operation
+    const totalEmployeesScheduledIncrement = schedule.employeesSchedules.some(
+      (e) => e.userId.toString() === userId.toString()
+    )
+      ? 0
+      : 1;
+
+    await Schedule.findByIdAndUpdate(
+      scheduleId,
+      {
+        $push: { employeesSchedules: updateUserSchedule },
+        $inc: {
+          totalDayEmployeesCost: updateUserSchedule.employeeCost,
+          totalEmployeesScheduled: totalEmployeesScheduledIncrement,
+        },
+      },
+      { new: true }
+    );
 
     if (vacation) {
       await User.findByIdAndUpdate(
         userId,
         { $inc: { vacationDaysLeft: -1 } },
-        { new: true, useFindAndModify: false }
+        { new: true }
       );
     }
 
-    const hourlySalary = userEmployee?.grossHourlySalary ?? 0;
-    const employeeCost = hourlySalary * differenceInHours;
-
-    const employeeToAdd = {
-      userId: userId,
-      role: role,
-      timeRange: {
-        startTime: startTime,
-        endTime: endTime,
-      },
-      vacation: vacation,
-      shiftHours: differenceInHours,
-      weekHoursLeft,
-      employeeCost,
-    };
-
-    let countsOfUserId = 0;
-    schedule.employees.forEach((employee) => {
-      if (employee.userId == userId) {
-        countsOfUserId += 1;
-      }
-    });
-
-    await Schedule.findByIdAndUpdate(
-      scheduleId,
-      {
-        $push: { employees: employeeToAdd },
-        $inc: {
-          totalEmployeesScheduled: countsOfUserId === 0 ? 1 : 0,
-          totalDayEmployeesCost: employeeCost,
-        },
-      },
-      { new: true, useFindAndModify: false }
-    );
     return new NextResponse(
       JSON.stringify({ message: "Employee added to schedule!" }),
       { status: 201, headers: { "Content-Type": "application/json" } }
