@@ -41,12 +41,12 @@ const scheduleSchema = new Schema(
       type: Number,
       required: true,
       default: 0,
-    }, // total users scheduled
+    }, // total users on vacation
     totalDayEmployeesCost: {
       type: Number,
       required: true,
       default: 0,
-    }, // total daily employees, sun of all employeeCost - REQUIERED FOR ANALYTICS
+    }, // sun of all employeeCost / scheduled and on vacation - REQUIERED FOR ANALYTICS
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",

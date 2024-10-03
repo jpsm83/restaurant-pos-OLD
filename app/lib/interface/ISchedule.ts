@@ -19,6 +19,7 @@ export interface ISchedule {
     weekNumber: number;
     employeesSchedules: IEmployeeSchedule[];
     totalEmployeesScheduled: number;
+    totalEmployeesVacation: number;
     totalDayEmployeesCost: number;
     businessId: Types.ObjectId;
     comments?: string;

@@ -5,6 +5,7 @@ salesLocation - DONE
 printers - DONE
 
 schedules - addEmployeeToSchedule updated and tested
+totalEmployeesVacation been add, check what have to be changed
 
 suppliers
 supplierGoods
