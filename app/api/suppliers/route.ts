@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import connectDb from "@/app/lib/utils/connectDb";
 
-// import models
-import Supplier from "@/app/lib/models/supplier";
-import { ISupplier } from "@/app/lib/interface/ISupplier";
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { ISupplier } from "@/app/lib/interface/ISupplier";
+
+// imported models
+import Supplier from "@/app/lib/models/supplier";
 
 // @desc    Get all suppliers
 // @route   GET /supplier
@@ -15,9 +20,7 @@ export const GET = async () => {
     // connect before first call to DB
     await connectDb();
 
-    const suppliers = await Supplier.find()
-      .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
-      .lean();
+    const suppliers = await Supplier.find().lean();
 
     return !suppliers.length
       ? new NextResponse(JSON.stringify({ message: "No suppliers found!" }), {
@@ -49,7 +52,7 @@ export const POST = async (req: Request) => {
       phoneNumber,
       taxNumber,
       currentlyInUse,
-      business,
+      businessId,
       address,
       contactPerson,
     } = (await req.json()) as ISupplier;
@@ -62,19 +65,29 @@ export const POST = async (req: Request) => {
       !phoneNumber ||
       !taxNumber ||
       currentlyInUse === undefined ||
-      !business
+      !businessId
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "TradeName, legalName, email, phoneNumber, taxNumber, currentlyInUse and business are required!",
+            "TradeName, legalName, email, phoneNumber, taxNumber, currentlyInUse and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
+    // validate businessId
+    if (isObjectIdValid([businessId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Business ID is not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // validate address fields
-    // check address validation
     if (address) {
       const validAddress = addressValidation(address);
       if (validAddress !== true) {
@@ -105,8 +118,8 @@ export const POST = async (req: Request) => {
     await connectDb();
 
     // check for duplicate legalName, email or taxNumber
-    const duplicateSupplier = await Supplier.findOne({
-      business: business,
+    const duplicateSupplier = await Supplier.exists({
+      businessId: businessId,
       $or: [{ legalName }, { email }, { taxNumber }],
     });
 
@@ -127,7 +140,7 @@ export const POST = async (req: Request) => {
       phoneNumber,
       taxNumber,
       currentlyInUse,
-      business,
+      businessId,
       address,
       contactPerson: contactPerson || undefined,
     };

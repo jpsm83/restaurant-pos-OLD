@@ -20,11 +20,6 @@ const supplierSchema = new Schema(
     // optional fields
     address: addressSchema, // Address of the suplier
     contactPerson: { type: String }, // Contact person of the suplier
-    supplierGoodsIds: {
-      type: [Schema.Types.ObjectId],
-      ref: "SupplierGood",
-      default: undefined,
-    }, // array of supplier goods we are buying from this supplier
   },
   {
     timestamps: true,

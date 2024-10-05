@@ -13,8 +13,6 @@ const oneTimePurchaseSupplier = async (businessId: Types.ObjectId) => {
       return "BusinessId not valid!";
     }
 
-    const defaultSupplierId = new Types.ObjectId();
-
     // connect before first call to DB
     await connectDb();
 
@@ -27,6 +25,9 @@ const oneTimePurchaseSupplier = async (businessId: Types.ObjectId) => {
     if (supplier) {
       return supplier._id;
     }
+
+    // create default supplier id
+    const defaultSupplierId = new Types.ObjectId();
 
     // create supplier object with required fields
     const newSupplierObj = {

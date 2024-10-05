@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
-// import models
-import Supplier from "@/app/lib/models/supplier";
-import { ISupplier } from "@/app/lib/interface/ISupplier";
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { IAddress } from "@/app/lib/interface/IAddress";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interface
+import { ISupplier } from "@/app/lib/interface/ISupplier";
+
+// imported models
+import Supplier from "@/app/lib/models/supplier";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
 
@@ -21,19 +25,20 @@ export const GET = async (
   try {
     const supplierId = context.params.supplierId;
 
-    if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
+    if (isObjectIdValid([supplierId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierId!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ message: "Invalid supplier ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
     // connect before first call to DB
     await connectDb();
 
-    const supplier = await Supplier.findById(supplierId)
-      .populate("supplierGoods", "name mainCategory subCategory currentlyInUse")
-      .lean();
+    const supplier = await Supplier.findById(supplierId).lean();
 
     return !supplier
       ? new NextResponse(JSON.stringify({ message: "No suppliers found!" }), {
@@ -61,10 +66,13 @@ export const PATCH = async (
   try {
     const supplierId = context.params.supplierId;
 
-    if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
+    if (isObjectIdValid([supplierId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierId" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ message: "Invalid supplier ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -77,16 +85,31 @@ export const PATCH = async (
       currentlyInUse,
       address,
       contactPerson,
-      supplierGoods,
     } = (await req.json()) as ISupplier;
+
+    // prepare update object
+    const supplerObj: Partial<ISupplier> = {};
+
+    // add address fields
+    if (address) {
+      const validAddress = addressValidation(address);
+      if (validAddress !== true) {
+        return new NextResponse(JSON.stringify({ message: validAddress }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      supplerObj.address = address;
+    }
 
     // connect before first call to DB
     await connectDb();
 
     // check if supplier exists
-    const supplier: ISupplier | null = await Supplier.findById(
-      supplierId
-    ).lean();
+    const supplier: ISupplier | null = await Supplier.findById(supplierId)
+      .select("businessId")
+      .lean();
+
     if (!supplier) {
       return new NextResponse(
         JSON.stringify({ message: "Supplier not found!" }),
@@ -95,9 +118,9 @@ export const PATCH = async (
     }
 
     // check for duplicate legalName, email or taxNumber
-    const duplicateSupplier = await Supplier.findOne({
+    const duplicateSupplier = await Supplier.exists({
       _id: { $ne: supplierId },
-      business: supplier.business,
+      businessId: supplier.businessId,
       $or: [{ legalName }, { email }, { taxNumber }],
     });
 
@@ -110,64 +133,23 @@ export const PATCH = async (
       );
     }
 
-    // Ensure supplier.address is an object if it's undefined or null
-    // that is because address is not required on supplier creation
-    // if it does not exist, it will be created as an empty object to avoid errors
-    // supplier.address = supplier.address ?? {};
-
-    // prepare update address object
-    const updatedAddress = {
-      country: address?.country ?? supplier.address?.country ?? undefined,
-      state: address?.state ?? supplier.address?.state ?? undefined,
-      city: address?.city ?? supplier.address?.city ?? undefined,
-      street: address?.street ?? supplier.address?.street ?? undefined,
-      buildingNumber:
-        address?.buildingNumber ??
-        supplier.address?.buildingNumber ??
-        undefined,
-      postCode: address?.postCode ?? supplier.address?.postCode ?? undefined,
-      region: address?.region ?? supplier.address?.region ?? undefined,
-      additionalDetails:
-        address?.additionalDetails ??
-        supplier.address?.additionalDetails ??
-        undefined,
-      coordinates:
-        address?.coordinates ?? supplier.address?.coordinates ?? undefined,
-    };
-
-    // add address fields
-    if (address) {
-      const validAddress = addressValidation(updatedAddress as IAddress);
-      if (validAddress !== true) {
-        return new NextResponse(JSON.stringify({ message: validAddress }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    // prepare update object
-    const updatedSupplier = {
-      tradeName: tradeName || supplier.tradeName,
-      legalName: legalName || supplier.legalName,
-      email: email || supplier.email,
-      phoneNumber: phoneNumber || supplier.phoneNumber,
-      taxNumber: taxNumber || supplier.taxNumber,
-      currentlyInUse: currentlyInUse || supplier.currentlyInUse,
-      address: address || supplier.address,
-      contactPerson: contactPerson || supplier.contactPerson,
-      // supplierGoods is an array of supplier goods ids coming fron the front
-      supplierGoods: supplierGoods || supplier.supplierGoods,
-    };
+    // populate supplier goods
+    if (tradeName) supplerObj.tradeName = tradeName;
+    if (legalName) supplerObj.legalName = legalName;
+    if (email) supplerObj.email = email;
+    if (phoneNumber) supplerObj.phoneNumber = phoneNumber;
+    if (taxNumber) supplerObj.taxNumber = taxNumber;
+    if (currentlyInUse) supplerObj.currentlyInUse = currentlyInUse;
+    if (contactPerson) supplerObj.contactPerson = contactPerson;
 
     // Save the updated supplier
-    await Supplier.findByIdAndUpdate(supplierId, updatedSupplier, {
+    await Supplier.findByIdAndUpdate(supplierId, supplerObj, {
       new: true,
     });
 
     return new NextResponse(
       JSON.stringify({
-        message: `Supplier ${updatedSupplier.legalName} updated successfully!`,
+        message: "Supplier updated successfully!",
       }),
       {
         status: 200,
@@ -194,10 +176,13 @@ export const DELETE = async (
     const supplierId = context.params.supplierId;
 
     // validate supplierId
-    if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
+    if (!isObjectIdValid([supplierId])) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid supplierId!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ message: "Invalid supplier ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -209,10 +194,12 @@ export const DELETE = async (
     // **********************************************************************
 
     // Check if any supplier goods referencing this supplier are in use at any business goods
+    // Check if any supplier goods referencing this supplier are in use at any business goods
+    const supplierGoodIds = await SupplierGood.find({
+      supplierId: supplierId,
+    }).distinct("_id");
     const isInUse = await BusinessGood.exists({
-      "ingredients.supplierGood": {
-        $in: await SupplierGood.find({ supplier: supplierId }).distinct("_id"),
-      },
+      "ingredients.supplierGood": { $in: supplierGoodIds },
     });
 
     if (isInUse) {

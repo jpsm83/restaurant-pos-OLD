@@ -21,7 +21,7 @@ export const GET = async () => {
     await connectDb();
 
     const supplierGoods = await SupplierGood.find()
-      .populate({ path: "supplier", select: "tradeName", model: Supplier })
+      .populate({ path: "supplierId", select: "tradeName", model: Supplier })
       .lean();
 
     return !supplierGoods.length

@@ -4,10 +4,10 @@ dailySalesReports - DONE
 salesLocation - DONE
 printers - DONE
 schedules - DONE
-
-suppliers
+suppliers - DONE
 
 supplierGoods
+
 businessGoods
 - add a sugested price on business goods base on the calculation
 promotions
@@ -29,3 +29,4 @@ this will cause errors if code is not update
 *****************************************************************************
 
 - daily saler report have to be tested once we got all the models tested and with data
+- transform cloudinaryActions route to be a function to be used in all the creations that could have images
