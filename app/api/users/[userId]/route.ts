@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -14,11 +14,6 @@ import { IUser } from "@/app/lib/interface/IUser";
 
 // imported models
 import User from "@/app/lib/models/user";
-import Table from "@/app/lib/models/salesLocation";
-import Order from "@/app/lib/models/order";
-import Schedule from "@/app/lib/models/schedule";
-import Notification from "@/app/lib/models/notification";
-import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "../utils/salaryValidation";
 import Printer from "@/app/lib/models/printer";
@@ -69,6 +64,12 @@ export const PATCH = async (
   req: Request,
   context: { params: { userId: Types.ObjectId } }
 ) => {
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const userId = context.params.userId;
     const {
@@ -205,7 +206,8 @@ export const PATCH = async (
     if (vacationDaysPerYear)
       updateUserObj.vacationDaysPerYear = vacationDaysPerYear;
     if (currentShiftRole) updateUserObj.currentShiftRole = currentShiftRole;
-    if (contractHoursWeek) updateUserObj.contractHoursWeek = contractHoursWeekMls; // in milliseconds
+    if (contractHoursWeek)
+      updateUserObj.contractHoursWeek = contractHoursWeekMls; // in milliseconds
     if (terminatedDate) updateUserObj.terminatedDate = terminatedDate;
     if (comments) updateUserObj.comments = comments;
 
@@ -216,6 +218,7 @@ export const PATCH = async (
       {
         new: true,
         lean: true,
+        session,
       }
     );
 
@@ -234,9 +237,17 @@ export const PATCH = async (
             usersAllowedToPrintDataIds: userId,
             "configurationSetupToPrintOrders.excludeUserIds": userId,
           },
+        },
+        {
+          new: true,
+          session,
         }
       );
     }
+
+    // Commit the transaction if both operations succeed
+    await session.commitTransaction();
+    session.endSession();
 
     // Check if the purchase was found and updated
     if (!updatedUser) {
@@ -253,7 +264,10 @@ export const PATCH = async (
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Update user failed!", error);
+  } finally {
+    session.endSession();
   }
 };
 

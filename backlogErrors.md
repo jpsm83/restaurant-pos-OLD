@@ -3,11 +3,10 @@ users - DONE
 dailySalesReports - DONE
 salesLocation - DONE
 printers - DONE
-
-schedules - addEmployeeToSchedule updated and tested
-totalEmployeesVacation been add, check what have to be changed
+schedules - DONE
 
 suppliers
+
 supplierGoods
 businessGoods
 - add a sugested price on business goods base on the calculation

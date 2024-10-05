@@ -1,100 +1,49 @@
-[
-    {
-        "_id": "6677146fb2b36aea9e001744",
-        "date": "2024-06-15T10:00:00.000Z",
-        "weekNumber": 202424,
-        "totalEmployeesScheduled": 1,
-        "totalDayEmployeesCost": 100,
-        "business": "6673fef88c45d0a0ca5f34c5",
-        "employees": [
-            {
-                "userId": {
-                    "_id": "66758b8904c4e6f5bbaa6b81",
-                    "username": "user3",
-                    "allUserRoles": [
-                        "Manager",
-                        "Bartender"
-                    ]
-                },
-                "role": "Manager",
-                "timeRange": {
-                    "startTime": "2024-06-15T10:00:00.000Z",
-                    "endTime": "2024-06-15T12:00:00.000Z"
-                },
-                "vacation": false,
-                "shiftHours": 2,
-                "weekHoursLeft": 31,
-                "employeeCost": 25,
-                "_id": "6677f5b0911035d92c5d5ea3"
+{
+    "_id": {"$oid":"66f29a4eba7259118e2b425c"},
+    "date": "2024-06-16T15:00:33.000Z",
+    "weekNumber": 202424,
+    "totalEmployeesScheduled": 1,
+    "totalDayEmployeesCost": 160,
+    "businessId": {"$oid":"66e169a709901431386c97cb"},
+    "employeesSchedules": [
+        {
+            "timeRange": {
+                "startTime": "2024-09-22T08:00:00.000Z",
+                "endTime": "2024-09-22T10:00:00.000Z"
             },
-            {
-                "userId": {
-                    "_id": "66758b8904c4e6f5bbaa6b81",
-                    "username": "user3",
-                    "allUserRoles": [
-                        "Manager",
-                        "Bartender"
-                    ]
-                },
-                "role": "Manager",
-                "timeRange": {
-                    "startTime": "2024-06-15T10:00:00.000Z",
-                    "endTime": "2024-06-15T16:00:00.000Z"
-                },
-                "vacation": false,
-                "shiftHours": 6,
-                "weekHoursLeft": 31,
-                "employeeCost": 75,
-                "_id": "6677f5b7911035d92c5d5eab"
-            }
-        ],
-        "createdAt": "2024-06-22T18:14:07.899Z",
-        "updatedAt": "2024-06-23T10:17:56.128Z",
-        "__v": 0
-    },
-    {
-        "_id": "66771473b2b36aea9e001747",
-        "date": "2024-06-16T10:00:00.000Z",
-        "weekNumber": 202424,
-        "totalEmployeesScheduled": 1,
-        "totalDayEmployeesCost": 75,
-        "business": "6673fef88c45d0a0ca5f34c5",
-        "employees": [
-            {
-                "userId": {
-                    "_id": "66758b8904c4e6f5bbaa6b81",
-                    "username": "user3",
-                    "allUserRoles": [
-                        "Manager",
-                        "Bartender"
-                    ]
-                },
-                "role": "Manager",
-                "timeRange": {
-                    "startTime": "2024-06-15T10:00:00.000Z",
-                    "endTime": "2024-06-15T11:00:00.000Z"
-                },
-                "vacation": false,
-                "shiftHours": 1,
-                "weekHoursLeft": 31,
-                "employeeCost": 12.5,
-                "_id": "6677f5c4911035d92c5d5eb8"
-            }
-        ],
-        "createdAt": "2024-06-22T18:14:11.976Z",
-        "updatedAt": "2024-06-23T10:17:56.219Z",
-        "__v": 0
-    },
-    {
-        "_id": "66771478b2b36aea9e00174a",
-        "date": "2024-06-17T10:00:00.000Z",
-        "weekNumber": 202425,
-        "totalEmployeesScheduled": 0,
-        "totalDayEmployeesCost": 0,
-        "business": "6673fef88c45d0a0ca5f34c5",
-        "employees": [],
-        "createdAt": "2024-06-22T18:14:16.095Z",
-        "updatedAt": "2024-06-23T07:41:19.010Z",
-        "__v": 0
-    }
-]
+            "role": "bartender",
+            "vacation": false,
+            "shiftHours": 28800000,
+            "employeeCost": 80,
+            "_id": {"$oid":"66f94e6d3d7f3cfc4877d0c4"},
+            "userId": {"$oid":"66e92e066a5cfcc2a707696b"}
+        },
+        {
+            "timeRange": {
+                "startTime": "2024-09-22T12:00:00.000Z",
+                "endTime": "2024-09-22T16:00:00.000Z"
+            },
+            "role": "bartender",
+            "vacation": false,
+            "shiftHours": 28800000,
+            "employeeCost": 80,
+            "_id": {"$oid":"66f94e6d3d7f3cfc4877d0c3"},
+            "userId": {"$oid":"66e92e066a5cfcc2a707696b"}
+        }, {
+            "timeRange": {
+                "startTime": "2024-09-22T19:00:00.000Z",
+                "endTime": "2024-09-22T23:00:00.000Z"
+            },
+            "role": "bartender",
+            "vacation": false,
+            "shiftHours": 28800000,
+            "employeeCost": 80,
+            "_id": {"$oid":"66f94e6d3d7f3cfc4877d0c2"},
+            "userId": {"$oid":"66e92e066a5cfcc2a707696b"}
+        }
+    ],
+    "createdAt": "2024-09-24T10:54:06.080Z",
+    "updatedAt": "2024-10-05T07:32:30.720Z",
+    "__v": 0,
+    "totalEmployeesVacation": -1
+}

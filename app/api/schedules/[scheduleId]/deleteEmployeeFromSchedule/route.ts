@@ -14,9 +14,9 @@ import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
 
 // @desc    Create new schedules
-// @route   POST /schedules/:schedulesId/deleteEmployeeFromSchedule
+// @route   PATCH /schedules/:schedulesId/deleteEmployeeFromSchedule
 // @access  Private
-export const POST = async (
+export const PATCH = async (
   req: Request,
   context: { params: { scheduleId: Types.ObjectId } }
 ) => {

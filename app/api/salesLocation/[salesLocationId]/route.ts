@@ -137,6 +137,12 @@ export const PATCH = async (
   req: Request,
   context: { params: { salesLocationId: Types.ObjectId } }
 ) => {
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const salesLocationId = context.params.salesLocationId;
 
@@ -182,7 +188,10 @@ export const PATCH = async (
       (!salesLocation.ordersIds || salesLocation.ordersIds.length === 0) &&
       status !== "Reserved"
     ) {
-      await SalesLocation.deleteOne({ _id: salesLocationId });
+      await SalesLocation.deleteOne(
+        { _id: salesLocationId },
+        { new: true, session }
+      );
       return new NextResponse(
         JSON.stringify({
           message: "Occupied salesLocation with no orders has been deleted!",
@@ -228,8 +237,12 @@ export const PATCH = async (
     await SalesLocation.findOneAndUpdate(
       { _id: salesLocationId },
       { $set: updatedSalesLocationObj },
-      { new: true }
+      { new: true, session }
     );
+
+    // Commit the transaction if both operations succeed
+    await session.commitTransaction();
+    session.endSession();
 
     return new NextResponse(
       JSON.stringify({
@@ -238,7 +251,10 @@ export const PATCH = async (
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Update salesLocation failed!", error);
+  } finally {
+    session.endSession();
   }
 };
 

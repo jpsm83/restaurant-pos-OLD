@@ -8,6 +8,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 // imported models
 import Schedule from "@/app/lib/models/schedule";
 import User from "@/app/lib/models/user";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get all schedules by business ID
 // @route   GET /schedules/business/:businessId
@@ -20,10 +21,11 @@ export const GET = async (
 ) => {
   try {
     const businessId = context.params.businessId;
-    // check if the business ID is valid
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+
+    // check if the schedule ID is valid
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid business ID!" }),
+        JSON.stringify({ message: "Invalid business Id!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -34,7 +36,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const schedules = await Schedule.find({ business: businessId })
+    const schedules = await Schedule.find({ businessId: businessId })
       .populate({
         path: "employeesSchedules.userId",
         select: "username allUserRoles",

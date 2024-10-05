@@ -224,7 +224,9 @@ export const DELETE = async (
     secure: true,
   });
 
-  // ensure multiple operations are atomic
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -281,25 +283,31 @@ export const DELETE = async (
       User.deleteMany({ business: businessId }).session(session),
     ]);
 
-    
-    const cloudinaryFolder = await cloudinary.api.sub_folders("restaurant-pos/");
-    
-    let subfoldersArr: string[] = []; 
-    
-    cloudinaryFolder.folders.forEach((folder: any) => subfoldersArr.push(folder.name));
-    
-    if(subfoldersArr.includes(businessId.toString())) {
-      await cloudinary.api.delete_folder(`restaurant-pos/${businessId}/`);
-    }
-
     await session.commitTransaction();
     session.endSession();
+
+    const cloudinaryFolder = await cloudinary.api.sub_folders(
+      "restaurant-pos/"
+    );
+
+    let subfoldersArr: string[] = [];
+
+    cloudinaryFolder.folders.forEach((folder: any) =>
+      subfoldersArr.push(folder.name)
+    );
+
+    if (subfoldersArr.includes(businessId.toString())) {
+      await cloudinary.api.delete_folder(`restaurant-pos/${businessId}/`);
+    }
 
     return new NextResponse(
       JSON.stringify({ message: "Business deleted successfully" }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Delete business failed!", error);
+  } finally {
+    session.endSession();
   }
 };

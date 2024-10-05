@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // imported utils
@@ -25,6 +25,22 @@ export const PATCH = async (
   req: Request,
   context: { params: { scheduleId: Types.ObjectId } }
 ) => {
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  if (!session) {
+    return new NextResponse(
+      JSON.stringify({ message: "Failed to start session for transaction" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const { employeeSchedule } = (await req.json()) as {
       employeeSchedule: IEmployeeSchedule;
@@ -62,7 +78,7 @@ export const PATCH = async (
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employeesSchedules.userId employeesSchedules.vacation employeesSchedules._id totalDayEmployeesCost totalEmployeesScheduled totalEmployeesVacation"
+        "employeesSchedules.userId employeesSchedules.vacation employeesSchedules.timeRange"
       )
       .lean();
 
@@ -74,12 +90,23 @@ export const PATCH = async (
     }
 
     // check if the employee is already in the schedule
-    const employeeAlreadyScheduled = schedule.employeesSchedules.find(
-      (emp) => emp.userId === userId
+    const employeeAlreadyScheduled = schedule.employeesSchedules.filter(
+      (emp) => emp.userId.toString() === userId.toString()
     );
 
+    // if employee is already on vacation, he can't be scheduled
+    if (
+      employeeAlreadyScheduled &&
+      employeeAlreadyScheduled.some((el) => el.vacation)
+    ) {
+      return new NextResponse(
+        JSON.stringify({ message: "Employee on vacation!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     if (vacation && employeeAlreadyScheduled) {
-      if (employeeAlreadyScheduled.vacation) {
+      if (employeeAlreadyScheduled.some((el) => el.vacation)) {
         return new NextResponse(
           JSON.stringify({ message: "Employee already on vacation!" }),
           { status: 400, headers: { "Content-Type": "application/json" } }
@@ -92,16 +119,14 @@ export const PATCH = async (
     }
 
     // create on object for each schedule with start and end time
-    const timeRangeArr = schedule.employeesSchedules
-      .filter((el) => el.userId === userId)
-      .map((el) => ({
-        startTime: el.timeRange.startTime,
-        endTime: el.timeRange.endTime,
-      }));
+    const timeRangeArr = employeeAlreadyScheduled.map((el) => ({
+      startTime: new Date(el.timeRange.startTime),
+      endTime: new Date(el.timeRange.endTime),
+    }));
 
     // the new schedule should not start or end inside an already scheduled shift
     if (timeRangeArr.length > 0) {
-      if (isScheduleOverlapping(startTime, endTime, timeRangeArr)) {
+      if (isScheduleOverlapping(startTime, endTime, timeRangeArr) === true) {
         return new NextResponse(
           JSON.stringify({
             message: "Employee scheduled overlaps existing one!",
@@ -112,7 +137,7 @@ export const PATCH = async (
     }
 
     const userEmployee: IUser | null = await User.findById(userId)
-      .select("salary")
+      .select("salary.grossSalary salary.payFrequency")
       .lean();
 
     if (!userEmployee) {
@@ -166,14 +191,14 @@ export const PATCH = async (
           totalEmployeesVacation: vacation ? 1 : 0,
         },
       },
-      { new: true }
+      { new: true, session }
     );
 
     if (updatedSchedule && vacation) {
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $inc: { vacationDaysLeft: -1 } },
-        { new: true }
+        { new: true, session }
       );
 
       if (!updatedUser) {
@@ -187,11 +212,18 @@ export const PATCH = async (
       }
     }
 
+    // Commit the transaction if both operations succeed
+    await session.commitTransaction();
+    session.endSession();
+
     return new NextResponse(
       JSON.stringify({ message: "Employee added to schedule!" }),
       { status: 201, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Adding employee to schedule failed!", error);
+  } finally {
+    session.endSession();
   }
 };

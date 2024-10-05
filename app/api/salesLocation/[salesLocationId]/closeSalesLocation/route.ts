@@ -1,8 +1,7 @@
 import connectDb from "@/app/lib/utils/connectDb";
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/salesLocation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import SalesLocation from "@/app/lib/models/salesLocation";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
@@ -14,6 +13,22 @@ export const PATCH = async (
   req: Request,
   context: { params: { salesLocationId: Types.ObjectId } }
 ) => {
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  if (!session) {
+    return new NextResponse(
+      JSON.stringify({ message: "Failed to start session for transaction" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
     const { closedById } = (await req.json()) as {
       closedById: Types.ObjectId;
@@ -42,7 +57,10 @@ export const PATCH = async (
         $or: [{ ordersIds: { $size: 0 } }, { ordersIds: { $exists: false } }],
       })
     ) {
-      await SalesLocation.deleteOne({ _id: salesLocationId });
+      await SalesLocation.deleteOne(
+        { _id: salesLocationId },
+        { new: true, session }
+      );
       return new NextResponse(
         JSON.stringify({
           message: "Sales location with no orders deleted successfully",
@@ -66,7 +84,7 @@ export const PATCH = async (
           closedAt: new Date(),
           closedById,
         },
-        { new: true }
+        { new: true, session }
       );
 
       return new NextResponse(
@@ -74,6 +92,10 @@ export const PATCH = async (
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
+
+    // Commit the transaction if both operations succeed
+    await session.commitTransaction();
+    session.endSession();
 
     return new NextResponse(
       JSON.stringify({
@@ -83,6 +105,9 @@ export const PATCH = async (
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Close table failed!", error);
+  } finally {
+    session.endSession();
   }
 };
