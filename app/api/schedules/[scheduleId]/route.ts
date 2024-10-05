@@ -68,6 +68,7 @@ export const PATCH = async (
 ) => {
   try {
     const scheduleId = context.params.scheduleId;
+    
     // check if the schedule ID is valid
     if (isObjectIdValid([scheduleId]) !== true) {
       return new NextResponse(
