@@ -1,8 +1,8 @@
 import { Schema, model, models } from "mongoose";
 
 // on the time of record the purchase, user should be able to select the supplier good in a dropdown
-// and from there user should be able to see the supplierGood.pricePerUnit to compare with the price of the purchase
-// if they are not the same, the user should be able to edit the supplierGood.pricePerUnit
+// and from there user should be able to see the supplierGood.pricePerMeasurementUnit to compare with the price of the purchase
+// if they are not the same, the user should be able to edit the supplierGood.pricePerMeasurementUnit
 const purchaseItemInventorySchema = new Schema({
   supplierGoodId: {
     type: Schema.Types.ObjectId,
@@ -11,13 +11,13 @@ const purchaseItemInventorySchema = new Schema({
   }, // Reference to the specific good
 
   // ************************* IMPORTANT *************************
-  // this quantity is base on the supplierGood.MEAUREMENTUNIT - NOT on the supplierGood.SALEUNIT
+  // this quantity is base on the supplierGood.MEAUREMENTUNIT - NOT on the supplierGood.purchaseUnit
   quantityPurchased: { type: Number, required: true }, // Quantity of this good purchased - ex: 10kg, 1L, 5 units
   // *************************************************************
 
   // ************************* IMPORTANT *************************
-  purchasePrice: { type: Number, required: true }, // this is calculate on the FRONT before be saved on DB supplierGood.pricePerUnit * quantityPurchased for user confirmation
-  // ex: 10kg * 2€ = 20€ - if the receipt says 25€, the user should be able to edit the supplierGood.pricePerUnit **** IMPORTANT for the analytics
+  purchasePrice: { type: Number, required: true }, // this is calculate on the FRONT before be saved on DB supplierGood.pricePerMeasurementUnit * quantityPurchased for user confirmation
+  // ex: 10kg * 2€ = 20€ - if the receipt says 25€, the user should be able to edit the supplierGood.pricePerMeasurementUnit **** IMPORTANT for the analytics
 });
 
 const purchaseSchema = new Schema(

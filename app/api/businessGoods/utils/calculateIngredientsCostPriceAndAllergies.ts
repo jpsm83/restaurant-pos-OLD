@@ -14,7 +14,7 @@ export const calculateIngredientsCostPriceAndAllergies = async (
       const supplierGood: ISupplierGood | null = await SupplierGood.findOne({
         _id: ingredient.supplierGood,
       })
-        .select("measurementUnit pricePerUnit allergens")
+        .select("measurementUnit pricePerMeasurementUnit allergens")
         .lean()
 
       if (!supplierGood) {
@@ -31,17 +31,17 @@ export const calculateIngredientsCostPriceAndAllergies = async (
       if (ingredient.measurementUnit && ingredient.requiredQuantity) {
         if (supplierGood?.measurementUnit === ingredient.measurementUnit) {
           if(ingredient.measurementUnit === "unit" as string){
-            ingredientObj.costOfRequiredQuantity = ingredient.requiredQuantity * (supplierGood?.pricePerUnit ?? 0);
+            ingredientObj.costOfRequiredQuantity = ingredient.requiredQuantity * (supplierGood?.pricePerMeasurementUnit ?? 0);
           } else {
           ingredientObj.costOfRequiredQuantity =
-            (supplierGood.pricePerUnit ?? 0) * ingredient.requiredQuantity;
+            (supplierGood.pricePerMeasurementUnit ?? 0) * ingredient.requiredQuantity;
           }
         } else {
           const convertedQuantity = convert(ingredient.requiredQuantity)
             .from(ingredient.measurementUnit)
             .to(supplierGood?.measurementUnit as Unit);
           ingredientObj.costOfRequiredQuantity =
-            (supplierGood?.pricePerUnit ?? 0) * convertedQuantity;
+            (supplierGood?.pricePerMeasurementUnit ?? 0) * convertedQuantity;
         }
       }
       newIngredientsArray.push(ingredientObj);

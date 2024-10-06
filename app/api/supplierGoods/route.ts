@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import connectDb from "@/app/lib/utils/connectDb";
 
-// imported interfaces
-import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
-
 // import utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import addSupplierGoodToInventory from "../inventories/utils/addSupplierGoodToInventory";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
-import addSupplierGoodToInventory from "../inventories/utils/addSupplierGoodToInventory";
 
 // @desc    Get all supplier goods
 // @route   GET /supplierGoods
@@ -49,17 +50,18 @@ export const POST = async (req: Request) => {
       mainCategory,
       subCategory,
       currentlyInUse,
-      supplier,
-      business,
+      supplierId,
+      businessId,
       description,
       allergens,
       budgetImpact,
-      saleUnit,
-      measurementUnit,
-      parLevel,
-      minimumQuantityRequired,
       inventorySchedule,
-      pricePerUnit,
+      minimumQuantityRequired,
+      parLevel,
+      purchaseUnit,
+      measurementUnit,
+      quantityInMeasurementUnit,
+      totalPurchasePrice,
     } = (await req.json()) as ISupplierGood;
 
     // check required fields
@@ -69,16 +71,26 @@ export const POST = async (req: Request) => {
       !mainCategory ||
       !subCategory ||
       currentlyInUse === undefined ||
-      !supplier ||
-      !business ||
-      !pricePerUnit
+      !supplierId ||
+      !businessId
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Name, keyword, mainCategory, subCategory, currentlyInUse, supplier, business and pricePerUnit are required!",
+            "Name, keyword, mainCategory, subCategory, currentlyInUse, supplierId and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // validate ids
+    if (isObjectIdValid([businessId, supplierId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Business or supplier ID is not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -86,8 +98,9 @@ export const POST = async (req: Request) => {
     await connectDb();
 
     // check if the supplier good already exists
-    const duplicateSupplierGood = await SupplierGood.findOne({
-      business,
+    const duplicateSupplierGood = await SupplierGood.exists({
+      businessId,
+      supplierId,
       name,
     });
 
@@ -104,31 +117,68 @@ export const POST = async (req: Request) => {
     }
 
     // Create a supplier good object with required fields
-    const supplierGoodObj: ISupplierGood = {
+    const newSupplierGood: ISupplierGood = {
       name,
       keyword,
       mainCategory,
       subCategory,
       currentlyInUse,
-      supplier,
-      business,
+      supplierId,
+      businessId,
       description: description || undefined,
       allergens: allergens || undefined,
       budgetImpact: budgetImpact || undefined,
-      saleUnit: saleUnit || undefined,
-      measurementUnit: measurementUnit || undefined,
-      pricePerUnit,
-      parLevel: parLevel || undefined,
-      minimumQuantityRequired: minimumQuantityRequired || undefined,
       inventorySchedule: inventorySchedule || undefined,
+      minimumQuantityRequired: minimumQuantityRequired || undefined,
+      parLevel: parLevel || undefined,
+      purchaseUnit: purchaseUnit || undefined,
+      measurementUnit: measurementUnit || undefined,
+      quantityInMeasurementUnit: quantityInMeasurementUnit || undefined,
+      totalPurchasePrice: totalPurchasePrice || undefined,
+      // Calculate price per unit only if both price and quantity are provided
+      pricePerMeasurementUnit:
+        totalPurchasePrice && quantityInMeasurementUnit
+          ? totalPurchasePrice / quantityInMeasurementUnit
+          : undefined,
     };
 
     // create a new supplier good
-    const newSupplierGood = await SupplierGood.create(supplierGoodObj);
+    const newSupplierGoodResponse = await SupplierGood.create(newSupplierGood);
+
+    if (!newSupplierGoodResponse) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Supplier good creation failed!",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // *** IMPORTANT ***
-    // when supplier good is created, it will be added to the inventory
-    await addSupplierGoodToInventory(newSupplierGood._id, business);
+    // when supplier good is created and it is currently in use, it will be added to the inventory
+    if (currentlyInUse === true) {
+      const addSupplierGoodToInventoryResult = await addSupplierGoodToInventory(
+        newSupplierGoodResponse._id,
+        businessId
+      );
+
+      if (addSupplierGoodToInventoryResult !== true) {
+        return new NextResponse(
+          JSON.stringify({
+            message:
+              "Supplier good created but fail to add to inventory! Error: " +
+              addSupplierGoodToInventoryResult,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
 
     // confirm supplier good was created
     return new NextResponse(

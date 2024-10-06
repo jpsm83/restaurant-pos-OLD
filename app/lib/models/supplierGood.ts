@@ -1,7 +1,7 @@
 import { Schema, model, models } from "mongoose";
 import {
   mainCategories,
-  saleUnit,
+  purchaseUnit,
   measurementUnit,
   allergens,
   budgetImpact,
@@ -38,26 +38,30 @@ const supplierGoodSchema = new Schema(
 
     // analytics fields
     minimumQuantityRequired: { type: Number }, // limit quantity required for a day work
-    
+
     // ************************* IMPORTANT *************************
     // parLevel is base on MEASUREMENT UNIT,
     parLevel: { type: Number }, // optimal quantity to maintain, bar orders have to reach this level - if par level is 100, you got 20, today is order day, you have to order 80
     // *************************************************************
-    
-    saleUnit: {
+
+    purchaseUnit: {
       type: String,
-      enum: saleUnit,
-    }, // unit in which the good is sold - block of cheese, bag of bread, milk gallon
+      enum: purchaseUnit,
+    }, // unit in which the good is sold - block of cheese, bag of bread, milk gallon, unit
     measurementUnit: {
       type: String,
       enum: measurementUnit,
-    }, // unit used for conversion, measurement on how to good is bought
-    pricePerUnit: { type: Number }, // price of the good per unit - user will divede the price of the product by the quantity of unit to get this value
-    
-    // saleUnit | measurementUnit |  pricePerUnit
-    //   Packet |     Kilogram    | 2€ per kilogram
-    //    Unit  |       Unit      |   3€ per unit
-    //   Carton |      Liters     |  1€ per liter
+    }, // unit used for conversion, measurement on how to good is bought - kilogram, liter, unit
+    quantityInMeasurementUnit: { type: Number }, // quantity of the good in measurementUnit - ex: 10kg, 1L, 5 units
+    totalPurchasePrice: { type: Number }, // price of purchaseUnit
+    pricePerMeasurementUnit: { type: Number }, // totalPurchasePrice / quantityInMeasurementUnit
+
+    // purchaseUnit | measurementUnit | quantityInMeasurementUnit | totalPurchasePrice | pricePerMeasurementUnit
+    // =========================================================================================================
+    //    Box       |     Kilogram    |          20               |       40€          |    2€ per kilogram
+    //   Carton     |      Liter      |          10               |       10€          |    1€ per liter
+    //    Unit      |      Unit       |           1               |        3€          |    3€ per unit
+    //    Bag       |     Kilogram    |           5               |       15€          |    3€ per kilogram
 
     // IMPORTANT *** this caluclation will be done automatically in the backend
     // this will need information of orders to do so

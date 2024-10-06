@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // import models
 import SupplierGood from "@/app/lib/models/supplierGood";
-import { Types } from "mongoose";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // @desc    Get supplier goods by supplier ID
 // @route   GET /supplierGoods/supplier/:supplierId
@@ -17,8 +20,9 @@ export const GET = async (
 ) => {
   try {
     const supplierId = context.params.supplierId;
+
     // check if the supplier is valid
-    if (!supplierId || !Types.ObjectId.isValid(supplierId)) {
+    if (!isObjectIdValid([supplierId])) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid supplierId!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -29,7 +33,7 @@ export const GET = async (
     await connectDb();
 
     const supplierGoods = await SupplierGood.find({
-      supplier: supplierId,
+      supplierId: supplierId,
     }).lean();
 
     return !supplierGoods.length

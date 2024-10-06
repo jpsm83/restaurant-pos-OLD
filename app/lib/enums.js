@@ -20,7 +20,7 @@ export const cryptoTypes = ['Bitcoin', 'Ethereum', 'Litecoin', 'Ripple', 'Cardan
 
 export const otherPaymentTypes = ['Voucher', 'Paypal', 'Venmo', 'Apple Pay', 'Google Pay', 'Samsung Pay'];
 
-export const saleUnit = [
+export const purchaseUnit = [
   "Unit",
   "Dozen",
   "Case",

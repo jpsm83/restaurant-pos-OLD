@@ -55,7 +55,7 @@ export const GET = async (req: Request) => {
       .populate({
         path: "inventoryGoods.supplierGoodId",
         select:
-          "name mainCategory subCategory supplier budgetImpact imageUrl inventorySchedule parLevel measurementUnit pricePerUnit",
+          "name mainCategory subCategory supplier budgetImpact imageUrl inventorySchedule parLevel measurementUnit pricePerMeasurementUnit",
         model: SupplierGood,
         populate: {
           path: "supplier",

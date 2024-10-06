@@ -20,6 +20,7 @@ const addSupplierGoodToInventory = async (
     await connectDb();
 
     // Get the current month's start and end dates
+    // new supplier good will be add to the inventory of the current month
     const startOfCurrentMonth = moment().startOf("month").toDate();
     const endOfCurrentMonth = moment().endOf("month").toDate();
 

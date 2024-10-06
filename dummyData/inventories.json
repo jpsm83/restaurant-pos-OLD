@@ -18,7 +18,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 9,
-                  "pricePerUnit": 13.5
+                  "pricePerMeasurementUnit": 13.5
               },
               "monthlyCounts": [
                   {
@@ -142,7 +142,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 60,
-                  "pricePerUnit": 2.8
+                  "pricePerMeasurementUnit": 2.8
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -163,7 +163,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "unit",
                   "parLevel": 120,
-                  "pricePerUnit": 1.8
+                  "pricePerMeasurementUnit": 1.8
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -184,7 +184,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 12,
-                  "pricePerUnit": 1.2
+                  "pricePerMeasurementUnit": 1.2
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -205,7 +205,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 4,
-                  "pricePerUnit": 8
+                  "pricePerMeasurementUnit": 8
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -226,7 +226,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "ml",
                   "parLevel": 140,
-                  "pricePerUnit": 0.8
+                  "pricePerMeasurementUnit": 0.8
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -247,7 +247,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 5,
-                  "pricePerUnit": 1.8
+                  "pricePerMeasurementUnit": 1.8
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -268,7 +268,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "ml",
                   "parLevel": 240,
-                  "pricePerUnit": 0.4
+                  "pricePerMeasurementUnit": 0.4
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -289,7 +289,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "unit",
                   "parLevel": 120,
-                  "pricePerUnit": 1
+                  "pricePerMeasurementUnit": 1
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -310,7 +310,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 10,
-                  "pricePerUnit": 1
+                  "pricePerMeasurementUnit": 1
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -331,7 +331,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 10,
-                  "pricePerUnit": 8
+                  "pricePerMeasurementUnit": 8
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -352,7 +352,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 6,
-                  "pricePerUnit": 2
+                  "pricePerMeasurementUnit": 2
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -370,7 +370,7 @@
                   "inventorySchedule": "weekly",
                   "measurementUnit": "kg",
                   "parLevel": 9,
-                  "pricePerUnit": 13.5
+                  "pricePerMeasurementUnit": 13.5
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,
@@ -387,7 +387,7 @@
                       "_id": "6674414e36e26dff0dc4ee8f",
                       "tradeName": "supplier1tradeName"
                   },
-                  "pricePerUnit": 10
+                  "pricePerMeasurementUnit": 10
               },
               "monthlyCounts": [],
               "averageDeviationPercent": 0,

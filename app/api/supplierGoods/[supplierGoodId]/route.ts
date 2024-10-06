@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
+// imported utils
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
 // imported interfaces
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 
-// import utils
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-
-// import models
+// imported models
 import SupplierGood from "@/app/lib/models/supplierGood";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Supplier from "@/app/lib/models/supplier";
+import addSupplierGoodToInventory from "../../inventories/utils/addSupplierGoodToInventory";
+import Inventory from "@/app/lib/models/inventory";
+import moment from "moment";
 
 // @desc    Get supplier good by ID
 // @route   GET /supplierGoods/:supplierGoodId
@@ -22,8 +26,9 @@ export const GET = async (
 ) => {
   try {
     const supplierGoodId = context.params.supplierGoodId;
+
     // check if the supplier good is valid
-    if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
+    if (isObjectIdValid([supplierGoodId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid supplierGoodId!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -34,7 +39,7 @@ export const GET = async (
     await connectDb();
 
     const supplierGood = await SupplierGood.findById(supplierGoodId)
-      .populate({ path: "supplier", select: "tradeName", model: Supplier })
+      .populate({ path: "supplierId", select: "tradeName", model: Supplier })
       .lean();
 
     return !supplierGood
@@ -60,8 +65,9 @@ export const PATCH = async (
 ) => {
   try {
     const supplierGoodId = context.params.supplierGoodId;
+
     // check if supplierGoodId is valid
-    if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
+    if (isObjectIdValid([supplierGoodId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid supplierGoodId!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -74,16 +80,16 @@ export const PATCH = async (
       mainCategory,
       subCategory,
       currentlyInUse,
-      supplier,
       description,
       allergens,
       budgetImpact,
-      saleUnit,
-      measurementUnit,
-      parLevel,
-      minimumQuantityRequired,
       inventorySchedule,
-      pricePerUnit,
+      minimumQuantityRequired,
+      parLevel,
+      purchaseUnit,
+      measurementUnit,
+      quantityInMeasurementUnit,
+      totalPurchasePrice,
     } = (await req.json()) as ISupplierGood;
 
     // connect before first call to DB
@@ -93,6 +99,7 @@ export const PATCH = async (
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(
       supplierGoodId
     ).lean();
+
     if (!supplierGood) {
       return new NextResponse(
         JSON.stringify({ message: "Supplier good not found!" }),
@@ -101,11 +108,11 @@ export const PATCH = async (
     }
 
     // check for duplicates supplier good name
-    const duplicateSupplierGood = await SupplierGood.findOne({
+    const duplicateSupplierGood = await SupplierGood.exists({
       _id: { $ne: supplierGoodId },
-      business: supplierGood.business,
+      businessId: supplierGood.businessId,
+      supplierId: supplierGood.supplierId,
       name,
-      supplier,
     });
 
     if (duplicateSupplierGood) {
@@ -117,34 +124,83 @@ export const PATCH = async (
       );
     }
 
-    // prepare update object
-    const updateObj: ISupplierGood = {
-      name: name || supplierGood.name,
-      keyword: keyword || supplierGood.keyword,
-      mainCategory: mainCategory || supplierGood.mainCategory,
-      subCategory: subCategory || supplierGood.subCategory,
-      currentlyInUse: currentlyInUse || supplierGood.currentlyInUse,
-      supplier: supplier || supplierGood.supplier,
-      description: description || supplierGood.description,
-      allergens: allergens || supplierGood.allergens,
-      budgetImpact: budgetImpact || supplierGood.budgetImpact,
-      saleUnit: saleUnit || supplierGood.saleUnit,
-      measurementUnit: measurementUnit || supplierGood.measurementUnit,
-      pricePerUnit: pricePerUnit || supplierGood.pricePerUnit,
-      parLevel: parLevel || supplierGood.parLevel,
-      minimumQuantityRequired:
-        minimumQuantityRequired || supplierGood.minimumQuantityRequired,
-      inventorySchedule: inventorySchedule || supplierGood.inventorySchedule,
-    };
+    // create a new supplier good object
+    let updateSupplierGood: Partial<ISupplierGood> = {};
+
+    if (name) updateSupplierGood.name = name;
+    if (keyword) updateSupplierGood.keyword = keyword;
+    if (mainCategory) updateSupplierGood.mainCategory = mainCategory;
+    if (subCategory) updateSupplierGood.subCategory = subCategory;
+    if (currentlyInUse) updateSupplierGood.currentlyInUse = currentlyInUse;
+    if (description) updateSupplierGood.description = description;
+    if (allergens) updateSupplierGood.allergens = allergens;
+    if (budgetImpact) updateSupplierGood.budgetImpact = budgetImpact;
+    if (inventorySchedule)
+      updateSupplierGood.inventorySchedule = inventorySchedule;
+    if (minimumQuantityRequired)
+      updateSupplierGood.minimumQuantityRequired = minimumQuantityRequired;
+    if (parLevel) updateSupplierGood.parLevel = parLevel;
+    if (purchaseUnit) updateSupplierGood.purchaseUnit = purchaseUnit;
+    if (measurementUnit) updateSupplierGood.measurementUnit = measurementUnit;
+    if (quantityInMeasurementUnit)
+      updateSupplierGood.quantityInMeasurementUnit = quantityInMeasurementUnit;
+    if (totalPurchasePrice)
+      updateSupplierGood.totalPurchasePrice = totalPurchasePrice;
+    if (totalPurchasePrice && quantityInMeasurementUnit)
+      updateSupplierGood.pricePerMeasurementUnit =
+        totalPurchasePrice / quantityInMeasurementUnit;
 
     // updated supplier good
-    await SupplierGood.findByIdAndUpdate(supplierGoodId, updateObj, {
-      new: true,
-    });
+    const updatedSupplierGood = await SupplierGood.findByIdAndUpdate(
+      supplierGoodId,
+      { $set: updateSupplierGood },
+      {
+        new: true,
+      }
+    );
+
+    if (updatedSupplierGood) {
+      // Get the current month's start and end dates to check if supplier good is in the inventory for the current month
+      const startOfCurrentMonth = moment().startOf("month").toDate();
+      const endOfCurrentMonth = moment().endOf("month").toDate();
+
+      const isSupplierGoodInInventory = await Inventory.exists({
+        businessId: supplierGood.businessId,
+        setFinalCount: false,
+        createdAt: { $gte: startOfCurrentMonth, $lte: endOfCurrentMonth },
+        "inventoryGoods.supplierGoodId": supplierGoodId,
+      });
+
+      // *** IMPORTANT ***
+      // if currently in use, added to the inventory
+      if (currentlyInUse === true) {
+        if (!isSupplierGoodInInventory) {
+          const addSupplierGoodToInventoryResult =
+            await addSupplierGoodToInventory(
+              supplierGoodId,
+              supplierGood.businessId as Types.ObjectId
+            );
+
+          if (addSupplierGoodToInventoryResult !== true) {
+            return new NextResponse(
+              JSON.stringify({
+                message:
+                  "Supplier good updated but fail to add to inventory! Error: " +
+                  addSupplierGoodToInventoryResult,
+              }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
+        }
+      }
+    }
 
     return new NextResponse(
       JSON.stringify({
-        message: `Supplier good ${name} updated successfully!`,
+        message: "Supplier good updated successfully!",
       }),
       {
         status: 200,
@@ -171,7 +227,7 @@ export const DELETE = async (
     const supplierGoodId = context.params.supplierGoodId;
 
     // check if the supplier good is valid
-    if (!supplierGoodId || !Types.ObjectId.isValid(supplierGoodId)) {
+    if (isObjectIdValid([supplierGoodId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid supplierGoodId!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -185,7 +241,7 @@ export const DELETE = async (
     const supplierGood: ISupplierGood | null = await SupplierGood.findById(
       supplierGoodId
     )
-      .select("_id business")
+      .select("businessId")
       .lean();
 
     if (!supplierGood) {
@@ -201,8 +257,8 @@ export const DELETE = async (
 
     // Check if any business goods uses this supplier good
     const isInUse = await BusinessGood.exists({
-      business: supplierGood.business,
-      "ingredients.supplierGood": supplierGoodId,
+      businessId: supplierGood.businessId,
+      "ingredients.supplierGoodId": supplierGoodId,
     });
 
     if (isInUse) {
@@ -215,7 +271,17 @@ export const DELETE = async (
     }
 
     // delete the supplier good
-    await SupplierGood.deleteOne({ _id: supplierGoodId });
+    const result = await SupplierGood.deleteOne({ _id: supplierGoodId });
+
+    if (result.deletedCount === 0) {
+      return new NextResponse(
+        JSON.stringify({ message: "Supplier good not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     return new NextResponse(
       JSON.stringify({

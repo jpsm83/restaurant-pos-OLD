@@ -13,10 +13,12 @@ export interface ISupplierGood {
   allergens?: string[];
   budgetImpact?: string;
   imageUrl?: string;
-  saleUnit?: string;
-  measurementUnit?: string;
-  pricePerUnit: number;
-  parLevel?: number;
-  minimumQuantityRequired?: number;
   inventorySchedule?: string;
+  minimumQuantityRequired?: number;
+  parLevel?: number;
+  purchaseUnit?: string;
+  measurementUnit?: string;
+  quantityInMeasurementUnit?: number;
+  totalPurchasePrice?: number;
+  pricePerMeasurementUnit?: number;
 }

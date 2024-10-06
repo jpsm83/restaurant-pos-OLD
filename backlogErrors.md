@@ -5,11 +5,11 @@ salesLocation - DONE
 printers - DONE
 schedules - DONE
 suppliers - DONE
-
-supplierGoods
+supplierGoods - DONE
 
 businessGoods
 - add a sugested price on business goods base on the calculation
+- 
 promotions
 orders
 purchaeses
