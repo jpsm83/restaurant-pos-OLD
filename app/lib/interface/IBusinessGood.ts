@@ -19,6 +19,8 @@ export interface IBusinessGood {
   ingredients?: IIngredients[];
   setMenuIds?: Types.ObjectId[];
   costPrice?: number;
+  grossProfitMarginDesired?: number;
+  suggestedSellingPrice?: number;
   description?: string;
   allergens?: string[];
   imageUrl?: string;

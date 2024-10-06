@@ -1,10 +1,14 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
-// import models
-import BusinessGood from "@/app/lib/models/businessGood";
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+
+// imported models
+import BusinessGood from "@/app/lib/models/businessGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
 
 // @desc    Get business goods by business ID
 // @route   GET /businessGoods/business/:businessId
@@ -18,7 +22,7 @@ export const GET = async (
   try {
     const businessId = context.params.businessId; // Corrected to use route parameter
 
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
         {
@@ -32,7 +36,16 @@ export const GET = async (
     await connectDb();
 
     const businessGoods = await BusinessGood.find({ business: businessId })
-      .populate("ingredients.supplierGood", "name mainCategory subCategory")
+      .populate({
+        path: "ingredients.supplierGoodId",
+        select: "name mainCategory subCategory",
+        model: SupplierGood,
+      })
+      .populate({
+        path: "setMenuIds",
+        select: "name mainCategory subCategory sellingPrice",
+        model: SupplierGood,
+      })
       .lean();
 
     return !businessGoods.length

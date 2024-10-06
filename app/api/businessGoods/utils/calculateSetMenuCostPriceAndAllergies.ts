@@ -1,28 +1,33 @@
+import { Types } from "mongoose";
+
+// imported utils
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported models
 import BusinessGood from "@/app/lib/models/businessGood";
-import { Types, set } from "mongoose";
 
 // helper function to set setMenu
 export const calculateSetMenuCostPriceAndAllergies = async (
-  setMenu: Types.ObjectId[]
+  setMenuIds: Types.ObjectId[]
 ) => {
   try {
-    if (Array.isArray(setMenu) && setMenu.length === 0) {
-      return "Invalid setMenu array!";
+    if (Array.isArray(setMenuIds) && setMenuIds.length === 0) {
+      return "Invalid setMenuIds array!";
     }
 
     // validate setMenu array of ids
-    if (!setMenu.every((id) => Types.ObjectId.isValid(id))) {
-      return "Invalid setMenu IDs!";
+    if (!setMenuIds.every((id) => isObjectIdValid([id]) !== true)) {
+      return "Invalid setMenuIds!";
     }
 
     // Query all businessGoods at once
     const businessGoods = await BusinessGood.find({
-      _id: { $in: setMenu },
+      _id: { $in: setMenuIds },
     })
       .select("costPrice allergens")
       .lean();
 
-    if (businessGoods.length !== setMenu.length) {
+    if (businessGoods.length !== setMenuIds.length) {
       return "Some business goods found!";
     }
 

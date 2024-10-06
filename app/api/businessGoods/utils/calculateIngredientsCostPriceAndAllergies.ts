@@ -1,9 +1,12 @@
-import { IIngredients } from "@/app/lib/interface/IBusinessGood";
-import SupplierGood from "@/app/lib/models/supplierGood";
-import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
 import convert, { Unit } from "convert-units";
 
-// helper function to set ingredients
+// imported interfaces
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import { IIngredients } from "@/app/lib/interface/IBusinessGood";
+
+// imported models
+import SupplierGood from "@/app/lib/models/supplierGood";
+
 export const calculateIngredientsCostPriceAndAllergies = async (
   ingredients: IIngredients[]
 ) => {
@@ -12,16 +15,16 @@ export const calculateIngredientsCostPriceAndAllergies = async (
 
     for (let ingredient of ingredients) {
       const supplierGood: ISupplierGood | null = await SupplierGood.findOne({
-        _id: ingredient.supplierGood,
+        _id: ingredient.supplierGoodId,
       })
         .select("measurementUnit pricePerMeasurementUnit allergens")
-        .lean()
+        .lean();
 
       if (!supplierGood) {
         return "Supplier good not found!";
       }
       let ingredientObj = {
-        supplierGood: ingredient.supplierGood,
+        supplierGoodId: ingredient.supplierGoodId,
         measurementUnit: ingredient.measurementUnit,
         requiredQuantity: ingredient.requiredQuantity,
         costOfRequiredQuantity: 0,
@@ -30,11 +33,14 @@ export const calculateIngredientsCostPriceAndAllergies = async (
 
       if (ingredient.measurementUnit && ingredient.requiredQuantity) {
         if (supplierGood?.measurementUnit === ingredient.measurementUnit) {
-          if(ingredient.measurementUnit === "unit" as string){
-            ingredientObj.costOfRequiredQuantity = ingredient.requiredQuantity * (supplierGood?.pricePerMeasurementUnit ?? 0);
+          if (ingredient.measurementUnit === ("unit" as string)) {
+            ingredientObj.costOfRequiredQuantity =
+              ingredient.requiredQuantity *
+              (supplierGood?.pricePerMeasurementUnit ?? 0);
           } else {
-          ingredientObj.costOfRequiredQuantity =
-            (supplierGood.pricePerMeasurementUnit ?? 0) * ingredient.requiredQuantity;
+            ingredientObj.costOfRequiredQuantity =
+              (supplierGood.pricePerMeasurementUnit ?? 0) *
+              ingredient.requiredQuantity;
           }
         } else {
           const convertedQuantity = convert(ingredient.requiredQuantity)

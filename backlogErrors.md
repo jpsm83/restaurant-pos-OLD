@@ -7,9 +7,8 @@ schedules - DONE
 suppliers - DONE
 supplierGoods - DONE
 
-businessGoods
-- add a sugested price on business goods base on the calculation
-- 
+businessGoods - ready for testing ALL
+
 promotions
 orders
 purchaeses

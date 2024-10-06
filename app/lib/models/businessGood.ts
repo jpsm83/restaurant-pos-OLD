@@ -52,6 +52,8 @@ const businessGoodSchema = new Schema(
 
     // optional fields
     costPrice: { type: Number }, // sun of all ingredients.costOfRequiredQuantity
+    grossProfitMarginDesired: { type: Number }, // desired gross profit margin - should show user a list of most used gross profit margins depending of the dish
+    suggestedSellingPrice: { type: Number }, // costPrice / (1 - grossProfitMarginDesired as decimal (65% = 0.65))
     description: { type: String }, // description of the business good
     allergens: { type: [String], enum: allergens, default: undefined }, // allergens of the business good - have to follow the allergens from the supplier goods and add more if needed
     imageUrl: { type: String }, // photo of the business good

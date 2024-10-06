@@ -1,16 +1,22 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 import { Types } from "mongoose";
 
-// import models
-import BusinessGood from "@/app/lib/models/businessGood";
-import Promotion from "@/app/lib/models/promotion";
-import Order from "@/app/lib/models/order";
-import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validateIngredients } from "../utils/validateIngredients";
 import { calculateIngredientsCostPriceAndAllergies } from "../utils/calculateIngredientsCostPriceAndAllergies";
 import { calculateSetMenuCostPriceAndAllergies } from "../utils/calculateSetMenuCostPriceAndAllergies";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+
+// imported models
+import BusinessGood from "@/app/lib/models/businessGood";
+import Promotion from "@/app/lib/models/promotion";
+import Order from "@/app/lib/models/order";
+import SupplierGood from "@/app/lib/models/supplierGood";
 
 // @desc    Get business good by ID
 // @route   GET /businessGoods/:businessGoodId
@@ -22,7 +28,7 @@ export const GET = async (
   try {
     const businessGoodId = context.params.businessGoodId;
 
-    if (!businessGoodId || !Types.ObjectId.isValid(businessGoodId)) {
+    if (isObjectIdValid([businessGoodId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessGoodId!" }),
         {
@@ -36,7 +42,16 @@ export const GET = async (
     await connectDb();
 
     const businessGood = await BusinessGood.findById(businessGoodId)
-      .populate("ingredients.supplierGood", "name mainCategory subCategory")
+      .populate({
+        path: "ingredients.supplierGoodId",
+        select: "name mainCategory subCategory",
+        model: SupplierGood,
+      })
+      .populate({
+        path: "setMenuIds",
+        select: "name mainCategory subCategory sellingPrice",
+        model: SupplierGood,
+      })
       .lean();
 
     return !businessGood
@@ -72,12 +87,13 @@ export const PATCH = async (
       sellingPrice,
       ingredients,
       setMenuIds,
+      grossProfitMarginDesired,
       description,
       deliveryTime,
     } = (await req.json()) as IBusinessGood;
 
     // check if businessGoodId is valid
-    if (!businessGoodId || !Types.ObjectId.isValid(businessGoodId)) {
+    if (isObjectIdValid([businessGoodId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessGoodId!" }),
         {
@@ -101,9 +117,11 @@ export const PATCH = async (
     await connectDb();
 
     // check if the business good exists
-    const businessGood = (await BusinessGood.findById(
+    const businessGood: IBusinessGood | null = await BusinessGood.findById(
       businessGoodId
-    ).lean()) as IBusinessGood;
+    )
+      .select("businessId")
+      .lean();
 
     if (!businessGood) {
       return new NextResponse(
@@ -113,9 +131,9 @@ export const PATCH = async (
     }
 
     // check for duplicate names
-    const duplicateBusinessGood = await BusinessGood.findOne({
+    const duplicateBusinessGood = await BusinessGood.exists({
       _id: { $ne: businessGoodId },
-      business: businessGood.business,
+      businessId: businessGood.businessId,
       name,
     });
 
@@ -130,17 +148,20 @@ export const PATCH = async (
     }
 
     // prepare the update object
-    const updatedBusinessGood: IBusinessGood = {
-      name: name || businessGood.name,
-      keyword: keyword || businessGood.keyword,
-      mainCategory: mainCategory || businessGood.mainCategory,
-      subCategory: subCategory || businessGood.subCategory,
-      onMenu: onMenu || businessGood.onMenu,
-      available: available || businessGood.available,
-      sellingPrice: sellingPrice || businessGood.sellingPrice,
-      description: description || businessGood.description,
-      deliveryTime: deliveryTime || businessGood.deliveryTime,
-    };
+    const updatedBusinessGoodObj: Partial<IBusinessGood> = {};
+
+    if (name) updatedBusinessGoodObj.name = name;
+    if (keyword) updatedBusinessGoodObj.keyword = keyword;
+    if (mainCategory) updatedBusinessGoodObj.mainCategory = mainCategory;
+    if (subCategory) updatedBusinessGoodObj.subCategory = subCategory;
+    if (onMenu !== undefined) updatedBusinessGoodObj.onMenu = onMenu;
+    if (available !== undefined) updatedBusinessGoodObj.available = available;
+    if (sellingPrice) updatedBusinessGoodObj.sellingPrice = sellingPrice;
+    if (grossProfitMarginDesired)
+      updatedBusinessGoodObj.grossProfitMarginDesired =
+        grossProfitMarginDesired;
+    if (description) updatedBusinessGoodObj.description = description;
+    if (deliveryTime) updatedBusinessGoodObj.deliveryTime = deliveryTime;
 
     // validate ingredients if they exist and calculate the cost price and allergens
     if (ingredients) {
@@ -164,16 +185,16 @@ export const PATCH = async (
           }
         );
       } else {
-        updatedBusinessGood.ingredients =
+        updatedBusinessGoodObj.ingredients =
           calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
-              supplierGood: ing.supplierGood,
+              supplierGoodId: ing.supplierGoodId,
               measurementUnit: ing.measurementUnit,
               requiredQuantity: ing.requiredQuantity ?? 0,
               costOfRequiredQuantity: ing.costOfRequiredQuantity,
             };
           });
-        updatedBusinessGood.costPrice =
+        updatedBusinessGoodObj.costPrice =
           calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc, curr) => acc + curr.costOfRequiredQuantity,
             0
@@ -192,13 +213,13 @@ export const PATCH = async (
             },
             []
           );
-        updatedBusinessGood.allergens =
+        updatedBusinessGoodObj.allergens =
           reducedAllergens && reducedAllergens.length > 0
             ? reducedAllergens
             : [];
       }
-      // @ts-ignore
-      updatedBusinessGood.$unset = { setMenuIds: "" }; // This removes the setMenuIds field
+
+      updatedBusinessGoodObj.setMenuIds = []; // This removes the setMenuIds field
     }
 
     // calculate the cost price and allergens for the setMenuIds if they exist
@@ -216,29 +237,39 @@ export const PATCH = async (
           }
         );
       } else {
-        updatedBusinessGood.setMenuIds = setMenuIds;
-        updatedBusinessGood.costPrice =
+        updatedBusinessGoodObj.setMenuIds = setMenuIds;
+        updatedBusinessGoodObj.costPrice =
           calculateSetMenuCostPriceAndAllergiesResult.costPrice;
-        updatedBusinessGood.allergens =
+        updatedBusinessGoodObj.allergens =
           calculateSetMenuCostPriceAndAllergiesResult.allergens &&
           calculateSetMenuCostPriceAndAllergiesResult.allergens.length > 0
             ? calculateSetMenuCostPriceAndAllergiesResult.allergens
             : [];
       }
-      // @ts-ignore
-      updatedBusinessGood.$unset = { ingredients: "" }; // This removes the ingredients field
+
+      updatedBusinessGoodObj.ingredients = []; // This removes the ingredients field
+    }
+
+    // calculate suggestedSellingPrice
+    if (
+      updatedBusinessGoodObj.costPrice &&
+      updatedBusinessGoodObj.grossProfitMarginDesired
+    ) {
+      updatedBusinessGoodObj.suggestedSellingPrice =
+        (updatedBusinessGoodObj.costPrice ?? 0) /
+        (1 - (updatedBusinessGoodObj.grossProfitMarginDesired ?? 0) / 100);
     }
 
     // update the business good
     await BusinessGood.findByIdAndUpdate(
       { _id: businessGoodId },
-      updatedBusinessGood,
+      updatedBusinessGoodObj,
       { new: true }
     );
 
     return new NextResponse(
       JSON.stringify({
-        message: `Business good ${updatedBusinessGood.name} updated successfully!`,
+        message: `Business good ${updatedBusinessGoodObj.name} updated successfully!`,
       }),
       {
         status: 200,
@@ -264,7 +295,7 @@ export const DELETE = async (
     const businessGoodId = context.params.businessGoodId;
 
     // check if businessGoodId is valid
-    if (!businessGoodId || !Types.ObjectId.isValid(businessGoodId)) {
+    if (isObjectIdValid([businessGoodId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessGoodId!" }),
         {
@@ -277,27 +308,29 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if the business good is used in any order.billingStatus: "Open"
-    const businessGoodInOrders = await Order.find({
-      businessGoods: businessGoodId,
-      billingStatus: "Open",
-    }).lean();
+    const [businessGoodInOrders, businessGoodInSetMenu] = await Promise.all([
+      // check if the business good is used in any order.billingStatus: "Open"
+      Order.exists({
+        businessGoodsIds: businessGoodId,
+        billingStatus: "Open",
+      }),
+      // check if the business good is used in any set menu
+      BusinessGood.exists({
+        setMenuIds: businessGoodId,
+      }),
+    ]);
 
-    if (businessGoodInOrders.length > 0) {
+    if (businessGoodInOrders) {
       return new NextResponse(
         JSON.stringify({
-          message: "Cannot delete Business good because it is in some open orders!",
+          message:
+            "Cannot delete Business good because it is in some open orders!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // check if the business good is used in any set menu
-    const businessGoodInSetMenu = await BusinessGood.find({
-      setMenuIds: businessGoodId,
-    }).lean();
-
-    if (businessGoodInSetMenu.length > 0) {
+    if (businessGoodInSetMenu) {
       return new NextResponse(
         JSON.stringify({
           message:
@@ -319,8 +352,8 @@ export const DELETE = async (
 
     // delete the business good id reference from promotions
     await Promotion.updateMany(
-      { businessGoodsToApply: businessGoodId },
-      { $pull: { businessGoodsToApply: businessGoodId } }
+      { businessGoodsToApplyIds: businessGoodId },
+      { $pull: { businessGoodsToApplyIds: businessGoodId } }
     );
 
     return new NextResponse(

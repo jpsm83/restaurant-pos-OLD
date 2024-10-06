@@ -1,3 +1,4 @@
+// imported interfaces
 import { IIngredients } from "@/app/lib/interface/IBusinessGood";
 
 export const validateIngredients = (ingredientsArray: IIngredients[]) => {
@@ -6,15 +7,18 @@ export const validateIngredients = (ingredientsArray: IIngredients[]) => {
     return "Invalid ingredients array";
   }
 
-  const requiredFields = ["supplierGood", "measurementUnit", "requiredQuantity"];
+  const requiredValidKeys = [
+    "supplierGoodId",
+    "measurementUnit",
+    "requiredQuantity",
+  ];
 
-  // Iterate over ingredients to check for missing fields
   for (const ingredient of ingredientsArray) {
-    const missingField = requiredFields.find(
-      (field) => ingredient[field] === undefined
-    );
-    if (missingField) {
-      return `Missing ${missingField} in ingredients array`;
+    // Check for the presence of all required keys
+    for (const key of requiredValidKeys) {
+      if (!ingredient[key as keyof IIngredients]) {
+        return `${key} must have a value!`;
+      }
     }
   }
 

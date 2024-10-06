@@ -1,25 +1,41 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
-// import models
-import BusinessGood from "@/app/lib/models/businessGood";
-import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validateIngredients } from "./utils/validateIngredients";
 import { calculateIngredientsCostPriceAndAllergies } from "./utils/calculateIngredientsCostPriceAndAllergies";
 import { calculateSetMenuCostPriceAndAllergies } from "./utils/calculateSetMenuCostPriceAndAllergies";
 
+// imported interfaces
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+
+// imported models
+import BusinessGood from "@/app/lib/models/businessGood";
+import SupplierGood from "@/app/lib/models/supplierGood";
+
 // @desc    Get all businessId goods
 // @route   GET /businessGoods
 // @access  Private
-export const GET = async () => {
+export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
+
     const businessGoods = await BusinessGood.find()
-      .populate("ingredients.supplierGood", "name mainCategory subCategory")
-      .populate("setMenuIds", "name mainCategory subCategory sellingPrice")
+      .populate({
+        path: "ingredients.supplierGoodId",
+        select: "name mainCategory subCategory",
+        model: SupplierGood,
+      })
+      .populate({
+        path: "setMenuIds",
+        select: "name mainCategory subCategory sellingPrice",
+        model: SupplierGood,
+      })
       .lean();
+
     return !businessGoods.length
       ? new NextResponse(
           JSON.stringify({ message: "No businessId goods found!" }),
@@ -50,6 +66,7 @@ export const POST = async (req: Request) => {
       businessId,
       ingredients,
       setMenuIds,
+      grossProfitMarginDesired,
       description,
       deliveryTime,
     } = (await req.json()) as IBusinessGood;
@@ -74,6 +91,17 @@ export const POST = async (req: Request) => {
       );
     }
 
+    // validate businessId
+    if (isObjectIdValid([businessId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Business ID is not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // one of the two fields should be present (ingredients or setMenuIds)
     if (ingredients && setMenuIds) {
       return new NextResponse(
@@ -88,7 +116,7 @@ export const POST = async (req: Request) => {
     await connectDb();
 
     // check for duplicate businessId good
-    const duplicateBusinessGood = await BusinessGood.findOne({
+    const duplicateBusinessGood = await BusinessGood.exists({
       businessId,
       name,
     });
@@ -116,6 +144,7 @@ export const POST = async (req: Request) => {
       sellingPrice,
       businessId,
       description: description || undefined,
+      grossProfitMarginDesired: grossProfitMarginDesired || undefined,
       deliveryTime: deliveryTime || undefined,
     };
 
@@ -144,7 +173,7 @@ export const POST = async (req: Request) => {
         newBusinessGood.ingredients =
           calculateIngredientsCostPriceAndAllergiesResult.map((ing) => {
             return {
-              supplierGoodId: ing.supplierGood,
+              supplierGoodId: ing.supplierGoodId,
               measurementUnit: ing.measurementUnit,
               requiredQuantity: ing.requiredQuantity ?? 0,
               costOfRequiredQuantity: ing.costOfRequiredQuantity,
@@ -202,6 +231,13 @@ export const POST = async (req: Request) => {
             ? calculateSetMenuCostPriceAndAllergiesResult.allergens
             : undefined;
       }
+    }
+
+    // calculate suggestedSellingPrice
+    if (newBusinessGood.costPrice && grossProfitMarginDesired) {
+      newBusinessGood.suggestedSellingPrice =
+        (newBusinessGood.costPrice ?? 0) /
+        (1 - (grossProfitMarginDesired ?? 0) / 100);
     }
 
     // create the new businessId good
