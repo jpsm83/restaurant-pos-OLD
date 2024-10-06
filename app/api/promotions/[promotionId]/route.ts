@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import connectDb from "@/app/lib/utils/connectDb";
 import { Types } from "mongoose";
 
-// imported interfaces
-import { IPromotion } from "@/app/lib/interface/IPromotion";
-
 // import utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { validateDateAndTime } from "../utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "../utils/validateDaysOfTheWeek";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validatePromotionType } from "../utils/validatePromotionType";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { IPromotion } from "@/app/lib/interface/IPromotion";
 
 // imported models
 import Promotion from "@/app/lib/models/promotion";
@@ -27,8 +28,9 @@ export const GET = async (
 ) => {
   try {
     const promotionId = context.params.promotionId;
+
     // check if the promotionId is valid
-    if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
+    if (isObjectIdValid([promotionId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid promotionId!" }),
         {
@@ -43,8 +45,8 @@ export const GET = async (
 
     const promotion = await Promotion.findById(promotionId)
       .populate({
-        path: "businessGoodsToApply",
-        select: "name sellingPrice",
+        path: "businessGoodsToApplyIds",
+        select: "name",
         model: BusinessGood,
       })
       .lean();
@@ -72,8 +74,9 @@ export const PATCH = async (
 ) => {
   try {
     const promotionId = context.params.promotionId;
+
     // check if the promotionId is valid
-    if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
+    if (isObjectIdValid([promotionId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid promotionId!" }),
         {
@@ -89,13 +92,13 @@ export const PATCH = async (
       weekDays,
       activePromotion,
       promotionType,
-      businessGoodsToApply,
+      businessGoodsToApplyIds,
       description,
     } = (await req.json()) as IPromotion;
 
-    // validate businessGoodsToApply
-    if (businessGoodsToApply) {
-      if (!Array.isArray(businessGoodsToApply)) {
+    // validate businessGoodsToApplyIds
+    if (businessGoodsToApplyIds) {
+      if (!Array.isArray(businessGoodsToApplyIds)) {
         return new NextResponse(
           JSON.stringify({
             message:
@@ -104,8 +107,9 @@ export const PATCH = async (
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
-      businessGoodsToApply.forEach((businessGoodId) => {
-        if (!Types.ObjectId.isValid(businessGoodId)) {
+
+      for (const businessGoodId of businessGoodsToApplyIds) {
+        if (isObjectIdValid([businessGoodId]) !== true) {
           return new NextResponse(
             JSON.stringify({ message: "BusinessGoodsToApply IDs not valid!" }),
             {
@@ -114,7 +118,7 @@ export const PATCH = async (
             }
           );
         }
-      });
+      }
     }
 
     // validate dateRange and timeRange
@@ -156,9 +160,9 @@ export const PATCH = async (
     await connectDb();
 
     // check if the promotion exists
-    const promotion: IPromotion | null = await Promotion.findById(
-      promotionId
-    ).lean();
+    const promotion: IPromotion | null = await Promotion.findById(promotionId)
+      .select("businessId")
+      .lean();
 
     if (!promotion) {
       return new NextResponse(
@@ -168,11 +172,11 @@ export const PATCH = async (
     }
 
     // check duplicate promotion
-    const duplicatePromotion = await Promotion.findOne({
+    const duplicatePromotion = await Promotion.exists({
       _id: { $ne: promotionId },
-      business: promotion.business,
+      businessId: promotion.businessId,
       promotionName,
-    }).lean();
+    });
 
     if (duplicatePromotion) {
       return new NextResponse(
@@ -187,23 +191,29 @@ export const PATCH = async (
     }
 
     // prepare update object
-    const updatedPromotion = {
-      promotionName: promotionName || promotion.promotionName,
-      promotionType: promotionType || promotion.promotionType,
-      activePromotion: activePromotion || promotion.activePromotion,
-      businessGoodsToApply:
-        businessGoodsToApply || promotion.businessGoodsToApply,
-      description: description || promotion.description,
-    };
+    const updatedPromotion: Partial<IPromotion> = {};
+
+    if (promotionName) updatedPromotion.promotionName = promotionName;
+    if (promotionPeriod) updatedPromotion.promotionPeriod = promotionPeriod;
+    if (weekDays) updatedPromotion.weekDays = weekDays;
+    if (activePromotion) updatedPromotion.activePromotion = activePromotion;
+    if (promotionType) updatedPromotion.promotionType = promotionType;
+    if (businessGoodsToApplyIds)
+      updatedPromotion.businessGoodsToApplyIds = businessGoodsToApplyIds;
+    if (description) updatedPromotion.description = description;
 
     // save the updated promotion
-    await Promotion.findByIdAndUpdate(promotionId, updatedPromotion, {
-      new: true,
-    });
+    await Promotion.findByIdAndUpdate(
+      promotionId,
+      { $set: updatedPromotion },
+      {
+        new: true,
+      }
+    );
 
     return new NextResponse(
       JSON.stringify({
-        message: `Promotion ${updatedPromotion.promotionName} updated successfully!`,
+        message: "Promotion updated successfully!",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -221,8 +231,9 @@ export const DELETE = async (
 ) => {
   try {
     const promotionId = context.params.promotionId;
+
     // check if the promotionId is valid
-    if (!promotionId || !Types.ObjectId.isValid(promotionId)) {
+    if (isObjectIdValid([promotionId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid promotionId!" }),
         {

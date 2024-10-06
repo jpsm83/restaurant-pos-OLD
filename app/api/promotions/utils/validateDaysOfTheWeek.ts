@@ -1,6 +1,6 @@
 export const validateDaysOfTheWeek = (weekDays: string[]) => {
-  if (!Array.isArray(weekDays) || !weekDays)
-    return "WeekDaysis required and must be an array!";
+  if (!Array.isArray(weekDays) || !weekDays || weekDays.length === 0)
+    return "WeekDaysis required and must be an array of days of the week!";
 
   const daysOfTheWeek = [
     "Sunday",
@@ -13,12 +13,10 @@ export const validateDaysOfTheWeek = (weekDays: string[]) => {
   ];
 
   // validate weekDays
-  if (weekDays.length > 0) {
-    const allValid = weekDays.every((day) => daysOfTheWeek.includes(day));
+  const allValid = weekDays.every((day) => daysOfTheWeek.includes(day));
 
-    if (!allValid) {
-      return `Invalid day(s) in the weekDays array!`;
-    }
+  if (!allValid) {
+    return `Invalid day(s) in the weekDays array!`;
   }
   return true;
 };

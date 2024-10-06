@@ -35,7 +35,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const businessGoods = await BusinessGood.find({ business: businessId })
+    const businessGoods = await BusinessGood.find({ businessId: businessId })
       .populate({
         path: "ingredients.supplierGoodId",
         select: "name mainCategory subCategory",

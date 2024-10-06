@@ -17,7 +17,7 @@ export const validateIngredients = (ingredientsArray: IIngredients[]) => {
     // Check for the presence of all required keys
     for (const key of requiredValidKeys) {
       if (!ingredient[key as keyof IIngredients]) {
-        return `${key} must have a value!`;
+        return `Validation fail, ${key} must have a value!`;
       }
     }
   }

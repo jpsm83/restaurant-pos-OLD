@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -103,11 +103,21 @@ export const PATCH = async (
       );
     }
 
-    // one of the two fields should be present (ingredients or setMenuIds)
+    // At least one of the two fields should be present (ingredients or setMenuIds), but not both
+    if (!ingredients && !setMenuIds) {
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "At least one of ingredients or setMenuIds must be assigned!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     if (ingredients && setMenuIds) {
       return new NextResponse(
         JSON.stringify({
-          message: "Only one of ingredients or setMenuIds can be asigned!",
+          message: "Only one of ingredients or setMenuIds can be assigned!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -194,11 +204,11 @@ export const PATCH = async (
               costOfRequiredQuantity: ing.costOfRequiredQuantity,
             };
           });
-        updatedBusinessGoodObj.costPrice =
-          calculateIngredientsCostPriceAndAllergiesResult.reduce(
-            (acc, curr) => acc + curr.costOfRequiredQuantity,
-            0
-          );
+        updatedBusinessGoodObj.costPrice = parseFloat(
+          calculateIngredientsCostPriceAndAllergiesResult
+            .reduce((acc, curr) => acc + curr.costOfRequiredQuantity, 0)
+            .toFixed(2)
+        );
         const reducedAllergens =
           calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc: string[], curr) => {
@@ -238,8 +248,9 @@ export const PATCH = async (
         );
       } else {
         updatedBusinessGoodObj.setMenuIds = setMenuIds;
-        updatedBusinessGoodObj.costPrice =
-          calculateSetMenuCostPriceAndAllergiesResult.costPrice;
+        updatedBusinessGoodObj.costPrice = parseFloat(
+          calculateSetMenuCostPriceAndAllergiesResult.costPrice.toFixed(2)
+        );
         updatedBusinessGoodObj.allergens =
           calculateSetMenuCostPriceAndAllergiesResult.allergens &&
           calculateSetMenuCostPriceAndAllergiesResult.allergens.length > 0
@@ -255,21 +266,24 @@ export const PATCH = async (
       updatedBusinessGoodObj.costPrice &&
       updatedBusinessGoodObj.grossProfitMarginDesired
     ) {
-      updatedBusinessGoodObj.suggestedSellingPrice =
-        (updatedBusinessGoodObj.costPrice ?? 0) /
-        (1 - (updatedBusinessGoodObj.grossProfitMarginDesired ?? 0) / 100);
+      updatedBusinessGoodObj.suggestedSellingPrice = parseFloat(
+        (
+          (updatedBusinessGoodObj.costPrice ?? 0) /
+          (1 - (updatedBusinessGoodObj.grossProfitMarginDesired ?? 0) / 100)
+        ).toFixed(2)
+      );
     }
 
     // update the business good
     await BusinessGood.findByIdAndUpdate(
-      { _id: businessGoodId },
-      updatedBusinessGoodObj,
+      businessGoodId,
+      { $set: updatedBusinessGoodObj },
       { new: true }
     );
 
     return new NextResponse(
       JSON.stringify({
-        message: `Business good ${updatedBusinessGoodObj.name} updated successfully!`,
+        message: `Business good updated successfully!`,
       }),
       {
         status: 200,
@@ -291,6 +305,12 @@ export const DELETE = async (
   req: Request,
   context: { params: { businessGoodId: Types.ObjectId } }
 ) => {
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const businessGoodId = context.params.businessGoodId;
 
@@ -341,9 +361,13 @@ export const DELETE = async (
     }
 
     // delete and check if the business good exists
-    const result = await BusinessGood.deleteOne({ _id: businessGoodId });
+    const result = await BusinessGood.deleteOne({
+      _id: businessGoodId,
+    }).session(session);
 
     if (result.deletedCount === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return new NextResponse(
         JSON.stringify({ message: "Business good not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -354,7 +378,10 @@ export const DELETE = async (
     await Promotion.updateMany(
       { businessGoodsToApplyIds: businessGoodId },
       { $pull: { businessGoodsToApplyIds: businessGoodId } }
-    );
+    ).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
 
     return new NextResponse(
       JSON.stringify({
@@ -363,6 +390,9 @@ export const DELETE = async (
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Delete business good failed!", error);
+  } finally {
+    session.endSession();
   }
 };

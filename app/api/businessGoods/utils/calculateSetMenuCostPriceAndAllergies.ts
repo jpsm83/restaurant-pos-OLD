@@ -16,7 +16,7 @@ export const calculateSetMenuCostPriceAndAllergies = async (
     }
 
     // validate setMenu array of ids
-    if (!setMenuIds.every((id) => isObjectIdValid([id]) !== true)) {
+    if (!setMenuIds.every((id) => isObjectIdValid([id]) === true)) {
       return "Invalid setMenuIds!";
     }
 

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Promotion from "@/app/lib/models/promotion";
-import { Types } from "mongoose";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import BusinessGood from "@/app/lib/models/businessGood";
 
 // when bill is printed, check if orders have a promotion base on their order time
 // if they have a promotion, apply it to the order updating its price and promotionApplied field
@@ -20,9 +24,9 @@ export const GET = async (
 ) => {
   try {
     const businessId = context.params.businessId;
-    
+
     // Validate businessId
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
         {
@@ -42,10 +46,10 @@ export const GET = async (
 
     // Build query based on the presence of startDate and endDate
     let query: {
-      business: Types.ObjectId;
+      businessId: Types.ObjectId;
       "promotionPeriod.start"?: { $gte: Date };
       "promotionPeriod.end"?: { $lte: Date };
-    } = { business: businessId };
+    } = { businessId: businessId };
 
     if (startDate && endDate) {
       if (startDate > endDate) {
@@ -67,8 +71,12 @@ export const GET = async (
     await connectDb();
 
     const promotion = await Promotion.find(query)
-      .populate("businessGoodsToApply", "name sellingPrice")
-      .lean();
+    .populate({
+      path: "businessGoodsToApplyIds",
+      select: "name",
+      model: BusinessGood,
+    })
+    .lean();
 
     return !promotion.length
       ? new NextResponse(JSON.stringify({ message: "No promotion found!" }), {

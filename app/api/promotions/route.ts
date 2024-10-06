@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import connectDb from "@/app/lib/utils/connectDb";
-import { Types } from "mongoose";
-
-// imported interfaces
-import { IPromotion } from "@/app/lib/interface/IPromotion";
 
 // import utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { validateDateAndTime } from "./utils/validateDateAndTime";
 import { validateDaysOfTheWeek } from "./utils/validateDaysOfTheWeek";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { validatePromotionType } from "./utils/validatePromotionType";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { IPromotion } from "@/app/lib/interface/IPromotion";
 
 // imported models
 import Promotion from "@/app/lib/models/promotion";
@@ -21,15 +21,15 @@ import BusinessGood from "@/app/lib/models/businessGood";
 // @desc    Get all promotion
 // @route   GET /promotions
 // @access  Private
-export const GET = async () => {
+export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
 
     const promotion = await Promotion.find()
       .populate({
-        path: "businessGoodsToApply",
-        select: "name sellingPrice",
+        path: "businessGoodsToApplyIds",
+        select: "name",
         model: BusinessGood,
       })
       .lean();
@@ -61,8 +61,8 @@ export const POST = async (req: Request) => {
       weekDays,
       activePromotion,
       promotionType,
-      business,
-      businessGoodsToApply,
+      businessId,
+      businessGoodsToApplyIds,
       description,
     } = (await req.json()) as IPromotion;
 
@@ -73,20 +73,20 @@ export const POST = async (req: Request) => {
       !weekDays ||
       activePromotion === undefined ||
       !promotionType ||
-      !business
+      !businessId
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "PromotionName, promotionPeriod, weekDays, activePromotion promotionType and business are required fields!",
+            "PromotionName, promotionPeriod, weekDays, activePromotion, promotionType and business are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // validate businessGoodsToApply
-    if (businessGoodsToApply) {
-      if (!Array.isArray(businessGoodsToApply)) {
+    // validate businessGoodsToApplyIds
+    if (businessGoodsToApplyIds) {
+      if (!Array.isArray(businessGoodsToApplyIds)) {
         return new NextResponse(
           JSON.stringify({
             message:
@@ -95,8 +95,9 @@ export const POST = async (req: Request) => {
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
-      businessGoodsToApply.forEach((businessGoodId) => {
-        if (!Types.ObjectId.isValid(businessGoodId)) {
+
+      for (const businessGoodId of businessGoodsToApplyIds) {
+        if (isObjectIdValid([businessGoodId]) !== true) {
           return new NextResponse(
             JSON.stringify({ message: "BusinessGoodsToApply IDs not valid!" }),
             {
@@ -105,7 +106,7 @@ export const POST = async (req: Request) => {
             }
           );
         }
-      });
+      }
     }
 
     // validate dateRange and timeRange
@@ -141,10 +142,10 @@ export const POST = async (req: Request) => {
     await connectDb();
 
     // check for duplicate promotion
-    const duplicatePromotion = await Promotion.findOne({
-      business,
+    const duplicatePromotion = await Promotion.exists({
+      businessId,
       promotionName,
-    }).lean();
+    });
 
     if (duplicatePromotion) {
       return new NextResponse(
@@ -165,8 +166,8 @@ export const POST = async (req: Request) => {
       weekDays,
       activePromotion,
       promotionType,
-      business,
-      businessGoodsToApply: businessGoodsToApply || undefined,
+      businessId,
+      businessGoodsToApply: businessGoodsToApplyIds || undefined,
       description: description || undefined,
     };
 

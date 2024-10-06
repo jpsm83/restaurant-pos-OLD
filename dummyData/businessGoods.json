@@ -1,42 +1,5 @@
 [
     {
-        "_id": "667c0761b1f9de2be3a80e17",
-        "name": "Cheeseburger with Fries",
-        "keyword": "Burger",
-        "mainCategory": "Set Menu",
-        "subCategory": "Burger Menu",
-        "onMenu": true,
-        "available": true,
-        "sellingPrice": 12.5,
-        "business": "6673fed98c45d0a0ca5f34c1",
-        "setMenu": [
-            {
-                "_id": "667bfc0c5d50be40f0c7b065",
-                "name": "Cheeseburger",
-                "mainCategory": "Food",
-                "subCategory": "Burger",
-                "sellingPrice": 16.45
-            },
-            {
-                "_id": "667bfddd5d50be40f0c7b079",
-                "name": "Fried french fries",
-                "mainCategory": "Food",
-                "subCategory": "Sides",
-                "sellingPrice": 3.5
-            }
-        ],
-        "costPrice": 3.14575,
-        "allergens": [
-            "Gluten",
-            "Eggs",
-            "Milk"
-        ],
-        "image": "../public/images/default_img.png",
-        "createdAt": "2024-06-26T12:19:45.023Z",
-        "updatedAt": "2024-08-28T18:29:18.081Z",
-        "__v": 0
-    },
-    {
         "_id": "667bfc0c5d50be40f0c7b065",
         "name": "Cheeseburger",
         "keyword": "burger",
@@ -45,31 +8,20 @@
         "onMenu": true,
         "available": true,
         "sellingPrice": 16.45,
-        "business": "6673fed98c45d0a0ca5f34c1",
         "ingredients": [
             {
                 "measurementUnit": "unit",
                 "requiredQuantity": 2,
                 "costOfRequiredQuantity": 2,
                 "_id": "667c13f2f22bdc543f105885",
-                "supplierGood": {
-                    "_id": "667bfac8d28a7ee19d9be443",
-                    "name": "Bun bread",
-                    "mainCategory": "Food",
-                    "subCategory": "Bread"
-                }
+                "supplierGoodId": "667bfac8d28a7ee19d9be443"
             },
             {
                 "measurementUnit": "g",
                 "requiredQuantity": 0.5,
                 "costOfRequiredQuantity": 0.00675,
                 "_id": "667c13f2f22bdc543f105886",
-                "supplierGood": {
-                    "_id": "667bfac8d28a7ee19d9be444",
-                    "name": "Cheddar cheese",
-                    "mainCategory": "Food",
-                    "subCategory": "Dairy"
-                }
+                "supplierGood": "667bfac8d28a7ee19d9be444"
             }
         ],
         "costPrice": 2.00675,
@@ -81,7 +33,8 @@
         "image": "../public/images/default_img.png",
         "createdAt": "2024-06-26T11:31:24.946Z",
         "updatedAt": "2024-06-26T13:13:22.859Z",
-        "__v": 0
+        "__v": 0,
+        "businessId": "66e169a709901431386c97cb"
     },
     {
         "_id": "667bfddd5d50be40f0c7b079",
@@ -92,25 +45,45 @@
         "onMenu": true,
         "available": true,
         "sellingPrice": 3.5,
-        "business": "6673fed98c45d0a0ca5f34c1",
         "ingredients": [
             {
                 "measurementUnit": "g",
                 "requiredQuantity": 100,
                 "costOfRequiredQuantity": 0.27999999999999997,
                 "_id": "667bfddd5d50be40f0c7b07b",
-                "supplierGood": {
-                    "_id": "667bfac8d28a7ee19d9be448",
-                    "name": "Frozen French Fries",
-                    "mainCategory": "Food",
-                    "subCategory": "Frozen food"
-                }
+                "supplierGood": "667bfac8d28a7ee19d9be448"
             }
         ],
         "costPrice": 0.27999999999999997,
         "image": "../public/images/default_img.png",
         "createdAt": "2024-06-26T11:39:09.683Z",
         "updatedAt": "2024-06-26T11:39:09.683Z",
-        "__v": 0
+        "__v": 0,
+        "businessId": "66e169a709901431386c97cb"
+    },
+    {
+        "_id": "667c0761b1f9de2be3a80e17",
+        "name": "Cheeseburger with Fries",
+        "keyword": "Burger",
+        "mainCategory": "Set Menu",
+        "subCategory": "Burger Menu",
+        "onMenu": true,
+        "available": true,
+        "sellingPrice": 12.5,
+        "setMenu": [
+            "667bfc0c5d50be40f0c7b065",
+            "667bfddd5d50be40f0c7b079"
+        ],
+        "costPrice": 3.14575,
+        "allergens": [
+            "Gluten",
+            "Eggs",
+            "Milk"
+        ],
+        "image": "../public/images/default_img.png",
+        "createdAt": "2024-06-26T12:19:45.023Z",
+        "updatedAt": "2024-08-28T18:29:18.081Z",
+        "__v": 0,
+        "businessId": "66e169a709901431386c97cb"
     }
 ]

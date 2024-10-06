@@ -102,11 +102,21 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // one of the two fields should be present (ingredients or setMenuIds)
+    // At least one of the two fields should be present (ingredients or setMenuIds), but not both
+    if (!ingredients && !setMenuIds) {
+      return new NextResponse(
+        JSON.stringify({
+          message:
+            "At least one of ingredients or setMenuIds must be assigned!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     if (ingredients && setMenuIds) {
       return new NextResponse(
         JSON.stringify({
-          message: "Only one of ingredients or setMenuIds can be asigned!",
+          message: "Only one of ingredients or setMenuIds can be assigned!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -180,11 +190,11 @@ export const POST = async (req: Request) => {
             };
           });
         newBusinessGood.setMenuIds = undefined;
-        newBusinessGood.costPrice =
-          calculateIngredientsCostPriceAndAllergiesResult.reduce(
-            (acc, curr) => acc + curr.costOfRequiredQuantity,
-            0
-          );
+        newBusinessGood.costPrice = parseFloat(
+          calculateIngredientsCostPriceAndAllergiesResult
+            .reduce((acc, curr) => acc + curr.costOfRequiredQuantity, 0)
+            .toFixed(2)
+        );
         const reducedAllergens =
           calculateIngredientsCostPriceAndAllergiesResult.reduce(
             (acc: string[], curr) => {
@@ -223,8 +233,9 @@ export const POST = async (req: Request) => {
       } else {
         newBusinessGood.ingredients = undefined;
         newBusinessGood.setMenuIds = setMenuIds;
-        newBusinessGood.costPrice =
-          calculateSetMenuCostPriceAndAllergiesResult.costPrice;
+        newBusinessGood.costPrice = parseFloat(
+          calculateSetMenuCostPriceAndAllergiesResult.costPrice.toFixed(2)
+        );
         newBusinessGood.allergens =
           calculateSetMenuCostPriceAndAllergiesResult.allergens &&
           calculateSetMenuCostPriceAndAllergiesResult.allergens.length > 0
@@ -235,9 +246,12 @@ export const POST = async (req: Request) => {
 
     // calculate suggestedSellingPrice
     if (newBusinessGood.costPrice && grossProfitMarginDesired) {
-      newBusinessGood.suggestedSellingPrice =
-        (newBusinessGood.costPrice ?? 0) /
-        (1 - (grossProfitMarginDesired ?? 0) / 100);
+      newBusinessGood.suggestedSellingPrice = parseFloat(
+        (
+          (newBusinessGood.costPrice ?? 0) /
+          (1 - (grossProfitMarginDesired ?? 0) / 100)
+        ).toFixed(2)
+      );
     }
 
     // create the new businessId good
