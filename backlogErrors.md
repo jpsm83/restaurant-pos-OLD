@@ -9,7 +9,11 @@ supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
 
+*** BEFORE START ORDERS
+- separate businessSalesLocation from the business, simple responsability principle, separate route/model, review all realtion code
+  
 orders
+
 purchaeses
 inventories
 notifications
