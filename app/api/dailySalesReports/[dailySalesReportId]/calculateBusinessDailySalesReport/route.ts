@@ -79,7 +79,7 @@ export const PATCH = async (
       _id: dailySalesReportId,
     })
       .select(
-        "_id dailyReferenceNumber usersDailySalesReport.userId usersDailySalesReport.hasOpenSalesLocations businessId"
+        "_id dailyReferenceNumber usersDailySalesReport.userId usersDailySalesReport.hasOpenSalesInstances businessId"
       )
       .populate({
         path: "usersDailySalesReport.userId",

@@ -40,7 +40,7 @@ export const PATCH = async (
     // Connect to the database
     await connectDb();
 
-    // Remove the specific printFor entry from the salesLocation's printFor array
+    // Remove the specific printFor entry from the salesInstance's printFor array
     const updatedPrinter = await Printer.findOneAndUpdate(
       {
         _id: printerId,

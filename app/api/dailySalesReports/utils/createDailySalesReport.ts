@@ -10,7 +10,7 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // this function will create daily report if not exists
-// it will be imported to be used on the salesLocation route
+// it will be imported to be used on the salesInstance route
 // if a sales location is created and the daily report is not opened or doesnt exist it will create one
 export const createDailySalesReport = async (businessId: Types.ObjectId) => {
   try {

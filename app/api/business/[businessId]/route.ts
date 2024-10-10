@@ -21,7 +21,7 @@ import Printer from "@/app/lib/models/printer";
 import Promotion from "@/app/lib/models/promotion";
 import Schedule from "@/app/lib/models/schedule";
 import Supplier from "@/app/lib/models/supplier";
-import SalesLocation from "@/app/lib/models/salesLocation";
+import SalesInstance from "@/app/lib/models/salesInstance";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
@@ -279,7 +279,7 @@ export const DELETE = async (
       Schedule.deleteMany({ business: businessId }).session(session),
       SupplierGood.deleteMany({ business: businessId }).session(session),
       Supplier.deleteMany({ business: businessId }).session(session),
-      SalesLocation.deleteMany({ business: businessId }).session(session),
+      SalesInstance.deleteMany({ business: businessId }).session(session),
       User.deleteMany({ business: businessId }).session(session),
     ]);
 

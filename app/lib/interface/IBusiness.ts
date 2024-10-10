@@ -1,15 +1,4 @@
-import { Types } from "mongoose";
 import { IAddress } from "./IAddress";
-
-export interface IBusinessSalesLocation {
-  _id?: Types.ObjectId;
-  locationReferenceName: string;
-  locationType?: string;
-  selfOrdering: boolean;
-  qrCode: string;
-  qrEnabled: boolean;
-  qrLastScanned?: Date;
-}
 
 export interface IMetrics {
   foodCostPercentage: number;
@@ -38,5 +27,4 @@ export interface IBusiness {
   address: IAddress;
   metrics?: IMetrics;
   contactPerson?: string;
-  businessSalesLocation?: IBusinessSalesLocation[];
 }

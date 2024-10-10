@@ -3,7 +3,7 @@ import Order from "@/app/lib/models/order";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import mongoose, { Types } from "mongoose";
 import { NextResponse } from "next/server";
-import SalesLocation from "@/app/lib/models/salesLocation";
+import SalesLocation from "@/app/lib/models/salesInstance";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Create new tables

@@ -15,7 +15,7 @@ import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 import Order from "@/app/lib/models/order";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import BusinessGood from "@/app/lib/models/businessGood";
-import SalesLocation from "@/app/lib/models/salesLocation";
+import SalesInstance from "@/app/lib/models/salesInstance";
 
 // this function will update individual user daily sales report
 // it will be fired individualy when the user closes his daily sales report for the day or if he just want to see the report at current time
@@ -46,7 +46,7 @@ export const updateUsersDailySalesReport = async (
     for (const userId of userIds) {
       try {
         // Fetch all tables closed by the user for the given dailyReferenceNumber
-        const salesLocation = await SalesLocation.find({
+        const salesInstance = await SalesInstance.find({
           responsibleById: userId,
           dailyReferenceNumber: dailyReferenceNumber,
         })
@@ -84,7 +84,7 @@ export const updateUsersDailySalesReport = async (
 
         let userDailySalesReportObj: IUserDailySalesReport = {
           userId: userId,
-          hasOpenSalesLocations: false,
+          hasOpenSalesInstances: false,
           userPaymentMethods: [] as IPaymentMethod[],
           totalSalesBeforeAdjustments: 0,
           totalNetPaidAmount: 0,
@@ -95,12 +95,12 @@ export const updateUsersDailySalesReport = async (
         };
 
         // Process each table for the user
-        if (salesLocation && salesLocation.length > 0) {
-          salesLocation.forEach((eachTableDocument) => {
-            userDailySalesReportObj.hasOpenSalesLocations =
+        if (salesInstance && salesInstance.length > 0) {
+          salesInstance.forEach((eachTableDocument) => {
+            userDailySalesReportObj.hasOpenSalesInstances =
               eachTableDocument.status !== "Closed"
                 ? true
-                : userDailySalesReportObj.hasOpenSalesLocations;
+                : userDailySalesReportObj.hasOpenSalesInstances;
 
             // Process orders in the table
             if (

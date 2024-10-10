@@ -17,7 +17,7 @@ import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
   //     "mainCategory": "Food", this will dictate what the printer will print as main category
   //     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
 //   {
-//     "businessSalesLocationReferenceIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the business sales location id that this configuration will apply
+//     "businessSalesInstanceReferenceIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the business sales location id that this configuration will apply
 //     "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the users that this configurarion wont apply
 //   },
 // ]
@@ -36,7 +36,7 @@ export const POST = async (
     const {
       mainCategory, // single string
       subCategories, // array of strings
-      businessSalesLocationReferenceIds, // array of sales location ids
+      businessSalesInstanceReferenceIds, // array of sales location ids
       excludeUserIds, // array of user ids
     } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
@@ -48,18 +48,18 @@ export const POST = async (
       });
     }
 
-    // check businessSalesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check businessSalesInstanceReferenceIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !businessSalesLocationReferenceIds ||
-      businessSalesLocationReferenceIds.length === 0 ||
-      !Array.isArray(businessSalesLocationReferenceIds) ||
-      isObjectIdValid(businessSalesLocationReferenceIds) !== true ||
+      !businessSalesInstanceReferenceIds ||
+      businessSalesInstanceReferenceIds.length === 0 ||
+      !Array.isArray(businessSalesInstanceReferenceIds) ||
+      isObjectIdValid(businessSalesInstanceReferenceIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "businessSalesLocationReferenceIds is required and must be an array of ObjectIds!",
+            "businessSalesInstanceReferenceIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -140,7 +140,7 @@ export const POST = async (
           configurationSetupToPrintOrders: {
             mainCategory,
             subCategories,
-            businessSalesLocationReferenceIds,
+            businessSalesInstanceReferenceIds,
             excludeUserIds,
           },
         },

@@ -47,37 +47,37 @@ export const GET = async (
           preserveNullAndEmptyArrays: true,
         },
       },
-      // Step 2: Unwind businessSalesLocationReferenceIds array with 'preserveNullAndEmptyArrays'
+      // Step 2: Unwind businessSalesInstanceReferenceIds array with 'preserveNullAndEmptyArrays'
       {
         $unwind: {
-          path: "$configurationSetupToPrintOrders.businessSalesLocationReferenceIds",
+          path: "$configurationSetupToPrintOrders.businessSalesInstanceReferenceIds",
           preserveNullAndEmptyArrays: true,
         },
       },
-      // Step 3: Lookup to fetch Business based on businessSalesLocationReferenceIds
+      // Step 3: Lookup to fetch Business based on businessSalesInstanceReferenceIds
       {
         $lookup: {
           from: "businesses", // The Business collection
           let: {
             businessId: "$businessId",
             locationId:
-              "$configurationSetupToPrintOrders.businessSalesLocationReferenceIds",
+              "$configurationSetupToPrintOrders.businessSalesInstanceReferenceIds",
           },
           pipeline: [
             { $match: { $expr: { $eq: ["$_id", "$$businessId"] } } }, // Match the correct business by its ID
-            { $unwind: "$businessSalesLocation" }, // Unwind the businessSalesLocation array
+            { $unwind: "$businessSalesInstance" }, // Unwind the businessSalesInstance array
             {
               $match: {
-                $expr: { $eq: ["$businessSalesLocation._id", "$$locationId"] },
+                $expr: { $eq: ["$businessSalesInstance._id", "$$locationId"] },
               },
-            }, // Match businessSalesLocation with the reference IDs
+            }, // Match businessSalesInstance with the reference IDs
             {
               $project: {
-                "businessSalesLocation.locationReferenceName": 1, // Adjust based on the fields you need
+                "businessSalesInstance.locationReferenceName": 1, // Adjust based on the fields you need
               },
             },
           ],
-          as: "businessSalesLocationReferenceData",
+          as: "businessSalesInstanceReferenceData",
         },
       },
       // Step 4: Lookup to fetch Users based on excludeUserIds, handling missing excludeUserIds
@@ -114,10 +114,10 @@ export const GET = async (
           usersAllowedToPrintDataIds: { $first: "$usersAllowedToPrintDataIds" },
           configurationSetupToPrintOrders: {
             $push: {
-              businessSalesLocationReferenceIds:
-                "$configurationSetupToPrintOrders.businessSalesLocationReferenceIds",
-              businessSalesLocationReferenceData:
-                "$businessSalesLocationReferenceData",
+              businessSalesInstanceReferenceIds:
+                "$configurationSetupToPrintOrders.businessSalesInstanceReferenceIds",
+              businessSalesInstanceReferenceData:
+                "$businessSalesInstanceReferenceData",
               mainCategory: "$configurationSetupToPrintOrders.mainCategory",
               subCategories: "$configurationSetupToPrintOrders.subCategories",
               excludedUsers: "$excludedUsers", // Include the populated excluded users here

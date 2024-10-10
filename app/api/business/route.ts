@@ -3,7 +3,7 @@ import { hash } from "bcrypt";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import { generateQrCode } from "./utils/generateQrCode";
+import { generateQrCode } from "../salesPoints/utils/generateQrCode";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 
@@ -149,7 +149,7 @@ export const POST = async (req: Request) => {
 // export const POST = async (req: Request) => {
 //   try {
 //     let cloudinaryImgToDelete =
-//       "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b";
+//       "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesInstanceQrCodes/66c9d6afc45a1547f9ab893b";
 //     let businessId = "6673fed98c45d0a0ca5f34c1";
 
 //     //@ts-ignore

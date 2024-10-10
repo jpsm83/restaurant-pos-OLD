@@ -30,7 +30,7 @@ export const PATCH = async (
     const {
       mainCategory,
       subCategories,
-      businessSalesLocationReferenceIds,
+      salesPointIds,
       excludeUserIds,
     } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
@@ -46,18 +46,18 @@ export const PATCH = async (
       );
     }
 
-    // check businessSalesLocationReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check salesPointIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !businessSalesLocationReferenceIds ||
-      businessSalesLocationReferenceIds.length === 0 ||
-      !Array.isArray(businessSalesLocationReferenceIds) ||
-      isObjectIdValid(businessSalesLocationReferenceIds) !== true ||
+      !salesPointIds ||
+      salesPointIds.length === 0 ||
+      !Array.isArray(salesPointIds) ||
+      isObjectIdValid(salesPointIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "businessSalesLocationReferenceIds is required and must be an array of ObjectIds!",
+            "salesPointIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -125,7 +125,7 @@ export const PATCH = async (
       );
     }
 
-    // Proceed with updating the salesLocation's printFor entry
+    // Proceed with updating the salesPonit printFor entry
     const updatedPrinter = await Printer.findOneAndUpdate(
       {
         _id: printerId,
@@ -134,8 +134,8 @@ export const PATCH = async (
       },
       {
         $set: {
-          "configurationSetupToPrintOrders.$.businessSalesLocationReferenceIds":
-            businessSalesLocationReferenceIds, // Update businessSalesLocationReferenceIds
+          "configurationSetupToPrintOrders.$.salesPointIds":
+            salesPointIds, // Update salesPointIds
           "configurationSetupToPrintOrders.$.excludeUserIds": excludeUserIds, // Update excludeUserIds
           "configurationSetupToPrintOrders.$.mainCategory": mainCategory, // Update mainCategories
           "configurationSetupToPrintOrders.$.subCategories": subCategories

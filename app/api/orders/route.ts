@@ -7,11 +7,11 @@ import { updateDynamicCountSupplierGood } from "../inventories/utils/updateDynam
 
 // import interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
-import { ITable } from "@/app/lib/interface/ISalesLocation";
+import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // import models
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/salesLocation";
+import Table from "@/app/lib/models/salesInstance";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 
@@ -24,7 +24,7 @@ export const GET = async () => {
     await connectDb();
 
     const orders = await Order.find()
-      .populate({ path: "table", select: "salesLocation", model: Table })
+      .populate({ path: "table", select: "salesInstance", model: Table })
       .populate({
         path: "user",
         select: "username allUserRoles currentShiftRole",

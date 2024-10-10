@@ -1,9 +1,9 @@
 import { Types } from "mongoose";
 
-export interface ISalesLocation {
+export interface ISalesInstance {
   _id?: Types.ObjectId;
   dailyReferenceNumber?: number;
-  salesLocationReferenceId: Types.ObjectId;
+  salesInstanceReferenceId: Types.ObjectId;
   guests: number;
   status: string;
   openedById: Types.ObjectId;

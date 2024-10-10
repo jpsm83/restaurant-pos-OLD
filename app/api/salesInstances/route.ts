@@ -9,7 +9,7 @@ import { createSalesLocation } from "./utils/createSalesLocation";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // import interfaces
-import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
+import { ISalesLocation } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
@@ -17,7 +17,7 @@ import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
 import Business from "@/app/lib/models/business";
-import SalesLocation from "@/app/lib/models/salesLocation";
+import SalesLocation from "@/app/lib/models/salesInstance";
 
 // @desc    Get all salesLocations
 // @route   GET /salesLocations

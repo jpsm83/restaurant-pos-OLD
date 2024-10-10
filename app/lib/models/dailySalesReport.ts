@@ -21,19 +21,19 @@ const userDailySalesReportSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
-  }, // user that closed the salesLocation, salesLocation.responsibleBy
+  }, // user that closed the salesInstance, salesInstance.responsibleBy
 
   // optional fields on creation, required on update
-  hasOpenSalesLocations: { type: Boolean }, // if the user has open sales locations, the user can view but not close the daily report
-  // those "SALES" refer salesLocation sales closed by the user (salesLocation.responsibleBy)
-  // not "SALES" made by the user, the user can close the salesLocation of another user if shifts are passed and the previous user has opened the tables
-  // when a salesLocation is closed, the sales from the previews user is pass to the new one because the new user is responsible for the salesLocation and will handle the payment in the end
+  hasOpenSalesInstances: { type: Boolean }, // if the user has open sales instances, the user can view but not close the daily report
+  // those "SALES" refer salesInstance sales closed by the user (salesInstance.responsibleBy)
+  // not "SALES" made by the user, the user can close the salesInstance of another user if shifts are passed and the previous user has opened the tables
+  // when a salesInstance is closed, the sales from the previews user is pass to the new one because the new user is responsible for the salesInstance and will handle the payment in the end
   userPaymentMethods: [paymentMethod], // array of payment methods used by the user
-  totalSalesBeforeAdjustments: { type: Number }, // sum of all orders made by the salesLocation.closedBy regardless of promotions, discounts, voids, or cancellations
+  totalSalesBeforeAdjustments: { type: Number }, // sum of all orders made by the salesInstance.closedBy regardless of promotions, discounts, voids, or cancellations
   totalNetPaidAmount: { type: Number }, // sum of all orders after adjustments have been made to the final price, vois, invitations, discounts, and promotions
   totalTipsReceived: { type: Number }, // sum of all tips
   totalCostOfGoodsSold: { type: Number }, // sum of the cost price of all goods sold by the user
-  // if salesLocation is passed to another user, new user will be responsible for the previews sales, and also the customers served at the salesLocation will be pass to the new user
+  // if salesInstance is passed to another user, new user will be responsible for the previews sales, and also the customers served at the salesInstance will be pass to the new user
   // we recomment users to close their tables on a shift change, so the individual analitics by user will be more accurate
   // this has no negative impact on the business analitics, because the sales will be passed to the new user, and the customers served will be passed to the new user
   totalCustomersServed: {
@@ -44,7 +44,7 @@ const userDailySalesReportSchema = new Schema({
     type: Number,
     default: 0,
   }, // average of customers expended (total of customers served / total of sales)
-  // those "GOODS" refer to the goods sold or void by the user itself, not the one that closed the salesLocation (order.user)
+  // those "GOODS" refer to the goods sold or void by the user itself, not the one that closed the salesInstance (order.user)
   soldGoods: [goodsReducedSchema], // array of goods sold by the user
   voidedGoods: [goodsReducedSchema], // array of goods void by the user
   invitedGoods: [goodsReducedSchema], // array of goods invited by the user

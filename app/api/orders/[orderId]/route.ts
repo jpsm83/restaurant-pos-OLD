@@ -13,7 +13,7 @@ import { cancelOrder } from "../utils/cancelOrder";
 import Order from "@/app/lib/models/order";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
-import Table from "@/app/lib/models/salesLocation";
+import SalesInstance from "@/app/lib/models/salesInstance";
 
 // @desc    Get order by ID
 // @route   GET /orders/:orderId
@@ -36,7 +36,7 @@ export const GET = async (
     await connectDb();
 
     const order = await Order.findById(orderId)
-      .populate({ path: "table", select: "salesLocation", model: Table })
+      .populate({ path: "table", select: "salesInstance", model: SalesInstance })
       .populate({
         path: "user",
         select: "username allUserRoles currentShiftRole",

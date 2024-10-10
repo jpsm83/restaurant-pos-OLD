@@ -1,11 +1,11 @@
 import { IOrder } from "@/app/lib/interface/IOrder";
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/salesLocation";
+import Table from "@/app/lib/models/salesInstance";
 import { Types } from "mongoose";
 import { NextResponse } from "next/server";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
-import { createSalesLocation } from "../../salesLocation/utils/createSalesLocation";
+import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
+import { createSalesInstance } from "../../salesInstances/utils/createSalesInstance";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // @desc    Create new orders
@@ -15,7 +15,7 @@ export const POST = async (req: Request) => {
   try {
     const {
       ordersArray,
-      salesLocation,
+      salesInstance,
       guests,
       user,
       clientName,
@@ -23,7 +23,7 @@ export const POST = async (req: Request) => {
       dailyReferenceNumber,
     } = (await req.json()) as {
       ordersArray: Types.ObjectId[];
-      salesLocation: string;
+      salesInstance: string;
       guests: number;
       user: Types.ObjectId;
       clientName: string | undefined | null;
@@ -58,21 +58,21 @@ export const POST = async (req: Request) => {
         await connectDb();
 
     
-    // we transfer tables following its salesLocation because table might not exist yet
+    // we transfer tables following its salesInstance because table might not exist yet
     // check if tables exist and it is not closed
-    const tableToTransfer: ISalesLocation | null = await Table.findOne({
+    const tableToTransfer: ISalesInstance | null = await Table.findOne({
       dailyReferenceNumber: dailyReferenceNumber,
       business,
-      salesLocation: salesLocation,
+      salesInstance: salesInstance,
       status: { $ne: "Closed" },
     })
       .select("_id")
       .lean();
 
-         // create new salesLocation
-    const salesLocationObj = {
+         // create new salesInstance
+    const salesInstanceObj = {
       dailyReferenceNumber,
-      salesLocationReferenceId,
+      salesInstanceReferenceId,
       guests,
       status: status || "Occupied",
       openedById,
@@ -84,7 +84,7 @@ export const POST = async (req: Request) => {
     if (tableToTransfer) {
       tableToTransferId = tableToTransfer._id;
     } else {
-      const newTable = await createSalesLocation(salesLocationObj);
+      const newTable = await createSalesInstance(salesInstanceObj);
       if (!newTable) {
         return new NextResponse(
           JSON.stringify({ message: "Table creation for transfer failed!" }),

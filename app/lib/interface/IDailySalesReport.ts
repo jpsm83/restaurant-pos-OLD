@@ -10,7 +10,7 @@ export interface IGoodsReduced {
 
 export interface IUserDailySalesReport {
   userId: Types.ObjectId;
-  hasOpenSalesLocations?: boolean;
+  hasOpenSalesInstances?: boolean;
   userPaymentMethods?: IPaymentMethod[];
   totalSalesBeforeAdjustments?: number;
   totalNetPaidAmount?: number;

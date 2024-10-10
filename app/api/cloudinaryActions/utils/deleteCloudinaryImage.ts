@@ -11,14 +11,14 @@ cloudinary.config({
 const deleteCloudinaryImage = async (imageUrl: string) => {
   try {
     // example of a cloudinary image url
-    // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesLocationQrCodes/66c9d6afc45a1547f9ab893b.png"
+    // "https://console.cloudinary.com/pm/c-9e91323343059685f5636d90d4b413/media-explorer/restaurant-pos/66cad982bb87c1faf53fb031/salesInstanceQrCodes/66c9d6afc45a1547f9ab893b.png"
     if (!imageUrl) {
       return "Image url is required!";
     }
 
     // Extract cloudinaryPublicId using regex
     // example of a publicId
-    // "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesLocationQrCodes/66c9d6afc45a1547f9ab893b"
+    // "restaurant-pos/6673fed98c45d0a0ca5f34c1/salesInstanceQrCodes/66c9d6afc45a1547f9ab893b"
     let cloudinaryPublicId = imageUrl.match(/restaurant-pos\/[^.]+/);
 
     const deletionResponse = await cloudinary.uploader.destroy(

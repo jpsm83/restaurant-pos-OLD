@@ -8,14 +8,14 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 
 // import interfaces
-import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
+import { ISalesLocation } from "@/app/lib/interface/ISalesInstance";
 
 // import models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
-import SalesLocation from "@/app/lib/models/salesLocation";
+import SalesLocation from "@/app/lib/models/salesInstance";
 
 // @desc    Get salesLocations by ID
 // @route   GET /salesLocations/:salesLocationId

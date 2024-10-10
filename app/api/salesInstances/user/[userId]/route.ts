@@ -2,28 +2,28 @@ import { NextResponse } from "next/server";
 import mongoose, { Types } from "mongoose";
 
 // import utils
-import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import connectDb from "@/app/lib/utils/connectDb";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // import models
-import SalesLocation from "@/app/lib/models/salesLocation";
-import Order from "@/app/lib/models/order";
-import BusinessGood from "@/app/lib/models/businessGood";
+import SalesLocation from "@/app/lib/models/salesInstance";
 import User from "@/app/lib/models/user";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Order from "@/app/lib/models/order";
 
-// @desc   Get salesLocations by bussiness ID
-// @route  GET /salesLocations/business/:businessId
+// @desc   Get salesLocations by user ID
+// @route  GET /salesLocations/user/:userId
 // @access Private
 export const GET = async (
   req: Request,
-  context: { params: { businessId: Types.ObjectId } }
+  context: { params: { userId: Types.ObjectId } }
 ) => {
   try {
-    const businessId = context.params.businessId;
+    const userId = context.params.userId;
 
     // validate salesLocationId
-    if (isObjectIdValid([businessId]) !== true) {
+    if (isObjectIdValid([userId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid salesLocationId!" }),
         {
@@ -39,7 +39,7 @@ export const GET = async (
     // Step 1: Perform the aggregation for businessSalesLocation
     const salesLocations = await SalesLocation.aggregate([
       {
-        $match: { businessId: new mongoose.Types.ObjectId(businessId) }, // Ensure to convert the printerId to an ObjectId
+        $match: { userId: new mongoose.Types.ObjectId(userId) }, // Ensure to convert the printerId to an ObjectId
       },
       {
         // Lookup to join with the Business collection
@@ -118,9 +118,6 @@ export const GET = async (
           headers: { "Content-Type": "application/json" },
         });
   } catch (error) {
-    return handleApiError(
-      "Fail to get all salesLocations by business ID!",
-      error
-    );
+    return handleApiError("Fail to get all salesLocations by user ID!", error);
   }
 };

@@ -3,10 +3,10 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 
 // imported interfaces
-import { ISalesLocation } from "@/app/lib/interface/ISalesLocation";
+import { ISalesLocation } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
-import Table from "@/app/lib/models/salesLocation";
+import Table from "@/app/lib/models/salesInstance";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 export const createSalesLocation = async (

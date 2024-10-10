@@ -7,7 +7,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // import models
 import Order from "@/app/lib/models/order";
-import Table from "@/app/lib/models/salesLocation";
+import Table from "@/app/lib/models/salesInstance";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 
@@ -34,7 +34,7 @@ export const GET = async (
     await connectDb();
 
     const orders = await Order.find({ user: userId })
-    .populate({ path: "table", select: "salesLocationReferenceId", model: Table })
+    .populate({ path: "table", select: "salesInstanceReferenceId", model: Table })
     .populate({
       path: "user",
       select: "username allUserRoles currentShiftRole",
