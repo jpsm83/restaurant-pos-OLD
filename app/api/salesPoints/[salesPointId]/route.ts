@@ -15,15 +15,15 @@ import deleteCloudinaryImage from "../../cloudinaryActions/utils/deleteCloudinar
 
 // sales point are the physical locations where salesInstance can be made and gathered orders
 
-// @desc Get salesPoints by salesPointId
-// @route GET /salesPoints/:salesPointId
-// @access Private
+// @desc    Get promotion by ID
+// @route   GET /salesPoints/:salesPointId
+// @access  Private
 export const GET = async (
   req: Request,
-  context: { params: { salesPoinId: Types.ObjectId } }
+  context: { params: { salesPointId: Types.ObjectId } }
 ) => {
   try {
-    const salesPointId = context.params.salesPoinId;
+    const salesPointId = context.params.salesPointId;
 
     // check if salesPointId is valid
     if (isObjectIdValid([salesPointId]) !== true) {

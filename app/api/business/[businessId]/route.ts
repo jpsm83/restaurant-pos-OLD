@@ -28,6 +28,8 @@ import SupplierGood from "@/app/lib/models/supplierGood";
 import Inventory from "@/app/lib/models/inventory";
 import Purchase from "@/app/lib/models/purchase";
 import validateBusinessMetrics from "../utils/validateBusinessMetrics";
+import SalesPoint from "@/app/lib/models/salesPoint";
+import MonthlyBusinessReport from "@/app/lib/models/monthlyBusinessReport";
 
 const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
 
@@ -197,8 +199,7 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Business updated successfully",
-        updatedBusiness,
+        message: "Business updated successfully"
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
@@ -234,7 +235,7 @@ export const DELETE = async (
     const businessId = context.params.businessId;
 
     // validate businessId
-    if (!businessId || isObjectIdValid([businessId]) !== true) {
+    if (isObjectIdValid([businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid businessId!" }),
         {
@@ -271,15 +272,19 @@ export const DELETE = async (
       BusinessGood.deleteMany({ business: businessId }).session(session),
       DailySalesReport.deleteMany({ business: businessId }).session(session),
       Inventory.deleteMany({ business: businessId }).session(session),
+      MonthlyBusinessReport.deleteMany({ business: businessId }).session(
+        session
+      ),
       Notification.deleteMany({ business: businessId }).session(session),
       Order.deleteMany({ business: businessId }).session(session),
       Printer.deleteMany({ business: businessId }).session(session),
       Promotion.deleteMany({ business: businessId }).session(session),
       Purchase.deleteMany({ business: businessId }).session(session),
+      SalesInstance.deleteMany({ business: businessId }).session(session),
+      SalesPoint.deleteMany({ business: businessId }).session(session),
       Schedule.deleteMany({ business: businessId }).session(session),
       SupplierGood.deleteMany({ business: businessId }).session(session),
       Supplier.deleteMany({ business: businessId }).session(session),
-      SalesInstance.deleteMany({ business: businessId }).session(session),
       User.deleteMany({ business: businessId }).session(session),
     ]);
 

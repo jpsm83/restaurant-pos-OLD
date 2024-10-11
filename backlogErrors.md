@@ -1,7 +1,5 @@
-business - review again
-
-salesPoint - read for testing
-  
+business - DONE
+salesPoint - DONE
 users - DONE
 dailySalesReports - DONE
 

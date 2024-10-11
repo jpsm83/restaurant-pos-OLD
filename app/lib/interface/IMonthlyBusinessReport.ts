@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import { businessGoodReduceSchema } from "../models/businessGoodReduce";
 import { IPaymentMethod } from "./IPaymentMethod";
+import { goodsReducedSchema } from "../models/dailySalesReport";
 
 export interface IFinancialPercentages {
   salesPaymentCompletionPercentage: number; // Percentage of sales paid during the month
@@ -51,9 +51,9 @@ export interface IMonthlyBusinessReport {
   businessId: Types.ObjectId; // Business reference
   financialSummary: IFinancialSummary; // Financial summary for the month
   costBreakdown: ICostBreakdown; // Breakdown of various costs
-  goodsSold: (typeof businessGoodReduceSchema)[]; // Goods sold during the month
-  goodsVoided: (typeof businessGoodReduceSchema)[]; // Voided goods during the month
-  goodsComplimentary: (typeof businessGoodReduceSchema)[]; // Complimentary goods
+  goodsSold: (typeof goodsReducedSchema)[]; // Goods sold during the month
+  goodsVoided: (typeof goodsReducedSchema)[]; // Voided goods during the month
+  goodsComplimentary: (typeof goodsReducedSchema)[]; // Complimentary goods
   supplierWasteAnalysis: ISupplierWasteAnalysis; // Analysis of supplier waste percentages
   totalCustomersServed: number; // Total number of customers served
   averageSpendingPerCustomer: number; // Average spending per customer

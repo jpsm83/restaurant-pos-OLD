@@ -1,6 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import { paymentMethod } from "./paymentMethod";
-import { businessGoodReduceSchema } from "./businessGoodReduce";
+import { goodsReducedSchema } from "./dailySalesReport";
 
 const monthlyBusinessReportSchema = new Schema(
   {
@@ -66,11 +66,11 @@ const monthlyBusinessReportSchema = new Schema(
       },
       // Percentages reflecting the proportion of each cost category relative to total operating costs.
     },
-    goodsSold: [businessGoodReduceSchema],
+    goodsSold: [goodsReducedSchema],
     // Array containing details of all goods sold during the month.
-    goodsVoided: [businessGoodReduceSchema],
+    goodsVoided: [goodsReducedSchema],
     // Array containing details of all goods voided during the month.
-    goodsComplimentary: [businessGoodReduceSchema],
+    goodsComplimentary: [goodsReducedSchema],
     // Array containing details of all goods provided as complimentary (invited) during the month.
     supplierWasteAnalysis: {
       veryLowImpactWastePercentage: { type: Number },
