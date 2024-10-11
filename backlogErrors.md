@@ -2,18 +2,15 @@ business - DONE
 salesPoint - DONE
 users - DONE
 dailySalesReports - DONE
-
-salesInstance - DONE - review again - used to be salesLocation
+salesInstance - DONE
 
 printers - review again
+
 schedules - DONE
 suppliers - DONE
 supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
-
-*** BEFORE START ORDERS
-- separate businessSalesLocation from the business, simple responsability principle, separate route/model, review all realtion code
   
 orders
 

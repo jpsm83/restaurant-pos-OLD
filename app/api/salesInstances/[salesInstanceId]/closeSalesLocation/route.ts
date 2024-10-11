@@ -3,15 +3,15 @@ import Order from "@/app/lib/models/order";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import mongoose, { Types } from "mongoose";
 import { NextResponse } from "next/server";
-import SalesLocation from "@/app/lib/models/salesInstance";
+import SalesInstance from "@/app/lib/models/salesInstance";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Create new tables
-// @route   PATCH /salesLocation/:salesLocationId/closeSalesLocation
+// @route   PATCH /salesInstance/:salesInstanceId/closeSalesInstance
 // @access  Private
 export const PATCH = async (
   req: Request,
-  context: { params: { salesLocationId: Types.ObjectId } }
+  context: { params: { salesInstanceId: Types.ObjectId } }
 ) => {
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
@@ -34,12 +34,12 @@ export const PATCH = async (
       closedById: Types.ObjectId;
     };
 
-    const salesLocationId = context.params.salesLocationId;
+    const salesInstanceId = context.params.salesInstanceId;
 
     //validate ids
-    if (isObjectIdValid([salesLocationId, closedById]) !== true) {
+    if (isObjectIdValid([salesInstanceId, closedById]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid salesLocationId or closedById!" }),
+        JSON.stringify({ message: "Invalid salesInstanceId or closedById!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -50,35 +50,35 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if sales location has no ordersIds
+    // check if sales instance has no ordersIds
     if (
-      await SalesLocation.exists({
-        _id: salesLocationId,
+      await SalesInstance.exists({
+        _id: salesInstanceId,
         $or: [{ ordersIds: { $size: 0 } }, { ordersIds: { $exists: false } }],
       })
     ) {
-      await SalesLocation.deleteOne(
-        { _id: salesLocationId },
+      await SalesInstance.deleteOne(
+        { _id: salesInstanceId },
         { new: true, session }
       );
       return new NextResponse(
         JSON.stringify({
-          message: "Sales location with no orders deleted successfully",
+          message: "Sales instance with no orders deleted successfully",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Check if any open orders exist for the sales location
+    // Check if any open orders exist for the sales instance
     const hasOpenOrders = await Order.exists({
-      salesLocationId: salesLocationId,
+      salesInstanceId: salesInstanceId,
       billingStatus: "Open",
     });
 
     // if no open orders and closeBy exists, close the table
     if (!hasOpenOrders) {
-      await SalesLocation.findByIdAndUpdate(
-        salesLocationId,
+      await SalesInstance.findByIdAndUpdate(
+        salesInstanceId,
         {
           status: "Closed",
           closedAt: new Date(),
@@ -88,7 +88,7 @@ export const PATCH = async (
       );
 
       return new NextResponse(
-        JSON.stringify({ message: "Sales location closed successfully" }),
+        JSON.stringify({ message: "Sales instance closed successfully" }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -100,7 +100,7 @@ export const PATCH = async (
     return new NextResponse(
       JSON.stringify({
         message:
-          "Sales location cant be closed because it still having open orders",
+          "Sales instance cant be closed because it still having open orders",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );

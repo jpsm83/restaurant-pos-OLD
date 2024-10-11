@@ -3,19 +3,19 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
 
 // imported interfaces
-import { ISalesLocation } from "@/app/lib/interface/ISalesInstance";
+import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
 import Table from "@/app/lib/models/salesInstance";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
-export const createSalesLocation = async (
-  newSalesLocationObj: ISalesLocation
+export const createSalesInstance = async (
+  newSalesLocationObj: ISalesInstance
 ) => {
   try {
     const requiredKeys = [
       "dailyReferenceNumber",
-      "salesLocationReferenceId",
+      "salesPointId",
       "guests",
       "status",
       "openedById",

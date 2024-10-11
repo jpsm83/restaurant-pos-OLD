@@ -5,9 +5,9 @@ const salesInstanceSchema = new Schema(
   {
     // required fields
     dailyReferenceNumber: { type: Number, required: true }, // reference number for the day, every object create in the same day will have the same reference number
-    salesInstanceReferenceId: {
+    salesPointId: {
       type: Schema.Types.ObjectId,
-      ref: "Business",
+      ref: "SalesPoint",
       required: true,
     }, // reference with the business sales instance
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS

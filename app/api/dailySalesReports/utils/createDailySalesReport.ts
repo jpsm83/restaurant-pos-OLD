@@ -11,7 +11,7 @@ import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // this function will create daily report if not exists
 // it will be imported to be used on the salesInstance route
-// if a sales location is created and the daily report is not opened or doesnt exist it will create one
+// if a sales instance is created and the daily report is not opened or doesnt exist it will create one
 export const createDailySalesReport = async (businessId: Types.ObjectId) => {
   try {
     // check required fields
@@ -28,7 +28,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
 
     // create daily report object
     const dailySalesReportObj: IDailySalesReport = {
-      dailyReferenceNumber: currentTimeUnix,
+      dailyReferenceNumber: currentTimeUnix,  // This should be a valid number
       isDailyReportOpen: true,
       timeCountdownToClose: countdownToClose,
       usersDailySalesReport: [],
@@ -36,7 +36,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
     };
 
     const dailySalesReport = await DailySalesReport.create(dailySalesReportObj);
-
+    
     // return daily reference number
     return dailySalesReport.dailyReferenceNumber;
   } catch (error) {

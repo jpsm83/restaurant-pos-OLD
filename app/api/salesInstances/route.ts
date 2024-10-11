@@ -5,11 +5,11 @@ import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import connectDb from "@/app/lib/utils/connectDb";
 import { createDailySalesReport } from "../dailySalesReports/utils/createDailySalesReport";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { createSalesLocation } from "./utils/createSalesLocation";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { createSalesInstance } from "./utils/createSalesInstance";
 
 // import interfaces
-import { ISalesLocation } from "@/app/lib/interface/ISalesInstance";
+import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
@@ -17,70 +17,30 @@ import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
 import Business from "@/app/lib/models/business";
-import SalesLocation from "@/app/lib/models/salesInstance";
+import SalesInstance from "@/app/lib/models/salesInstance";
+import path from "path";
+import SalesPoint from "@/app/lib/models/salesPoint";
 
-// @desc    Get all salesLocations
-// @route   GET /salesLocations
+// @desc    Get all salesInstances
+// @route   GET /salesInstances
 // @access  Private
 export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
 
-    // Step 1: Perform the aggregation for businessSalesLocation
-    const salesLocations = await SalesLocation.aggregate([
-      {
-        // Lookup to join with the Business collection
-        $lookup: {
-          from: "businesses", // MongoDB collection name for the Business model
-          localField: "salesLocationReferenceId", // Field from SalesLocation
-          foreignField: "businessSalesLocation._id", // Field from Business
-          as: "businessData", // Output array with the joined data
-        },
-      },
-      {
-        // Unwind the array to get individual business location objects
-        $unwind: "$businessData",
-      },
-      {
-        // Project to extract relevant businessSalesLocation details
-        $addFields: {
-          salesLocationReferenceData: {
-            $arrayElemAt: [
-              {
-                $filter: {
-                  input: "$businessData.businessSalesLocation", // Access the array in Business
-                  as: "salesLocation",
-                  cond: {
-                    $eq: ["$$salesLocation._id", "$salesLocationReferenceId"], // Match the salesLocationReferenceId with the _id in the array
-                  },
-                },
-              },
-              0,
-            ],
-          },
-        },
-      },
-      {
-        // Project only the locationReferenceName from the salesLocationReferenceData
-        $project: {
-          businessData: 0, // Remove the original business data
-          "salesLocationReferenceData.locationType": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
-          "salesLocationReferenceData.selfOrdering": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
-          "salesLocationReferenceData.qrCode": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
-          "salesLocationReferenceData.qrEnabled": 0, // Optionally remove the _id from salesLocationReferenceData if not needed
-        },
-      },
-    ]);
-
-    // Step 2: Populate the user-related fields and order details
-    await SalesLocation.populate(salesLocations, [
-      {
+    const salesInstances = await SalesInstance.find()
+      .populate({
+        path: "salesPointId",
+        select: "salesPointReferenceName salesPointType selfOrdering",
+        model: SalesPoint,
+      })
+      .populate({
         path: "openedById responsibleById closedById",
         select: "username currentShiftRole",
         model: User,
-      },
-      {
+      })
+      .populate({
         path: "ordersIds",
         select:
           "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
@@ -90,59 +50,56 @@ export const GET = async (req: Request) => {
           model: BusinessGood,
         },
         model: Order,
-      },
-    ]);
+      })
+      .lean();
 
-    return !salesLocations?.length
+    return !salesInstances?.length
       ? new NextResponse(
-          JSON.stringify({ message: "No salesLocations found!" }),
+          JSON.stringify({ message: "No salesInstances found!" }),
           {
             status: 404,
             headers: { "Content-Type": "application/json" },
           }
         )
-      : new NextResponse(JSON.stringify(salesLocations), {
+      : new NextResponse(JSON.stringify(salesInstances), {
           status: 200,
           headers: {
             "Content-Type": "application/json",
           },
         });
   } catch (error) {
-    return handleApiError("Get all salesLocations failed!", error);
+    return handleApiError("Get all salesInstances failed!", error);
   }
 };
 
-// first create a empty salesLocation, then update it with the ordersIds
-// @desc    Create new salesLocations
-// @route   POST /salesLocations
+// first create a empty salesInstance, then update it with the ordersIds
+// @desc    Create new salesInstances
+// @route   POST /salesInstances
 // @access  Private
 export const POST = async (req: Request) => {
   try {
     const {
-      salesLocationReferenceId,
+      salesPointId,
       guests,
       status = "Occupied",
       openedById,
       businessId,
       clientName,
-    } = (await req.json()) as ISalesLocation;
+    } = (await req.json()) as ISalesInstance;
 
     // check required fields
-    if (!salesLocationReferenceId || !guests || !openedById || !businessId) {
+    if (!salesPointId || !guests || !openedById || !businessId) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "SalesLocationReference, guest, openedById and businessId are required!",
+            "SalesInstanceReference, guest, openedById and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // validate ids
-    if (
-      isObjectIdValid([salesLocationReferenceId, openedById, businessId]) !==
-      true
-    ) {
+    if (isObjectIdValid([salesPointId, openedById, businessId]) !== true) {
       return new NextResponse(
         JSON.stringify({
           message: "OpenedBy or businessId not valid!",
@@ -154,23 +111,22 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDb();
 
-    // check salesLocationReferenceId exists in the business
+    // check salesPointId exists
     if (
-      !(await Business.exists({
-        _id: businessId,
-        "businessSalesLocation._id": salesLocationReferenceId,
+      !(await SalesPoint.exists({
+        _id: salesPointId,
       }))
     ) {
       return new NextResponse(
         JSON.stringify({
-          message: `SalesLocationReference ${salesLocationReferenceId} does not exist in this business!`,
+          message: "Sales point does not exist in this business!",
         }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // **** IMPORTANT ****
-    // dailySalesReport is created when the first salesLocation of the day is created
+    // dailySalesReport is created when the first salesInstance of the day is created
     const dailySalesReport: IDailySalesReport | null =
       await DailySalesReport.findOne({
         isDailyReportOpen: true,
@@ -184,25 +140,25 @@ export const POST = async (req: Request) => {
       : await createDailySalesReport(businessId);
 
     if (
-      await SalesLocation.exists({
+      await SalesInstance.exists({
         dailyReferenceNumber: dailyReferenceNumber,
         businessId,
-        salesLocationReferenceId,
+        salesPointId,
         status: { $ne: "Closed" },
       })
     ) {
       return new NextResponse(
         JSON.stringify({
-          message: `SalesLocation ${salesLocationReferenceId} already exists and it is not closed!`,
+          message: "SalesInstance already exists and it is not closed!",
         }),
         { status: 409, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // create new salesLocation
-    const newSalesLocationObj = {
+    // create new salesInstance
+    const newSalesInstanceObj = {
       dailyReferenceNumber,
-      salesLocationReferenceId,
+      salesPointId,
       guests,
       status,
       openedById,
@@ -211,13 +167,13 @@ export const POST = async (req: Request) => {
       clientName,
     };
 
-    // we use a outside function to create the salesLocation because this function is used in other places
-    // create new salesLocation
-    await createSalesLocation(newSalesLocationObj);
+    // we use a outside function to create the salesInstance because this function is used in other places
+    // create new salesInstance
+    await createSalesInstance(newSalesInstanceObj);
 
     return new NextResponse(
       JSON.stringify({
-        message: `SalesLocation ${salesLocationReferenceId} created successfully!`,
+        message: "SalesInstance created successfully!",
       }),
       {
         status: 201,
@@ -225,6 +181,6 @@ export const POST = async (req: Request) => {
       }
     );
   } catch (error) {
-    return handleApiError("Create salesLocation failed!", error);
+    return handleApiError("Create salesInstance failed!", error);
   }
 };
