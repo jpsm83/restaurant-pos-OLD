@@ -13,6 +13,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 // imported models
 import Printer from "@/app/lib/models/printer";
 import User from "@/app/lib/models/user";
+import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc    Get printer by ID
 // @route   GET /printers/:printerId
@@ -36,110 +37,23 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const printer = await Printer.aggregate([
-      {
-        $match: { _id: new mongoose.Types.ObjectId(printerId) }, // Ensure to convert the printerId to an ObjectId
-      },
-      // Step 1: Unwind configurationSetupToPrintOrders array with 'preserveNullAndEmptyArrays'
-      {
-        $unwind: {
-          path: "$configurationSetupToPrintOrders",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      // Step 2: Unwind businessSalesInstanceReferenceIds array with 'preserveNullAndEmptyArrays'
-      {
-        $unwind: {
-          path: "$configurationSetupToPrintOrders.businessSalesInstanceReferenceIds",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      // Step 3: Lookup to fetch Business based on businessSalesInstanceReferenceIds
-      {
-        $lookup: {
-          from: "businesses", // The Business collection
-          let: {
-            businessId: "$businessId",
-            locationId:
-              "$configurationSetupToPrintOrders.businessSalesInstanceReferenceIds",
-          },
-          pipeline: [
-            { $match: { $expr: { $eq: ["$_id", "$$businessId"] } } }, // Match the correct business by its ID
-            { $unwind: "$businessSalesInstance" }, // Unwind the businessSalesInstance array
-            {
-              $match: {
-                $expr: { $eq: ["$businessSalesInstance._id", "$$locationId"] },
-              },
-            }, // Match businessSalesInstance with the reference IDs
-            {
-              $project: {
-                "businessSalesInstance.locationReferenceName": 1, // Adjust based on the fields you need
-              },
-            },
-          ],
-          as: "businessSalesInstanceReferenceData",
-        },
-      },
-      // Step 4: Lookup to fetch Users based on excludeUserIds, handling missing excludeUserIds
-      {
-        $lookup: {
-          from: "users", // The User collection
-          let: {
-            excludeUsers: {
-              $ifNull: ["$configurationSetupToPrintOrders.excludeUserIds", []],
-            }, // If excludeUserIds is null, default to an empty array
-          },
-          pipeline: [
-            { $match: { $expr: { $in: ["$_id", "$$excludeUsers"] } } }, // Match the correct users based on excludeUserIds
-            {
-              $project: {
-                username: 1, // Return the username field
-              },
-            },
-          ],
-          as: "excludedUsers", // Alias to hold the populated excludeUserIds data
-        },
-      },
-      // Step 5: Group data back into printer level with configuration and excluded users
-      {
-        $group: {
-          _id: "$_id",
-          printerAlias: { $first: "$printerAlias" },
-          description: { $first: "$description" },
-          printerStatus: { $first: "$printerStatus" },
-          ipAddress: { $first: "$ipAddress" },
-          port: { $first: "$port" },
-          businessId: { $first: "$businessId" },
-          backupPrinterId: { $first: "$backupPrinterId" },
-          usersAllowedToPrintDataIds: { $first: "$usersAllowedToPrintDataIds" },
-          configurationSetupToPrintOrders: {
-            $push: {
-              businessSalesInstanceReferenceIds:
-                "$configurationSetupToPrintOrders.businessSalesInstanceReferenceIds",
-              businessSalesInstanceReferenceData:
-                "$businessSalesInstanceReferenceData",
-              mainCategory: "$configurationSetupToPrintOrders.mainCategory",
-              subCategories: "$configurationSetupToPrintOrders.subCategories",
-              excludedUsers: "$excludedUsers", // Include the populated excluded users here
-            },
-          },
-        },
-      },
-    ]);
-
-    // Step 7: Populate the user-related fields and order details
-    await Printer.populate(printer, [
-      {
+    const printer = await Printer.find()
+      .populate({
         path: "backupPrinterId",
         select: "printerAlias",
         model: Printer,
-      },
-      {
+      })
+      .populate({
         path: "usersAllowedToPrintDataIds",
         select: "username",
         model: User,
-      },
-    ]);
+      })
+      .populate({
+        path: "configurationSetupToPrintOrders.salesPointIds",
+        select: "salesPointName",
+        model: SalesPoint,
+      })
+      .lean();
 
     return !printer
       ? new NextResponse(JSON.stringify({ message: "Printer not found!" }), {

@@ -47,7 +47,7 @@ export const GET = async (req: Request) => {
 export const POST = async (req: Request) => {
   try {
     const {
-      salesPointReferenceName,
+      salesPointName,
       salesPointType,
       selfOrdering,
       qrEnabled,
@@ -55,10 +55,10 @@ export const POST = async (req: Request) => {
     } = (await req.json()) as ISalesPoint;
 
     // check required fields
-    if (!salesPointReferenceName || !businessId) {
+    if (!salesPointName || !businessId) {
       return new NextResponse(
         JSON.stringify({
-          message: "SalesPointReferenceName and businessId are required!",
+          message: "SalesPointName and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -81,7 +81,7 @@ export const POST = async (req: Request) => {
     // check for duplicate salesPoint
     const duplicateSalesPoint = await SalesPoint.exists({
       businessId,
-      salesPointReferenceName,
+      salesPointName,
     });
 
     if (duplicateSalesPoint) {
@@ -95,7 +95,7 @@ export const POST = async (req: Request) => {
 
     // create salesPoint object
     const newSalesPoint = {
-      salesPointReferenceName,
+      salesPointName,
       salesPointType: salesPointType || undefined,
       selfOrdering: selfOrdering !== undefined ? selfOrdering : false,
       qrEnabled: qrEnabled !== undefined ? qrEnabled : true,

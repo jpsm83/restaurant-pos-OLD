@@ -4,7 +4,7 @@ users - DONE
 dailySalesReports - DONE
 salesInstance - DONE
 
-printers - review again
+printers - ready for test
 
 schedules - DONE
 suppliers - DONE
@@ -14,7 +14,7 @@ promotions - DONE
   
 orders
 
-purchaeses
+purchases
 inventories
 notifications
 cloudinaryActions

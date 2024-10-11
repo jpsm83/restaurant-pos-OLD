@@ -32,7 +32,7 @@ export const GET = async (req: Request) => {
     const salesInstances = await SalesInstance.find()
       .populate({
         path: "salesPointId",
-        select: "salesPointReferenceName salesPointType selfOrdering",
+        select: "salesPointName salesPointType selfOrdering",
         model: SalesPoint,
       })
       .populate({

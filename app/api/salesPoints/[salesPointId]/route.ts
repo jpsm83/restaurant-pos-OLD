@@ -70,7 +70,7 @@ export const PATCH = async (
   try {
     const salesPointId = context.params.salesPointId;
 
-    const { salesPointReferenceName, salesPointType, selfOrdering, qrEnabled } =
+    const { salesPointName, salesPointType, selfOrdering, qrEnabled } =
       (await req.json()) as ISalesPoint;
 
     // check if salesPointId is valid
@@ -87,7 +87,7 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // check for duplicate salesPointReferenceName
+    // check for duplicate salesPointName
     const salesPoint = await SalesPoint.findById(salesPointId);
 
     if (!salesPoint) {
@@ -97,16 +97,16 @@ export const PATCH = async (
       );
     }
 
-    // check for duplicate salesPointReferenceName
+    // check for duplicate salesPointName
     const duplicateSalesPoint = await SalesPoint.exists({
-      salesPointReferenceName,
+      salesPointName,
       _id: { $ne: salesPointId },
       businessId: salesPoint.businessId,
     });
 
     if (duplicateSalesPoint) {
       return new NextResponse(
-        JSON.stringify({ message: "SalesPointReferenceName already exists!" }),
+        JSON.stringify({ message: "SalesPointName already exists!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -114,8 +114,8 @@ export const PATCH = async (
     // create salesPoint object
     const updatedSalesPoint: Partial<ISalesPoint> = {};
 
-    if (salesPointReferenceName)
-      updatedSalesPoint.salesPointReferenceName = salesPointReferenceName;
+    if (salesPointName)
+      updatedSalesPoint.salesPointName = salesPointName;
     if (salesPointType) updatedSalesPoint.salesPointType = salesPointType;
     if (selfOrdering !== undefined)
       updatedSalesPoint.selfOrdering = selfOrdering;

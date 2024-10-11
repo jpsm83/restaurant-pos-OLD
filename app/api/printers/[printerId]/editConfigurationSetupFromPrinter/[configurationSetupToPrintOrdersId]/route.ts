@@ -27,12 +27,8 @@ export const PATCH = async (
 ) => {
   try {
     const { printerId, configurationSetupToPrintOrdersId } = context.params;
-    const {
-      mainCategory,
-      subCategories,
-      salesPointIds,
-      excludeUserIds,
-    } = (await req.json()) as IConfigurationSetupToPrintOrders;
+    const { mainCategory, subCategories, salesPointIds, excludeUserIds } =
+      (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // Validate input
     if (
@@ -134,8 +130,7 @@ export const PATCH = async (
       },
       {
         $set: {
-          "configurationSetupToPrintOrders.$.salesPointIds":
-            salesPointIds, // Update salesPointIds
+          "configurationSetupToPrintOrders.$.salesPointIds": salesPointIds, // Update salesPointIds
           "configurationSetupToPrintOrders.$.excludeUserIds": excludeUserIds, // Update excludeUserIds
           "configurationSetupToPrintOrders.$.mainCategory": mainCategory, // Update mainCategories
           "configurationSetupToPrintOrders.$.subCategories": subCategories

@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
 
 export interface IConfigurationSetupToPrintOrders {
-    businessSalesLocationReferenceIds: Types.ObjectId[];
-    excludeUserIds?: Types.ObjectId[];
     mainCategory: string;
     subCategories?: string[];
+    salesPointIds: Types.ObjectId[];
+    excludeUserIds?: Types.ObjectId[];
 }
 
 export interface IPrinter {

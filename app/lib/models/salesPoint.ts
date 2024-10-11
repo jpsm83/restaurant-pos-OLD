@@ -2,7 +2,7 @@ import { Schema, model, models } from "mongoose";
 
 const SalesPointSchema = new Schema(
   {
-    salesPointReferenceName: { type: String, required: true }, // name of the location sale reference - ex: 101
+    salesPointName: { type: String, required: true }, // name of the location sale reference - ex: 101
     salesPointType: { type: String }, // table, room, bar, seat, etc - ex: Table101
     selfOrdering: { type: Boolean, default: false }, // manager decision if location can order by itself using QR code
     qrCode: { type: String }, // auto created QR code for the location

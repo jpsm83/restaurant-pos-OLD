@@ -14,10 +14,10 @@ import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 
 // this route will add individual configurationSetupToPrintOrders configuration to the printer with their properties and the users that will apply to
 // [
-  //     "mainCategory": "Food", this will dictate what the printer will print as main category
-  //     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
+//     "mainCategory": "Food", this will dictate what the printer will print as main category
+//     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
 //   {
-//     "businessSalesInstanceReferenceIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the business sales location id that this configuration will apply
+//     "salesPointIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the sales points id that this configuration will apply
 //     "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the users that this configurarion wont apply
 //   },
 // ]
@@ -36,7 +36,7 @@ export const POST = async (
     const {
       mainCategory, // single string
       subCategories, // array of strings
-      businessSalesInstanceReferenceIds, // array of sales location ids
+      salesPointIds, // array of sales point ids
       excludeUserIds, // array of user ids
     } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
@@ -48,18 +48,18 @@ export const POST = async (
       });
     }
 
-    // check businessSalesInstanceReferenceIds is a valid array of ObjectIds and mainCategory is not empty
+    // check salesPointIds is a valid array of ObjectIds and mainCategory is not empty
     if (
-      !businessSalesInstanceReferenceIds ||
-      businessSalesInstanceReferenceIds.length === 0 ||
-      !Array.isArray(businessSalesInstanceReferenceIds) ||
-      isObjectIdValid(businessSalesInstanceReferenceIds) !== true ||
+      !salesPointIds ||
+      salesPointIds.length === 0 ||
+      !Array.isArray(salesPointIds) ||
+      isObjectIdValid(salesPointIds) !== true ||
       !mainCategory
     ) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "businessSalesInstanceReferenceIds is required and must be an array of ObjectIds!",
+            "salesPointIds is required and must be an array of ObjectIds!",
         }),
         {
           status: 400,
@@ -140,7 +140,7 @@ export const POST = async (
           configurationSetupToPrintOrders: {
             mainCategory,
             subCategories,
-            businessSalesInstanceReferenceIds,
+            salesPointIds,
             excludeUserIds,
           },
         },
@@ -159,7 +159,8 @@ export const POST = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Configuration setup to print orders add to printer successfully",
+        message:
+          "Configuration setup to print orders add to printer successfully",
       }),
       {
         status: 201,
@@ -167,6 +168,9 @@ export const POST = async (
       }
     );
   } catch (error) {
-    return handleApiError("Configuration setup to print orders creation failed!", error);
+    return handleApiError(
+      "Configuration setup to print orders creation failed!",
+      error
+    );
   }
 };

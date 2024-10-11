@@ -45,7 +45,7 @@ export const GET = async (
     const salesInstance = await SalesInstance.find()
       .populate({
         path: "salesPointId",
-        select: "salesPointReferenceName salesPointType selfOrdering",
+        select: "salesPointName salesPointType selfOrdering",
         model: SalesPoint,
       })
       .populate({
