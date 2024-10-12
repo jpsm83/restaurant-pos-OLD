@@ -1,15 +1,22 @@
 import { Types } from "mongoose";
-import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
-import connectDb from "@/app/lib/utils/connectDb";
-import Order from "@/app/lib/models/order";
-import { updateMultipleOrders } from "../utils/updateMultipleOrders";
-import Table from "@/app/lib/models/salesInstance";
-import { IOrder } from "@/app/lib/interface/IOrder";
-import { IPayment } from "@/app/lib/interface/IPayment";
 import { NextResponse } from "next/server";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { IOrder } from "@/app/lib/interface/IOrder";
+import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
+import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
+
+// imported models
+import Order from "@/app/lib/models/order";
+import SalesInstance from "@/app/lib/models/salesInstance";
+
+// close multiple orders at the same time
 // @desc    Create new orders
 // @route   POST /orders/closeOrders
 // @access  Private
@@ -17,21 +24,21 @@ export const POST = async (req: Request) => {
   try {
     const { ordersIdArr, paymentMethod } = (await req.json()) as {
       ordersIdArr: Types.ObjectId[];
-      paymentMethod: IPayment[];
+      paymentMethod: IPaymentMethod[];
     };
 
-    // Validate order IDs
-    if (
-      !Array.isArray(ordersIdArr) ||
-      !ordersIdArr.every(Types.ObjectId.isValid)
-    ) {
+    // validate orders ids
+    if (isObjectIdValid(ordersIdArr) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid ordersIdArr!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ message: "OrdersIdsArr not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
-    if (!Array.isArray(paymentMethod) || !paymentMethod) {
+    if (!Array.isArray(paymentMethod) || paymentMethod.length === 0) {
       return new NextResponse(
         JSON.stringify({ message: "Invalid payment method array!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -55,10 +62,10 @@ export const POST = async (req: Request) => {
       _id: { $in: ordersIdArr },
       billingStatus: "Open",
     })
-      .select("table billingStatus orderNetPrice")
+      .select("salesInstanceId billingStatus orderNetPrice")
       .lean();
 
-    if (orders && orders.length === 0) {
+    if (!orders) {
       return new NextResponse(
         JSON.stringify({ message: "No open orders found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -119,7 +126,13 @@ export const POST = async (req: Request) => {
           orderTips: firstOrder ? totalTips : undefined,
         };
         if (order._id) {
-          const updatedOrder = await updateMultipleOrders(order._id, update);
+          const updatedOrder = await Order.findOneAndUpdate(
+            { _id: order._id },
+            { $set: update },
+            {
+              new: true,
+            }
+          );
           if (!updatedOrder) {
             return new NextResponse(
               JSON.stringify({ message: "Failed to update order!" }),
@@ -131,33 +144,40 @@ export const POST = async (req: Request) => {
       }
     }
 
-    // Check and update table status
-    const tableId = orders && orders[0].table;
-    const openOrders = await Order.find({
-      table: tableId,
-      billingStatus: "Open",
-    }).lean();
+    const salesInstance: ISalesInstance | null = await SalesInstance.findById(
+      orders[0].salesInstanceId
+    )
+      .select("responsibleBy salesGroup")
+      .populate({
+        path: "salesGroup.ordersIds",
+        select: "billingStatus",
+        model: "Order",
+      })
+      .lean();
 
-    if (openOrders.length === 0) {
-      const table: ISalesInstance | null = await Table.findById(tableId)
-        .select("responsibleBy")
-        .lean();
-      if (!table) {
-        return new NextResponse(
-          JSON.stringify({ message: "Table not found!" }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
+    if (!salesInstance) {
+      return new NextResponse(
+        JSON.stringify({ message: "SalesInstance not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (salesInstance) {
+      const allOrdersPaid = salesInstance?.salesGroup?.every((group) =>
+        group.ordersIds.every((order: any) => order.billingStatus === "Paid")
+      );
+
+      if (allOrdersPaid) {
+        await SalesInstance.findByIdAndUpdate(
+          salesInstance._id,
+          {
+            status: "Closed",
+            closedAt: new Date(),
+            closedBy: salesInstance.responsibleById,
+          },
+          { new: true }
         );
       }
-
-      await Table.findByIdAndUpdate(
-        tableId,
-        {
-          status: "Closed",
-          closedAt: new Date(),
-          closedBy: table.responsibleBy,
-        },
-        { new: true }
-      );
     }
 
     return new NextResponse(

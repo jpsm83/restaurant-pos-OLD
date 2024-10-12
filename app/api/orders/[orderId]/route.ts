@@ -14,6 +14,8 @@ import Order from "@/app/lib/models/order";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesInstance from "@/app/lib/models/salesInstance";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc    Get order by ID
 // @route   GET /orders/:orderId
@@ -24,31 +26,47 @@ export const GET = async (
 ) => {
   try {
     const orderId = context.params.orderId;
-    // check if orderId is valid
-    if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid orderId!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
 
-    // connect before first call to DB
+        // validate ids
+        if (isObjectIdValid([orderId]) !== true) {
+          return new NextResponse(
+            JSON.stringify({
+              message:
+                "OrderId not valid!",
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // connect before first call to DB
     await connectDb();
 
     const order = await Order.findById(orderId)
-      .populate({ path: "salesInstance", select: "salesInstance", model: SalesInstance })
-      .populate({
-        path: "user",
-        select: "username allUserRoles currentShiftRole",
-        model: User,
-      })
-      .populate({
-        path: "businessGoods",
-        select:
-          "name mainCategory subCategory productionTime sellingPrice allergens",
-        model: BusinessGood,
-      })
-      .lean();
+    .populate({
+      path: "salesInstanceId",
+      select: "salesPointId",
+      populate: {
+        path: "salesPointId",
+        select: "salesPointName",
+        model: SalesPoint,
+      },
+      model: SalesInstance,
+    })
+    .populate({
+      path: "userId",
+      select: "username allUserRoles currentShiftRole",
+      model: User,
+    })
+    .populate({
+      path: "businessGoodsIds",
+      select:
+        "name mainCategory subCategory productionTime sellingPrice allergens",
+      model: BusinessGood,
+    })
+    .lean();
 
     return !order
       ? new NextResponse(JSON.stringify({ message: "Order not found!" }), {
@@ -64,6 +82,7 @@ export const GET = async (
   }
 };
 
+// this patch is used to update the order status, billing status, payment method and discount percentage of a single order
 // @desc    Update order by ID
 // @route   PATCH /orders/:orderId
 // @access  Private
@@ -74,14 +93,22 @@ export const PATCH = async (
 ) => {
   try {
     const orderId = context.params.orderId;
-    // check if orderId is valid
-    if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return new NextResponse(JSON.stringify({ message: "Invalid orderId!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
 
+        // validate orderId
+        if (isObjectIdValid([orderId]) !== true) {
+          return new NextResponse(
+            JSON.stringify({
+              message:
+                "OrderId not valid!",
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
+    // discountPercentage can only by added after order is done
     const {
       billingStatus,
       orderStatus,
@@ -108,16 +135,14 @@ export const PATCH = async (
     }
 
     // prepare the update object
-    let updatedOrder = {
-      billingStatus: billingStatus || order.billingStatus,
-      orderStatus: orderStatus || order.orderStatus,
-      orderNetPrice: order.orderNetPrice,
-      discountPercentage:
-        discountPercentage || order.discountPercentage || undefined,
-      paymentMethod: paymentMethod || order.paymentMethod || undefined,
-    };
+    let updatedOrder: Partial<IOrder> = {}
+
+if(billingStatus) updatedOrder.billingStatus = billingStatus
+if(orderStatus) updatedOrder.orderStatus = orderStatus
+if(paymentMethod) updatedOrder.paymentMethod = paymentMethod
 
     // if billing status is "Void" or "Invitation", comments are required
+    if(billingStatus){
     switch (billingStatus) {
       case "Void":
       case "Invitation":
@@ -130,7 +155,7 @@ export const PATCH = async (
             { status: 400, headers: { "Content-Type": "application/json" } }
           );
         }
-        updatedOrder.orderNetPrice = 0;
+        updatedOrder.orderNetPrice = 0; // orderNetPrice can change base on billing status or dicount percentage
         break;
       case "Cancel":
         await cancelOrder(orderId);
@@ -143,7 +168,7 @@ export const PATCH = async (
         );
       default:
         break;
-    }
+    }}
 
     // do not add discount if promotion applyed
     // if discount percentage is provided, the total price will be calculated on the front end
@@ -161,7 +186,7 @@ export const PATCH = async (
       if (!comments) {
         return new NextResponse(
           JSON.stringify({
-            message: "Comments are required if promotion applied!",
+            message: "Comments are required if discount applied!",
           }),
           {
             status: 400,
@@ -181,10 +206,11 @@ export const PATCH = async (
         );
       }
       updatedOrder.discountPercentage = discountPercentage;
+      updatedOrder.orderNetPrice = order.orderGrossPrice - order.orderGrossPrice * (discountPercentage / 100); // orderNetPrice can change base on billing status or dicount percentage
     }
 
     // updatedOrder the order
-    await Order.findOneAndUpdate({ _id: orderId }, updatedOrder, {
+    await Order.findOneAndUpdate(orderId, { $set: updatedOrder}, {
       new: true,
     });
 

@@ -80,8 +80,7 @@ export const userRoles = [
   "Other",
 ];
 
-export const orderStatus = ["Sent", "Started", "Done", "Dont Make", "Hold", "Started Hold"];
-// "Started" and "Started Hold" are a value sent by the kitchen indicatiog the order is being prepared
+export const orderStatus = ["Sent", "Done", "Dont Make", "Hold"];
 // once it has been started, it can't be cancel
 // "Dont Make" means it has been done before it been requested, it cannot be cancel
 

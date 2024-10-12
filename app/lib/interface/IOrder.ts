@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { IPaymentMethod } from "./IPaymentMethod";
 
 export interface IOrder {
+  _id: Types.ObjectId;
   dailyReferenceNumber: number;
   billingStatus?: string;
   orderStatus?: string;

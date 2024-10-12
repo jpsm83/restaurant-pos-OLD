@@ -6,39 +6,40 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
-// imported interfaces
-
 // imported models
 import Order from "@/app/lib/models/order";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
-import SalesPoint from "@/app/lib/models/salesPoint";
 import SalesInstance from "@/app/lib/models/salesInstance";
+import SalesPoint from "@/app/lib/models/salesPoint";
 
-// @desc    Get orders user ID
-// @route   GET /orders/user/:userId
+// @desc    Get orders salesInstance ID
+// @route   GET /orders/salesInstance/:salesInstanceId
 // @access  Private
 export const GET = async (
   req: Request,
   context: {
-    params: { userId: Types.ObjectId };
+    params: { salesInstanceId: Types.ObjectId };
   }
 ) => {
   try {
-    const userId = context.params.userId;
+    const salesInstanceId = context.params.salesInstanceId;
 
-    // check if userId is valid
-    if (isObjectIdValid([userId]) !== true) {
-      return new NextResponse(JSON.stringify({ message: "Invalid userId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    // validate salesInstanceId
+    if (isObjectIdValid([salesInstanceId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "User ID is not valid!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
     await connectDb();
 
-    const orders = await Order.find(userId)
+    const orders = await Order.find(salesInstanceId)
       .populate({
         path: "salesInstanceId",
         select: "salesPointId",
@@ -72,6 +73,6 @@ export const GET = async (
           headers: { "Content-Type": "application/json" },
         });
   } catch (error) {
-    return handleApiError("Get all orders by user ID failed!", error);
+    return handleApiError("Get all orders by salesInstance ID failed!", error);
   }
 };

@@ -1,55 +1,82 @@
-import { Types } from "mongoose";
-import { updateDynamicCountSupplierGood } from "../../inventories/utils/updateDynamicCountSupplierGood";
-import Order from "@/app/lib/models/order";
-import { IOrder } from "@/app/lib/interface/IOrder";
-import Table from "@/app/lib/models/salesInstance";
-import connectDb from "@/app/lib/utils/connectDb";
+import mongoose, { Types } from "mongoose";
 
-// order with status "Started", "Done", "Dont Make" and "Started Hold" cannot be canceled
-export const cancelOrder = async (
-  orderId: Types.ObjectId
-) => {
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { updateDynamicCountSupplierGood } from "../../inventories/utils/updateDynamicCountSupplierGood";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { IOrder } from "@/app/lib/interface/IOrder";
+
+// imported models
+import Order from "@/app/lib/models/order";
+import SalesInstance from "@/app/lib/models/salesInstance";
+
+// order with status "Done" or "Dont Make" cannot be canceled
+export const cancelOrder = async (orderId: Types.ObjectId) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    // validate orderId
-    if (!orderId || !Types.ObjectId.isValid(orderId)) {
-      return "Invalid orderId!";
+    // validate userId
+    if (isObjectIdValid([orderId]) !== true) {
+      return "User ID is not valid!";
     }
 
-        // connect before first call to DB
-        await connectDb();
+    // connect before first call to DB
+    await connectDb();
 
-        // check if order exists and can be canceled
+    // check if order exists and can be canceled
     const orderBusinessGoods: IOrder | null = await Order.findById(orderId)
-      .select("businessGoods table orderStatus")
+      .select("businessGoodsIds salesInstanceId orderStatus")
       .lean();
+
     if (!orderBusinessGoods) {
+      await session.abortTransaction();
       return "Order not found!";
     }
-    const notAllowedToCancel = ["Started", "Done", "Dont Make", "Started Hold"];
+
+    const notAllowedToCancel = ["Done", "Dont Make"];
     if (notAllowedToCancel.includes(orderBusinessGoods?.orderStatus ?? "")) {
-      return "Order cannot be canceled because its been started or done!";
+      await session.abortTransaction();
+      return "Order cannot be canceled because its has been done!";
     }
 
     const updateDynamicCountSupplierGoodResult =
       await updateDynamicCountSupplierGood(
-        orderBusinessGoods.businessGoods,
+        orderBusinessGoods.businessGoodsIds,
         "remove"
       );
 
-      if(updateDynamicCountSupplierGoodResult !== true) {
-        return "updateDynamicCountSupplierGood! " + updateDynamicCountSupplierGoodResult
-      }
-
-      await Table.findOneAndUpdate(
-        { _id: orderBusinessGoods.table },
-        { $pull: { orders: orderId } },
-        { new: true } // Now this option is valid and will return the updated document
+    if (updateDynamicCountSupplierGoodResult !== true) {
+      await session.abortTransaction();
+      return (
+        "updateDynamicCountSupplierGood error: " +
+        updateDynamicCountSupplierGoodResult
       );
+    }
 
-    await Order.deleteOne({ _id: orderId });
+    await SalesInstance.findOneAndUpdate(
+      { _id: orderBusinessGoods.salesInstanceId },
+      { $pull: { "salesGroup.ordersIds": orderId } },
+      { new: true, session }
+    );
+
+    const deleteResult = await Order.deleteOne({ _id: orderId }).session(
+      session
+    );
+
+    if (deleteResult.deletedCount === 0) {
+      await session.abortTransaction();
+      return "Cancel order failed, order not deleted!";
+    }
+
+    await session.commitTransaction();
 
     return "Cancel order and update dynamic count success";
   } catch (error) {
+    await session.abortTransaction();
     return "Cancel order and update dynamic count failed! " + error;
+  } finally {
+    session.endSession();
   }
 };

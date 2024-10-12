@@ -10,7 +10,9 @@ supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
   
-orders
+orders - get all/post done and tested
+-transferOrderBetweenSalesInstances are not correct, i might loose the original orderCode when transfering
+- refact the whole routing, every action (cancel, update, transfer) supose to be done in a bulk of order. inside the orders.salesInstance[salesInstanceId]
 
 purchases
 inventories
