@@ -247,7 +247,6 @@ export const PATCH = async (
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();
-    session.endSession();
 
     // Check if the purchase was found and updated
     if (!updatedUser) {

@@ -255,7 +255,6 @@ export const DELETE = async (
 
     if (result.deletedCount === 0) {
       await session.abortTransaction();
-      session.endSession();
       return new NextResponse(
         JSON.stringify({
           message: "Business not found or atomic deletation failed!",
@@ -289,7 +288,6 @@ export const DELETE = async (
     ]);
 
     await session.commitTransaction();
-    session.endSession();
 
     const cloudinaryFolder = await cloudinary.api.sub_folders(
       "restaurant-pos/"

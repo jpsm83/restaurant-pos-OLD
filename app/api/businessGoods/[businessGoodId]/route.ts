@@ -367,7 +367,6 @@ export const DELETE = async (
 
     if (result.deletedCount === 0) {
       await session.abortTransaction();
-      session.endSession();
       return new NextResponse(
         JSON.stringify({ message: "Business good not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -381,7 +380,6 @@ export const DELETE = async (
     ).session(session);
 
     await session.commitTransaction();
-    session.endSession();
 
     return new NextResponse(
       JSON.stringify({

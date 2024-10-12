@@ -50,11 +50,14 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // check if sales instance has no ordersIds
+    // check if salesInstance has no salesGroup
     if (
       await SalesInstance.exists({
         _id: salesInstanceId,
-        $or: [{ ordersIds: { $size: 0 } }, { ordersIds: { $exists: false } }],
+        $or: [
+          { salesGroup: { $size: 0 } },
+          { salesGroup: { $exists: false } },
+        ],
       })
     ) {
       await SalesInstance.deleteOne(
@@ -95,7 +98,6 @@ export const PATCH = async (
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();
-    session.endSession();
 
     return new NextResponse(
       JSON.stringify({

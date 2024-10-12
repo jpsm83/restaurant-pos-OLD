@@ -41,9 +41,9 @@ export const GET = async (req: Request) => {
         model: User,
       })
       .populate({
-        path: "ordersIds",
+        path: "salesGroup.ordersIds",
         select:
-          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
+          "billingStatus orderStatus orderGrossPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
         populate: {
           path: "businessGoodsIds",
           select: "name mainCategory subCategory allergens sellingPrice",
@@ -72,7 +72,7 @@ export const GET = async (req: Request) => {
   }
 };
 
-// first create a empty salesInstance, then update it with the ordersIds
+// first create a empty salesInstance, then update it with the salesGroup.ordersIds
 // @desc    Create new salesInstances
 // @route   POST /salesInstances
 // @access  Private

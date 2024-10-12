@@ -89,7 +89,7 @@ export const POST = async (req: Request) => {
     // Update each order
     if (orders) {
       for (const order of orders) {
-        let remainingOrderPrice = order.orderNetPrice;
+        let remainingOrderGrossPrice = order.orderNetPrice;
         const orderPaymentMethods = [];
 
         for (const payment of validPaymentMethods) {
@@ -97,7 +97,7 @@ export const POST = async (req: Request) => {
 
           const amountToUse = Math.min(
             payment.methodSalesTotal,
-            remainingOrderPrice
+            remainingOrderGrossPrice
           );
 
           // Create payment method object with the new structure
@@ -108,9 +108,9 @@ export const POST = async (req: Request) => {
           });
 
           payment.methodSalesTotal -= amountToUse;
-          remainingOrderPrice -= amountToUse;
+          remainingOrderGrossPrice -= amountToUse;
 
-          if (remainingOrderPrice === 0) break;
+          if (remainingOrderGrossPrice === 0) break;
         }
 
         const update = {

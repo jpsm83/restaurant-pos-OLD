@@ -51,7 +51,7 @@ export const updateUsersDailySalesReport = async (
           dailyReferenceNumber: dailyReferenceNumber,
         })
           .populate({
-            path: "ordersIds",
+            path: "salesGroup.ordersIds",
             model: Order,
             populate: {
               path: "businessGoodsIds",
@@ -64,7 +64,7 @@ export const updateUsersDailySalesReport = async (
                 "_id name mainCategory subCategory sellingPrice costPrice",
             },
             select:
-              "userId paymentMethod billingStatus orderPrice orderNetPrice orderTips orderCostPrice",
+              "userId paymentMethod billingStatus orderGrossPrice orderNetPrice orderTips orderCostPrice",
           })
           .select(
             "dailyReferenceNumber status businessId orderNetPrice orderTips guests closedById"
@@ -93,6 +93,12 @@ export const updateUsersDailySalesReport = async (
           totalCustomersServed: 0 as number,
           averageCustomerExpenditure: 0,
         };
+
+// ******************************************
+// MUST REFACTOR THSI CODE BLOCK
+// salesInstance.ordersIds does not exist anymore
+// now it is salesInstance.salesGroup.ordersIds
+// ****************************************
 
         // Process each table for the user
         if (salesInstance && salesInstance.length > 0) {
@@ -133,7 +139,7 @@ export const updateUsersDailySalesReport = async (
                 userDailySalesReportObj.totalTipsReceived +=
                   order.orderTips ?? 0;
                 userDailySalesReportObj.totalSalesBeforeAdjustments +=
-                  order.orderPrice ?? 0;
+                  order.orderGrossPrice ?? 0;
                 userDailySalesReportObj.totalCostOfGoodsSold +=
                   order.orderCostPrice ?? 0;
 

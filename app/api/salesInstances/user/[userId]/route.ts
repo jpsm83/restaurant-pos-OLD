@@ -49,9 +49,9 @@ export const GET = async (
         model: User,
       })
       .populate({
-        path: "ordersIds",
+        path: "salesGroup.ordersIds",
         select:
-          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
+          "billingStatus orderStatus orderGrossPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
         populate: {
           path: "businessGoodsIds",
           select: "name mainCategory subCategory allergens sellingPrice",

@@ -282,7 +282,6 @@ export const DELETE = async (
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();
-    session.endSession();
 
     return new NextResponse(
       JSON.stringify({ message: `Printer ${printerId} deleted!` }),

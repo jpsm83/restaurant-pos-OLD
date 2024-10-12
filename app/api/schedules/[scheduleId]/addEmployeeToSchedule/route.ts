@@ -214,7 +214,6 @@ export const PATCH = async (
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();
-    session.endSession();
 
     return new NextResponse(
       JSON.stringify({ message: "Employee added to schedule!" }),

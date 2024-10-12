@@ -36,7 +36,7 @@ export const GET = async (
     await connectDb();
 
     const order = await Order.findById(orderId)
-      .populate({ path: "table", select: "salesInstance", model: SalesInstance })
+      .populate({ path: "salesInstance", select: "salesInstance", model: SalesInstance })
       .populate({
         path: "user",
         select: "username allUserRoles currentShiftRole",
@@ -96,7 +96,7 @@ export const PATCH = async (
     // check if order exists
     const order: IOrder | null = await Order.findById(orderId)
       .select(
-        "_id table billingStatus orderStatus promotionApplyed discountPercentage paymentMethod"
+        "_id salesInstance billingStatus orderStatus promotionApplyed discountPercentage paymentMethod"
       )
       .lean();
 
@@ -190,7 +190,7 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: `Order from table ${order.table} updated successfully!`,
+        message: `Order updated successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

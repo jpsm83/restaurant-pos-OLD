@@ -5,7 +5,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import convert, { Unit } from "convert-units";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { IInventory } from "@/app/lib/interface/IInventory";
 
 // every time an order is created or cancel, we MUST update the supplier goods
@@ -16,7 +16,8 @@ import { IInventory } from "@/app/lib/interface/IInventory";
 // get all business goods from the setMenu and repeat the cicle
 export const updateDynamicCountSupplierGood = async (
   businessGoodsIds: Types.ObjectId[],
-  addOrRemove: "add" | "remove"
+  addOrRemove: "add" | "remove",
+  options: { session: mongoose.ClientSession }
 ) => {
   try {
     // Connect to the database
@@ -107,9 +108,10 @@ export const updateDynamicCountSupplierGood = async (
           "supplierGoods.measurementUnit": 1,
         },
       },
-    ]);
+    ]).session(options.session);
 
-    if (!inventoryItems || inventoryItems.length === 0) return "Inventory not found!";
+    if (!inventoryItems || inventoryItems.length === 0)
+      return "Inventory not found!";
 
     // Map supplierGoodId to measurementUnit and dynamicSystemCount
     const supplierGoodUnitsMap = inventoryItems[0].supplierGoods.reduce(
@@ -157,6 +159,7 @@ export const updateDynamicCountSupplierGood = async (
                   addOrRemove === "add" ? quantityChange : -quantityChange,
               },
             },
+            session: options.session,
           },
         };
       })
@@ -164,7 +167,7 @@ export const updateDynamicCountSupplierGood = async (
 
     // Execute bulk update
     if (bulkOperations.length > 0) {
-      await Inventory.bulkWrite(bulkOperations);
+      await Inventory.bulkWrite(bulkOperations, { session: options.session });
     }
 
     return true;

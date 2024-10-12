@@ -10,6 +10,9 @@ export interface ISalesInstance {
   responsibleById: Types.ObjectId;
   businessId: Types.ObjectId;
   clientName?: string;
-  ordersIds?: Types.ObjectId[];
+  salesGroup?: {
+    orderCode: string;
+    ordersIds: Types.ObjectId[];
+  }[];
   closedById?: Types.ObjectId;
 }

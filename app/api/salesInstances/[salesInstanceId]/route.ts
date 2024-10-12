@@ -54,9 +54,9 @@ export const GET = async (
         model: User,
       })
       .populate({
-        path: "ordersIds",
+        path: "salesGroup.ordersIds",
         select:
-          "billingStatus orderStatus orderPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
+          "billingStatus orderStatus orderGrossPrice orderNetPrice paymentMethod allergens promotionApplyed discountPercentage createdAt businessGoodsIds",
         populate: {
           path: "businessGoodsIds",
           select: "name mainCategory subCategory allergens sellingPrice",
@@ -83,7 +83,7 @@ export const GET = async (
   }
 };
 
-// salesPointId and ordersIds doesnt get updated here, we got separate routes for that
+// salesPointId and salesGroup doesnt get updated here, we got separate routes for that
 // also sales instance doesnt get closed here, they get closed when all orders are closed automatically
 // @desc    Update salesInstances
 // @route   PATCH /salesInstances/:salesInstanceId
@@ -124,7 +124,7 @@ export const PATCH = async (
     const salesInstance: ISalesInstance | null = await SalesInstance.findById(
       salesInstanceId
     )
-      .select("openedById businessId status ordersIds")
+      .select("openedById businessId status salesGroup")
       .lean();
 
     if (!salesInstance) {
@@ -137,10 +137,10 @@ export const PATCH = async (
       );
     }
 
-    // Handle deletion for occupied salesInstance without orders
+    // Handle deletion for occupied salesInstance without salesGroup
     if (
       salesInstance.status === "Occupied" &&
-      (!salesInstance.ordersIds || salesInstance.ordersIds.length === 0) &&
+      (!salesInstance.salesGroup || salesInstance.salesGroup.length === 0) &&
       status !== "Reserved"
     ) {
       await SalesInstance.deleteOne(
@@ -149,7 +149,7 @@ export const PATCH = async (
       );
       return new NextResponse(
         JSON.stringify({
-          message: "Occupied salesInstance with no orders has been deleted!",
+          message: "Occupied salesInstance with no salesGroup has been deleted!",
         }),
         {
           status: 200,
@@ -197,7 +197,6 @@ export const PATCH = async (
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();
-    session.endSession();
 
     return new NextResponse(
       JSON.stringify({
@@ -239,11 +238,11 @@ export const DELETE = async (
     // connect before first call to DB
     await connectDb();
 
-    // do not allow delete if salesInstance has orders
+    // do not allow delete if salesInstance has salesGroup
     // delete the salesInstance
     const result = await SalesInstance.deleteOne({
       _id: salesInstanceId,
-      $or: [{ ordersIds: { $size: 0 } }, { ordersIds: { $exists: false } }],
+      $or: [{ salesGroup: { $size: 0 } }, { salesGroup: { $exists: false } }],
     });
 
     if (result.deletedCount === 0) {

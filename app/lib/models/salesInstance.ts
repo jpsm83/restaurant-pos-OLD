@@ -30,11 +30,19 @@ const salesInstanceSchema = new Schema(
 
     // non required fields
     clientName: { type: String }, // name of the client that is in the table
-    ordersIds: {
-      type: [Schema.Types.ObjectId],
-      ref: "Order",
-      default: undefined,
-    }, // array of orders made in the table
+    salesGroup: {
+      type: [
+      {
+        orderCode: { type: String, required: true }, // unique code for the group of orders
+        ordersIds: {
+          type: [Schema.Types.ObjectId],
+          ref: "Order",
+          default: undefined,
+        }, // array of orders made in the table
+      }
+    ],
+    default: undefined,
+    }, // orders separate by groups of time ordered made in the salesInstance
     closedAt: { type: Date }, // date and time when the table was closed
     closedById: { type: Schema.Types.ObjectId, ref: "User" }, // user that closed the table, same as responsibleBy
   },
