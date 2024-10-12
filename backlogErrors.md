@@ -3,9 +3,7 @@ salesPoint - DONE
 users - DONE
 dailySalesReports - DONE
 salesInstance - DONE
-
-printers - ready for test
-
+printers - DONE
 schedules - DONE
 suppliers - DONE
 supplierGoods - DONE

@@ -4,7 +4,7 @@ export const personalDetailsValidation = (
   personalDetails: IPersonalDetails
 ) => {
   // check personalDetails is an object
-  if (typeof personalDetails !== "object" || personalDetails === null || Object.keys(personalDetails).length !== 6)
+  if (typeof personalDetails !== "object" || Object.keys(personalDetails).length !== 6)
     return "Personal details must be an object of 6 keys!";
 
   // required fields
@@ -28,7 +28,7 @@ export const personalDetailsValidation = (
   for (const key of Object.keys(personalDetails)) {
     const value = personalDetails[key as keyof IPersonalDetails];
 
-    if (value === undefined || value === null || value === "") {
+    if (!value) {
       return `${key} must have a value!`;
     }
   }

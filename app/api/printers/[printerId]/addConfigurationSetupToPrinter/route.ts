@@ -23,9 +23,9 @@ import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 // ]
 
 // @desc    Add Configuration Setup To Printer
-// @route   POST /printers/:printerId/addConfigurationSetupToPrinter
+// @route   PATCH /printers/:printerId/addConfigurationSetupToPrinter
 // @access  Private
-export const POST = async (
+export const PATCH = async (
   req: Request,
   context: {
     params: { printerId: Types.ObjectId };

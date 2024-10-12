@@ -3,7 +3,7 @@ import { IAddress } from "@/app/lib/interface/IAddress";
 // helper function to validate address object
 export const addressValidation = (address: IAddress) => {
   // check address is an object
-  if (typeof address !== "object" || address === null)
+  if (typeof address !== "object")
     return "Address must be an object!";
 
   const validKeys = [
@@ -39,7 +39,7 @@ export const addressValidation = (address: IAddress) => {
   for (const key of requiredFields) {
     const value = address[key as keyof IAddress];
 
-    if (value === undefined || value === null || value === "") {
+    if (!value) {
       return `${key} must have a value!`;
     }
   }

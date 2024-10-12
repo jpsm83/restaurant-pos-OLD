@@ -38,6 +38,11 @@ export const GET = async (req: Request) => {
         select: "salesPointName",
         model: SalesPoint,
       })
+      .populate({
+        path: "configurationSetupToPrintOrders.excludeUserIds",
+        select: "username",
+        model: User,
+      })
       .lean();
 
     return !printers.length
@@ -148,12 +153,12 @@ export const POST = async (req: Request) => {
     // create printer object with required fields
     const newPrinter = {
       printerAlias,
-      description: description || null,
+      description: description || undefined,
       printerStatus: isOnline ? "Online" : "Offline",
       ipAddress,
       port,
       businessId,
-      backupPrinterId: backupPrinterId || null,
+      backupPrinterId: backupPrinterId || undefined,
       usersAllowedToPrintDataIds: usersAllowedToPrintDataIds || [],
     };
 

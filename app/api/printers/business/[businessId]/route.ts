@@ -37,7 +37,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const printers = await Printer.find()
+    const printers = await Printer.find({ businessId })
       .populate({
         path: "backupPrinterId",
         select: "printerAlias",
@@ -52,6 +52,11 @@ export const GET = async (
         path: "configurationSetupToPrintOrders.salesPointIds",
         select: "salesPointName",
         model: SalesPoint,
+      })
+      .populate({
+        path: "configurationSetupToPrintOrders.excludeUserIds",
+        select: "username",
+        model: User,
       })
       .lean();
 

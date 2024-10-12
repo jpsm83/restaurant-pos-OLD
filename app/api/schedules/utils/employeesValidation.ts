@@ -12,7 +12,7 @@ export const employeesValidation = (employee: IEmployeeSchedule) => {
   for (const key of validKeys) {
     const value = employee[key as keyof IEmployeeSchedule];
 
-    if (value === undefined || value === null || value === "") {
+    if (!value) {
       return `${key} must have a value!`;
     }
   }

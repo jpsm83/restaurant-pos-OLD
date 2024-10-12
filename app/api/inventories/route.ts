@@ -114,7 +114,7 @@ export const POST = async (req: Request) => {
       createdAt: { $gte: startOfCurrentMonth, $lte: endOfCurrentMonth },
     });
 
-    if (currentMonthInventory === null) {
+    if (!currentMonthInventory) {
       // Get the previous month's start and end dates
       const startOfPreviousMonth = moment()
         .subtract(1, "months")
