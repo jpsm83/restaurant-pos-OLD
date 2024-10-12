@@ -22,7 +22,7 @@ export const ordersArrValidation = (ordersArr: Partial<IOrder>[]) => {
         )
     )
   )
-    return "BusinessGoodsIds must be an array of strings!";
+    return "BusinessGoodsIds must be an array of Ids!";
 
 // Validate ids
 const businessGoodsIds: any = ordersArr.flatMap((order) => order.businessGoodsIds);

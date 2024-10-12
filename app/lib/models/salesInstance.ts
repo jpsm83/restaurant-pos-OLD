@@ -1,5 +1,5 @@
 import { Schema, model, models } from "mongoose";
-import { tableStatus } from "../enums.js";
+import { salesInstanceStatus } from "../enums.js";
 
 const salesInstanceSchema = new Schema(
   {
@@ -11,7 +11,7 @@ const salesInstanceSchema = new Schema(
       required: true,
     }, // reference with the business sales instance
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
-    status: { type: String, enum: tableStatus, default: "Occupied" }, // status of the table
+    status: { type: String, enum: salesInstanceStatus, default: "Occupied" }, // status of the table
     openedById: {
       type: Schema.Types.ObjectId,
       ref: "User",

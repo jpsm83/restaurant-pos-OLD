@@ -57,22 +57,3 @@ const orderSchema = new Schema(
 
 const Order = models.Order || model("Order", orderSchema);
 export default Order;
-
-
-
-
-
-
-
-  // *** ordersArr is an array of objects with the order details ***
-  // [
-  //    {
-  //       orderGrossPrice,
-  //       orderNetPrice, - calculated on the front_end following the promotion rules
-  //       orderCostPrice,
-  //       businessGoodsIds, - can be an array of businessId goods (3 IDs) "burger with extra cheese and add bacon"
-  //       allergens,
-  //       promotionApplyed, - automatically set by the front_end upon creation
-  //       comments
-  //    }
-  //]

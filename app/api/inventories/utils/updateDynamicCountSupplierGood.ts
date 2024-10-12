@@ -7,6 +7,7 @@ import SupplierGood from "@/app/lib/models/supplierGood";
 import convert, { Unit } from "convert-units";
 import mongoose, { Types } from "mongoose";
 import { IInventory } from "@/app/lib/interface/IInventory";
+import path from "path";
 
 // every time an order is created or cancel, we MUST update the supplier goods
 // check all the ingredients of the business goods array of the order
@@ -16,9 +17,10 @@ import { IInventory } from "@/app/lib/interface/IInventory";
 // get all business goods from the setMenu and repeat the cicle
 export const updateDynamicCountSupplierGood = async (
   businessGoodsIds: Types.ObjectId[],
-  addOrRemove: "add" | "remove",
-  options: { session: mongoose.ClientSession }
+  addOrRemove: "add" | "remove"
 ) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     // Connect to the database
     await connectDb();
@@ -28,13 +30,19 @@ export const updateDynamicCountSupplierGood = async (
       _id: { $in: businessGoodsIds },
     })
       .select(
-        "ingredients.supplierGood ingredients.measurementUnit ingredients.requiredQuantity setMenu"
+        "ingredients.supplierGoodId ingredients.measurementUnit ingredients.requiredQuantity setMenuIds"
       )
-      .populate(
-        "setMenu",
-        "ingredients.supplierGood ingredients.measurementUnit ingredients.requiredQuantity"
-      )
+      .populate({
+        path: "setMenuIds",
+        select:
+          "ingredients.supplierGoodId ingredients.measurementUnit ingredients.requiredQuantity",
+        model: BusinessGood,
+      })
       .lean();
+
+    if (!businessGoodsIngredients || businessGoodsIngredients.length === 0) {
+      return "Business goods not found!";
+    }
 
     // Collect all required ingredients from business goods and setMenus
     let allIngredientsRequired: {
@@ -47,17 +55,17 @@ export const updateDynamicCountSupplierGood = async (
       if (businessGood.ingredients) {
         businessGood.ingredients.forEach((ing: any) => {
           allIngredientsRequired.push({
-            ingredientId: ing.supplierGood,
+            ingredientId: ing.supplierGoodId,
             requiredQuantity: ing.requiredQuantity,
             measurementUnit: ing.measurementUnit,
           });
         });
       }
-      if (businessGood.setMenu) {
-        businessGood.setMenu.forEach((setMenuItem: any) => {
+      if (businessGood.setMenuIds) {
+        businessGood.setMenuIds.forEach((setMenuItem: any) => {
           setMenuItem.ingredients.forEach((ing: any) => {
             allIngredientsRequired.push({
-              ingredientId: ing.supplierGood,
+              ingredientId: ing.supplierGoodId,
               requiredQuantity: ing.requiredQuantity,
               measurementUnit: ing.measurementUnit,
             });
@@ -65,6 +73,8 @@ export const updateDynamicCountSupplierGood = async (
         });
       }
     });
+
+    if (allIngredientsRequired.length === 0) return "No ingredients found!";
 
     // Aggregation to fetch both inventory items and supplier goods in one query
     const inventoryItems = await Inventory.aggregate([
@@ -108,7 +118,7 @@ export const updateDynamicCountSupplierGood = async (
           "supplierGoods.measurementUnit": 1,
         },
       },
-    ]).session(options.session);
+    ]).session(session);
 
     if (!inventoryItems || inventoryItems.length === 0)
       return "Inventory not found!";
@@ -138,7 +148,8 @@ export const updateDynamicCountSupplierGood = async (
         const supplierGoodUnit =
           supplierGoodUnitsMap[ingredientObj.ingredientId.toString()];
 
-        if (!inventoryItem || !supplierGoodUnit) return null;
+        if (!inventoryItem || !supplierGoodUnit)
+          return "InventoryItem or supplierGoodUnit not found!";
 
         let quantityChange = ingredientObj.requiredQuantity;
         if (ingredientObj.measurementUnit !== supplierGoodUnit) {
@@ -159,7 +170,6 @@ export const updateDynamicCountSupplierGood = async (
                   addOrRemove === "add" ? quantityChange : -quantityChange,
               },
             },
-            session: options.session,
           },
         };
       })
@@ -167,11 +177,16 @@ export const updateDynamicCountSupplierGood = async (
 
     // Execute bulk update
     if (bulkOperations.length > 0) {
-      await Inventory.bulkWrite(bulkOperations, { session: options.session });
+      await Inventory.bulkWrite(bulkOperations, { session });
+    } else {
+      return "No bulk operations failed!";
     }
 
     return true;
   } catch (error) {
+    await session.abortTransaction();
     return "Could not update dynamic count supplier good! " + error;
+  } finally {
+    await session.endSession();
   }
 };

@@ -1,13 +1,17 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
+import mongoose, { Types } from "mongoose";
 
 // import utils
+import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { updateDynamicCountSupplierGood } from "../inventories/utils/updateDynamicCountSupplierGood";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { ordersArrValidation } from "./utils/validateOrdersArr";
 
 // import interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
+import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // import models
 import Order from "@/app/lib/models/order";
@@ -15,13 +19,7 @@ import SalesInstance from "@/app/lib/models/salesInstance";
 import User from "@/app/lib/models/user";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
-import { billingStatus } from "@/app/lib/enums";
-import { IUser } from "@/app/lib/interface/IUser";
-import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { ordersArrValidation } from "./utils/validateOrdersArr";
-import mongoose, { Types } from "mongoose";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -233,21 +231,19 @@ export const POST = async (req: Request) => {
     // Bulk insert the orders
     const ordersCreated = await Order.insertMany(ordersToInsert, { session });
     const ordersIdsCreated = ordersCreated.map((order) => order._id);
-
-    // Now update the dynamic count of supplier goods for each order
-    const dynamicCountUpdates = ordersCreated.map((order) =>
-      updateDynamicCountSupplierGood(order.businessGoodsIds, "add", { session })
+    const businessGoodsIds = ordersCreated.flatMap(
+      (order) => order.businessGoodsIds
     );
 
-    // Execute all dynamic count updates concurrently
-    const updateResults = await Promise.all(dynamicCountUpdates);
+    let updateDynamicCountSupplierGoodResult: any =
+      await updateDynamicCountSupplierGood(businessGoodsIds, "add");
 
-    // Check if any update failed
-    const failedUpdate = updateResults.find((result) => result !== true);
-    if (failedUpdate) {
+    if (updateDynamicCountSupplierGoodResult !== true) {
       return new NextResponse(
         JSON.stringify({
-          message: "Error in updating dynamic count for some supplier goods.",
+          message:
+            "updateDynamicCountSupplierGood failed! Error: " +
+            updateDynamicCountSupplierGoodResult,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );

@@ -32,3 +32,4 @@ this will cause errors if code is not update
 - transform cloudinaryActions route to be a function to be used in all the creations that could have images
 - -check if all findByIdAndUpdate is done with $set
 - when a salesInstance is created with qrCode, update the qrLastScanned of the salesPoint
+- test updateDynamicCountSupplierGood when inventory is refactored / it has no errors but need to check on the whole app

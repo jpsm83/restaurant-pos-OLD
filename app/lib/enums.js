@@ -48,7 +48,7 @@ export const locationTypes = ["Table", "Room", "Seat", "Bar", "Counter", "Spot",
 
 export const notificationTypes = ["Warning", "Emergency", "Info", "Message"];
 
-export const tableStatus = ["Occupied", "Reserved", "Bill", "Closed"];
+export const salesInstanceStatus = ["Occupied", "Reserved", "Bill", "Closed"];
 
 export const subscription = ["Free", "Basic", "Premium", "Enterprise"];
 
