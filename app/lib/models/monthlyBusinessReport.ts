@@ -96,7 +96,6 @@ const monthlyBusinessReportSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

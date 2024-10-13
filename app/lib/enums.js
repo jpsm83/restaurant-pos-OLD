@@ -80,7 +80,7 @@ export const userRoles = [
   "Other",
 ];
 
-export const orderStatus = ["Sent", "Done", "Dont Make", "Hold"];
+export const orderStatus = ["Sent", "Done", "Dont Make", "Hold", "Delivered"];
 // once it has been started, it can't be cancel
 // "Dont Make" means it has been done before it been requested, it cannot be cancel
 

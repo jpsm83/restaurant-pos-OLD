@@ -18,8 +18,8 @@ const orderSchema = new Schema(
       default: "Sent",
       required: true,
     }, // status regarding the order action to be taken or already taken
-    orderGrossPrice : { type: Number, required: true }, // final price of the sun of product being sold regardless of any discounts, voids, or cancellations
-    orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, vois, invitations, discounts and promotions
+    orderGrossPrice: { type: Number, required: true }, // final price of the sun of product being sold regardless of any discounts, voids, or cancellations
+    orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, voids, invitations, discounts and promotions
     orderCostPrice: { type: Number, required: true }, // cost price of the sun of product being sold regardless of any discounts, voids, or cancellations
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // user that made the order
     salesInstanceId: {
@@ -51,7 +51,6 @@ const orderSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

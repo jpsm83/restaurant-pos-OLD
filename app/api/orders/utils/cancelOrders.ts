@@ -13,39 +13,51 @@ import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 
 // order with status "Done" or "Dont Make" cannot be canceled
-export const cancelOrder = async (orderId: Types.ObjectId) => {
+export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
+  // validate userId
+  if (isObjectIdValid(orderIdsArr) !== true) {
+    return "OrderIdsArr not valid!";
+  }
+
+  // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
-  try {
-    // validate userId
-    if (isObjectIdValid([orderId]) !== true) {
-      return "User ID is not valid!";
-    }
 
+  try {
     // connect before first call to DB
     await connectDb();
 
-    // check if order exists and can be canceled
-    const orderBusinessGoods: IOrder | null = await Order.findById(orderId)
+    // Fetch all relevant orders at once using $in
+    const orders = await Order.find({
+      _id: { $in: orderIdsArr },
+    })
       .select("businessGoodsIds salesInstanceId orderStatus")
-      .lean();
+      .lean()
+      .session(session);
 
-    if (!orderBusinessGoods) {
+    if (!orders || orders.length === 0) {
       await session.abortTransaction();
-      return "Order not found!";
+      return "Some orders were not found!";
     }
 
+    // Check if any of the orders are not allowed to be canceled
     const notAllowedToCancel = ["Done", "Dont Make"];
-    if (notAllowedToCancel.includes(orderBusinessGoods?.orderStatus ?? "")) {
+
+    if (
+      orders.some((order) =>
+        notAllowedToCancel.includes(order.orderStatus ?? "")
+      )
+    ) {
       await session.abortTransaction();
-      return "Order cannot be canceled because its has been done!";
+      return "Cannot cancel orders with status 'Done' or 'Dont Make'!";
     }
 
+    // Bulk update dynamic count for all business goods
+    const businessGoodsIds = orders
+      .map((order) => order.businessGoodsIds)
+      .flat();
     const updateDynamicCountSupplierGoodResult =
-      await updateDynamicCountSupplierGood(
-        orderBusinessGoods.businessGoodsIds,
-        "remove"
-      );
+      await updateDynamicCountSupplierGood(businessGoodsIds, "remove");
 
     if (updateDynamicCountSupplierGoodResult !== true) {
       await session.abortTransaction();
@@ -55,21 +67,24 @@ export const cancelOrder = async (orderId: Types.ObjectId) => {
       );
     }
 
+    // Update sales instances in bulk
     await SalesInstance.findOneAndUpdate(
-      { _id: orderBusinessGoods.salesInstanceId },
-      { $pull: { "salesGroup.ordersIds": orderId } },
+      { _id: orders[0].salesInstanceId },
+      { $pull: { "salesGroup.ordersIds": { $in: orderIdsArr } } },
       { new: true, session }
     );
 
-    const deleteResult = await Order.deleteOne({ _id: orderId }).session(
-      session
-    );
+    // Delete orders in bulk
+    const deleteResult = await Order.deleteMany({
+      _id: { $in: orderIdsArr },
+    }).session(session);
 
-    if (deleteResult.deletedCount === 0) {
+    if (deleteResult.deletedCount !== orderIdsArr.length) {
       await session.abortTransaction();
-      return "Cancel order failed, order not deleted!";
+      return "Cancel order failed, some orders were not deleted!";
     }
 
+    // Commit transaction
     await session.commitTransaction();
 
     return "Cancel order and update dynamic count success";

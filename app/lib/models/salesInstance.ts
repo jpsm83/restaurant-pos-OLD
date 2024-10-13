@@ -32,22 +32,24 @@ const salesInstanceSchema = new Schema(
     clientName: { type: String }, // name of the client that is in the table
     salesGroup: {
       type: [
-      {
-        orderCode: { type: String, required: true }, // unique code for the group of orders
-        ordersIds: {
-          type: [Schema.Types.ObjectId],
-          ref: "Order",
-          default: undefined,
-        }, // array of orders made in the table
-      }
-    ],
-    default: undefined,
+        {
+          orderCode: { type: String, required: true }, // unique code for the group of orders
+          ordersIds: {
+            type: [Schema.Types.ObjectId],
+            ref: "Order",
+            default: undefined,
+          }, // array of orders made in the table
+          timestamps: true, // date and time when the order was made, will be used to count down the time for the kitchen to prepare the order
+        },
+      ],
+      default: undefined,
     }, // orders separate by groups of time ordered made in the salesInstance
     closedAt: { type: Date }, // date and time when the table was closed
     closedById: { type: Schema.Types.ObjectId, ref: "User" }, // user that closed the table, same as responsibleBy
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true }
 );
 
-const SalesInstance = models.SalesInstance || model("SalesInstance", salesInstanceSchema);
+const SalesInstance =
+  models.SalesInstance || model("SalesInstance", salesInstanceSchema);
 export default SalesInstance;

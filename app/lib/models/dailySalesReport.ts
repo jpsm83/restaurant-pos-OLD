@@ -84,7 +84,7 @@ const dailySalesReportSchema = new Schema(
     dailyTotalInvitedValue: { type: Number }, // sum of the price of the invited items
     dailyPosSystemCommission: { type: Number }, // comission of the POS system app
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true }
 );
 
 const DailySalesReport =

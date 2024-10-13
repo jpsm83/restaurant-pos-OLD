@@ -22,7 +22,6 @@ const notificationSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

@@ -59,8 +59,9 @@ const businessGoodSchema = new Schema(
     imageUrl: { type: String }, // photo of the business good
     deliveryTime: { type: Number }, // maximun time to deliver the business good to client in minutes
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true }
 );
 
-const BusinessGood = models.BusinessGood || model("BusinessGood", businessGoodSchema);
+const BusinessGood =
+  models.BusinessGood || model("BusinessGood", businessGoodSchema);
 export default BusinessGood;

@@ -43,7 +43,7 @@ const promotionSchema = new Schema(
     }, // business goods that the promotion will apply to
     description: { type: String }, // description of the promotion
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true }
 );
 
 const Promotion = models.Promotion || model("Promotion", promotionSchema);

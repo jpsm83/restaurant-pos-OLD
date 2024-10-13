@@ -21,6 +21,8 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
+import { closeOrders } from "./utils/closeOrders";
+
 // @desc    Get all orders
 // @route   GET /orders
 // @access  Private
@@ -287,3 +289,49 @@ export const POST = async (req: Request) => {
     session.endSession();
   }
 };
+
+// export const POST = async (req: Request) => {
+//   try {
+//     // connect before first call to DB
+//     await connectDb();
+
+//     const ordersArr = ["669642706e92805872dbfb3e", "6693c0fd0693ec3374a899b5"];
+//     const paymentMethod = [
+//       {
+//         paymentMethodType: "Card",
+//         methodBranch: "Visa",
+//         methodSalesTotal: 20,
+//       },
+//       {
+//         paymentMethodType: "Card",
+//         methodBranch: "Mastercard",
+//         methodSalesTotal: 100,
+//       },
+//       {
+//         paymentMethodType: "Cash",
+//         methodBranch: "Cash",
+//         methodSalesTotal: 90,
+//       },
+//       {
+//         paymentMethodType: "Crypto",
+//         methodBranch: "Bitcoin",
+//         methodSalesTotal: 80,
+//       },
+//       {
+//         paymentMethodType: "Other",
+//         methodBranch: "Voucher",
+//         methodSalesTotal: 150,
+//       },
+//     ];
+
+//     // @ts-ignore
+//     const result = await closeOrders(ordersArr, paymentMethod);
+
+//     return new NextResponse(JSON.stringify(result), {
+//       status: 200,
+//       headers: { "Content-Type": "application/json" },
+//     });
+//   } catch (error) {
+//     return handleApiError("Function failed!", error);
+//   }
+// };

@@ -39,7 +39,7 @@ const printerSchema = new Schema(
     usersAllowedToPrintDataIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users can print data - users are allowed to print from one printer only - ex: bills, sales reports, etc
     configurationSetupToPrintOrders: [configurationSetupToPrintOrdersSchema], // array of objects that will dictate what the printer will print and from wich sales point, it can be multiple variations of prints, thats why it is an array
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true }
 );
 
 const Printer = models.Printer || model("Printer", printerSchema);

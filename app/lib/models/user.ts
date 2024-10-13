@@ -77,7 +77,7 @@ const userSchema = new Schema(
     }, // if the user wants to receive notifications
     comments: { type: String }, // comments about the user
   },
-  { timestamps: true, minimize: false }
+  { timestamps: true }
 );
 
 const User = models.User || model("User", userSchema);

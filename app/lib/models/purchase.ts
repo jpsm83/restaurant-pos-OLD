@@ -47,7 +47,6 @@ const purchaseSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

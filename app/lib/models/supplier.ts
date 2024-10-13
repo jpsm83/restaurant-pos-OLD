@@ -23,7 +23,6 @@ const supplierSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

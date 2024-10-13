@@ -42,7 +42,6 @@ const businessSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

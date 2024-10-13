@@ -16,10 +16,12 @@ const employeesScheduledSchema = new Schema({
   // not required from the front end
   // calculated in the back end
   shiftHours: {
-    type: Number, required: true
+    type: Number,
+    required: true,
   }, // quantity of shift hours worked , startTime - endTime
   employeeCost: {
-    type: Number, required: true
+    type: Number,
+    required: true,
   }, // cost of the employee for the shift, user.grossMonthlySalary / user.contractHoursMonth * shiftHours - calculated in the front end
 });
 
@@ -31,7 +33,7 @@ const scheduleSchema = new Schema(
       required: true,
     }, // date of the schedule without time
     weekNumber: { type: Number, required: true }, // week number of the year
-    employeesSchedules:  [employeesScheduledSchema],
+    employeesSchedules: [employeesScheduledSchema],
     totalEmployeesScheduled: {
       type: Number,
       required: true,
@@ -60,7 +62,6 @@ const scheduleSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

@@ -70,7 +70,6 @@ const supplierGoodSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 

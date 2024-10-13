@@ -16,11 +16,8 @@ const SalesPointSchema = new Schema(
   },
   {
     timestamps: true,
-    minimize: false,
   }
 );
 
-const SalesPoint =
-  models.SalesPoint ||
-  model("SalesPoint", SalesPointSchema);
+const SalesPoint = models.SalesPoint || model("SalesPoint", SalesPointSchema);
 export default SalesPoint;
