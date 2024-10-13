@@ -1,44 +1,28 @@
 import mongoose, { Types } from "mongoose";
-import { NextResponse } from "next/server";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { createSalesInstance } from "../../salesInstances/utils/createSalesInstance";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported interfaces
-import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
-import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 
 export const transferOrdersBetweenSalesInstances = async (
   orderIdsArr: Types.ObjectId[],
-  userId: Types.ObjectId,
-  businessId: Types.ObjectId,
   fromSalesInstanceId: Types.ObjectId,
   toSalesInstanceId: Types.ObjectId,
   newSalesPointId: Types.ObjectId,
   guests: number,
-  clientName: string,
-  orderCode: string
+  clientName: string
 ) => {
   // validate ids
-  if (
-    isObjectIdValid([
-      ...orderIdsArr,
-      userId,
-      businessId,
-      fromSalesInstanceId,
-      toSalesInstanceId,
-      newSalesPointId,
-    ]) !== true
-  ) {
-    return "OrderIdsArr, salesInstanceId, userId or businessId not valid!";
+  if (isObjectIdValid([...orderIdsArr, fromSalesInstanceId]) !== true) {
+    return "OrderIdsArr or fromSalesInstanceId not valid!";
   }
 
   // toSalesInstanceId and newSalesPointId cannot exist at the same time
@@ -46,58 +30,69 @@ export const transferOrdersBetweenSalesInstances = async (
     return "toSalesInstanceId and newSalesPointId cannot exist at the same time!";
   }
 
+  // Validate toSalesInstanceId or newSalesPointId
+  if (
+    (toSalesInstanceId && isObjectIdValid([toSalesInstanceId]) !== true) ||
+    (newSalesPointId && isObjectIdValid([newSalesPointId]) !== true)
+  ) {
+    return "Invalid toSalesInstanceId or newSalesPointId!";
+  }
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // check if required fields are provided
-    if (
-      !orderIdsArr ||
-      !userId ||
-      !businessId ||
-      !fromSalesInstanceId ||
-      !newSalesPointId
-    ) {
-      return "OrderIdsArr, userId, businessId, fromSalesInstanceId and newSalesPointId are required!";
-    }
-
     // connect before first call to DB
     await connectDb();
 
-    // get the dailySalesReport reference number
-    const dailySalesReport: IDailySalesReport | null =
-      await DailySalesReport.findOne({
-        isDailyReportOpen: true,
-        businessId,
-      })
-        .select("dailyReferenceNumber")
-        .lean();
+    // Fetch the original createdAt date from the fromSalesInstanceId's salesGroup
+    const originalSalesGroup = await SalesInstance.findOne(
+      {
+        _id: fromSalesInstanceId,
+        "salesGroup.ordersIds": { $in: orderIdsArr },
+      },
+      {
+        "salesGroup.$": 1,
+        businessId: 1,
+        responsibleById: 1,
+        dailyReferenceNumber: 1,
+      }
+    );
 
-    if (!dailySalesReport) {
+    if (
+      !originalSalesGroup ||
+      !originalSalesGroup.salesGroup ||
+      originalSalesGroup.salesGroup.length === 0
+    ) {
       await session.abortTransaction();
-      return "DailySalesReport not found!";
+      return "Original salesGroup not found!";
     }
 
-    // save the salesInstance id where the orders will be transferred
-    let salesInstanceToTransferId;
+    const { salesGroup, businessId, responsibleById, dailyReferenceNumber } =
+      originalSalesGroup;
+    const originalCreatedAt = salesGroup[0].createdAt;
+    let newOrderCode = salesGroup[0].orderCode;
 
-    // save the order code for user tracking purposes in case of new salesInstance creation
-    let newOrderCode = orderCode;
+    // save the salesInstance id where the orders will be transferred
+    let salesInstanceToTransferId = null;
 
     // create new salesInstance
     const salesInstanceObj: Partial<ISalesInstance> = {
-      dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
+      dailyReferenceNumber: dailyReferenceNumber,
       status: "Occupied",
-      responsibleById: userId,
-      businessId,
+      responsibleById: responsibleById,
+      businessId: businessId,
     };
 
-    // check if salesInstances where orders will move exist and it is not closed
-    const salesInstanceToTransfer: ISalesInstance | null =
-      await SalesInstance.findById(toSalesInstanceId)
-        .select("_id status salesPointId")
+    let salesInstanceToTransfer: ISalesInstance | null = null;
+
+    if (toSalesInstanceId) {
+      // Fetch existing salesInstance to transfer to
+      salesInstanceToTransfer = await SalesInstance.findById(toSalesInstanceId)
+        .select("_id status salesPointId guests openedById clientName")
         .lean();
+    }
 
     if (
       salesInstanceToTransfer &&
@@ -113,13 +108,13 @@ export const transferOrdersBetweenSalesInstances = async (
     } else {
       salesInstanceObj.salesPointId = newSalesPointId;
       salesInstanceObj.guests = guests ? guests : undefined;
-      salesInstanceObj.openedById = userId;
+      salesInstanceObj.openedById = responsibleById;
       salesInstanceObj.clientName = clientName ? clientName : undefined;
 
       const newSalesInstance = await createSalesInstance(
         salesInstanceObj as ISalesInstance
       );
-      if (!newSalesInstance) {
+      if (typeof newSalesInstance === "string") {
         await session.abortTransaction();
         return "SalesInstance creation for transfer failed!";
       } else {
@@ -149,40 +144,61 @@ export const transferOrdersBetweenSalesInstances = async (
       };
     });
 
-    // execute bulk update
-    await Order.bulkWrite(bulkUpdateOperations, { session });
+    // Execute bulk update of orders and update sales instances
+    await Promise.all([
+      // execute bulk update
+      await Order.bulkWrite(bulkUpdateOperations, { session }),
 
-    // move orders between salesInstances
-    // Update the salesInstance document by adding the order id to it
-    await SalesInstance.findOneAndUpdate(
-      { _id: salesInstanceToTransferId },
-      {
-        $push: {
-          salesGroup: { orderCode: newOrderCode, ordersIds: orderIdsArr },
+      // move orders between salesInstances
+      // Update the salesInstance document by adding the order id to it
+      await SalesInstance.findOneAndUpdate(
+        { _id: salesInstanceToTransferId },
+        {
+          $push: {
+            salesGroup: {
+              orderCode: newOrderCode,
+              ordersIds: orderIdsArr,
+              createdAt: originalCreatedAt,
+            },
+          },
+          $set: { status: "Occupied" },
         },
-        $set: { status: "Occupied" },
-      },
-      { new: true }
-    );
+        { new: true, session }
+      ),
 
-    // Remove the order id from the old salesInstance
-    await SalesInstance.updateOne(
-      { _id: fromSalesInstanceId },
-      {
-        $pull: {
-          salesGroup: {
-            $or: [
-              { ordersIds: { $in: orderIdsArr } }, // Remove specific orders
-              { ordersIds: { $size: 0 } }, // Remove entire object if ordersIds array is empty
-            ],
+      // First, remove specific order IDs from the `ordersIds` array
+      await SalesInstance.findOneAndUpdate(
+        { _id: fromSalesInstanceId },
+        {
+          $pull: {
+            "salesGroup.$[].ordersIds": { $in: orderIdsArr },
           },
         },
-      },
-      { session }
-    );
+        { session }
+      ),
+
+      // Then, remove the entire `salesGroup` object if its `ordersIds` array is empty
+      await SalesInstance.findOneAndUpdate(
+        { _id: fromSalesInstanceId },
+        {
+          $pull: {
+            salesGroup: {
+              ordersIds: { $size: 0 },
+            },
+          },
+        },
+        { session }
+      ),
+    ]);
+
+    // Commit transaction
+    await session.commitTransaction();
 
     return "Orders transferred successfully!";
   } catch (error) {
+    await session.abortTransaction();
     return "Transfer orders between salesInstances failed! Error: " + error;
+  } finally {
+    session.endSession();
   }
 };

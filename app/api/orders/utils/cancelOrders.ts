@@ -5,9 +5,6 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { updateDynamicCountSupplierGood } from "../../inventories/utils/updateDynamicCountSupplierGood";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
-// imported interfaces
-import { IOrder } from "@/app/lib/interface/IOrder";
-
 // imported models
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
@@ -68,10 +65,17 @@ export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
     }
 
     // Update sales instances in bulk
-    await SalesInstance.findOneAndUpdate(
+    await SalesInstance.updateMany(
+      { _id: orders[0].salesInstanceId, "salesGroup.ordersIds": { $in: orderIdsArr } },
+      { $pull: { "salesGroup.$.ordersIds": { $in: orderIdsArr } } },
+      { session }
+    );
+
+    // Remove empty salesGroup objects
+    await SalesInstance.updateMany(
       { _id: orders[0].salesInstanceId },
-      { $pull: { "salesGroup.ordersIds": { $in: orderIdsArr } } },
-      { new: true, session }
+      { $pull: { salesGroup: { ordersIds: { $size: 0 } } } },
+      { session }
     );
 
     // Delete orders in bulk

@@ -22,6 +22,12 @@ import SalesPoint from "@/app/lib/models/salesPoint";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 import { closeOrders } from "./utils/closeOrders";
+import { create } from "domain";
+import { cancelOrders } from "./utils/cancelOrders";
+import { addDiscountToOrders } from "./utils/addDiscountToOrders";
+import { changeOrdersBillingStatus } from "./utils/changeOrdersBillingStatus";
+import { changeOrdersStatus } from "./utils/changeOrdersStatus";
+import { transferOrdersBetweenSalesInstances } from "./utils/transferOrdersBetweenSalesInstances";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -99,239 +105,264 @@ export const GET = async () => {
 // ORDERS ARE CREATED INDIVIDUALLY UNLESS IT HAS ADDONS
 // THAT WAY WE CAN APPLY PROMOTIONS TO INDIVIDUAL ORDERS, MANAGE PAYMENTS AND TRACK THE STATUS OF EACH ORDER EASILY
 
-// @desc    Create new order
-// @route   POST /orders
-// @access  Private
-export const POST = async (req: Request) => {
-  // Start a session to handle transactions
-  // with session if any error occurs, the transaction will be aborted
-  // session is created outside of the try block to be able to abort it in the catch/finally block
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  // *** ordersArr is an array of objects with the order details ***
-  // [
-  //    {
-  //       orderGrossPrice,
-  //       orderNetPrice, - calculated on the front_end following the promotion rules
-  //       orderCostPrice,
-  //       businessGoodsIds, - can be an array of businessId goods (3 IDs) "burger with extra cheese and add bacon"
-  //       allergens,
-  //       promotionApplyed, - automatically set by the front_end upon creation
-  //       comments
-  //    }
-  //]
-  try {
-    // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
-    const { ordersArr, userId, salesInstanceId, businessId } =
-      (await req.json()) as {
-        ordersArr: Partial<IOrder>[];
-        userId: Types.ObjectId;
-        salesInstanceId: Types.ObjectId;
-        businessId: Types.ObjectId;
-      };
-
-    // check required fields
-    if (!ordersArr || !userId || !salesInstanceId || !businessId) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "OrdersArr, userId, salesInstanceId and businessId are required fields!",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // validate ids
-    if (isObjectIdValid([userId, businessId, salesInstanceId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "BusinessGoodsIds, userId, businessId or salesInstanceId not valid!",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // validate ordersArr
-    const ordersArrValidationResult = ordersArrValidation(ordersArr);
-    if (ordersArrValidationResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: ordersArrValidationResult }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // - FLOW - in case if customer pays at the time of the order
-    // - CREATE the order with billing status "Open"
-    // - GET the order by its ID
-    // - UPDATE the order with the payment method and billing status "Paid"
-    // - UPDATE the salesInstanceId status to "Closed" (if all orders are paid)
-    // - *** IMPORTANT ***
-    // - Because it has been payed, doesn't mean orderStatus is "Done"
-
-    // connect before first call to DB
-    await connectDb();
-
-    // Check if salesInstanceId exists and is open
-    const salesInstance: ISalesInstance | null = await SalesInstance.findById(
-      salesInstanceId
-    )
-      .select("status")
-      .lean();
-
-    if (!salesInstance || salesInstance.status === "Closed") {
-      return new NextResponse(
-        JSON.stringify({ message: "SalesInstance not found or closed!" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // get the dailySalesReport reference number
-    const dailySalesReport: IDailySalesReport | null =
-      await DailySalesReport.findOne({
-        isDailyReportOpen: true,
-        businessId,
-      })
-        .select("dailyReferenceNumber")
-        .lean();
-
-    if (!dailySalesReport) {
-      return new NextResponse(
-        JSON.stringify({ message: "DailySalesReport not found!" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // ***********************************************
-    // ORDERS CAN BE DUPLICATED WITH DIFFERENT IDs ***
-    // ***********************************************
-
-    // orderStatus will always be "Sent" at the time of creation unless user set it to something else manually at the front end
-    // all orders sent will have their own screen where employees can change the status of the order (kitchen, bar, merchandise, etc.)
-
-    // Prepare orders for bulk insertion
-    const ordersToInsert = ordersArr.map((order) => ({
-      dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
-      billingStatus: "Open",
-      orderStatus: "Sent",
-      userId,
-      salesInstanceId,
-      businessId,
-      orderGrossPrice: order.orderGrossPrice,
-      orderNetPrice: order.orderNetPrice,
-      orderCostPrice: order.orderCostPrice,
-      businessGoodsIds: order.businessGoodsIds,
-      allergens: order.allergens || undefined,
-      promotionApplyed: order.promotionApplyed || undefined,
-      discountPercentage: order.discountPercentage || undefined,
-    }));
-
-    // Bulk insert the orders
-    const ordersCreated = await Order.insertMany(ordersToInsert, { session });
-    const ordersIdsCreated = ordersCreated.map((order) => order._id);
-    const businessGoodsIds = ordersCreated.flatMap(
-      (order) => order.businessGoodsIds
-    );
-
-    let updateDynamicCountSupplierGoodResult: any =
-      await updateDynamicCountSupplierGood(businessGoodsIds, "add");
-
-    if (updateDynamicCountSupplierGoodResult !== true) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "updateDynamicCountSupplierGood failed! Error: " +
-            updateDynamicCountSupplierGoodResult,
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // set the order code for user tracking purposes
-    // it will be add on the salesInstance.salesGroup array related with this group of orders
-    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const day = String(new Date().getDate()).padStart(2, "0");
-    const month = String(new Date().getMonth() + 1).padStart(2, "0");
-    const dayOfWeek = weekDays[new Date().getDay()];
-    const randomNum = String(Math.floor(Math.random() * 9000) + 1000);
-
-    const orderCode = `${day}${month}${dayOfWeek}${randomNum}`;
-
-    // After order is created, add order ID to salesInstanceId
-    await SalesInstance.findByIdAndUpdate(
-      { _id: salesInstanceId },
-      {
-        $push: {
-          salesGroup: {
-            orderCode: orderCode,
-            ordersIds: ordersIdsCreated,
-          },
-        },
-      },
-      { new: true, session }
-    );
-
-    // Commit the transaction if both operations succeed
-    await session.commitTransaction();
-
-    return new NextResponse(
-      JSON.stringify({ message: "Orders created successfully!" }),
-      { status: 201, headers: { "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    await session.abortTransaction();
-    return handleApiError("Create order failed!", error);
-  } finally {
-    session.endSession();
-  }
-};
-
+// // @desc    Create new order
+// // @route   POST /orders
+// // @access  Private
 // export const POST = async (req: Request) => {
+//   // Start a session to handle transactions
+//   // with session if any error occurs, the transaction will be aborted
+//   // session is created outside of the try block to be able to abort it in the catch/finally block
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   // *** ordersArr is an array of objects with the order details ***
+//   // [
+//   //    {
+//   //       orderGrossPrice,
+//   //       orderNetPrice, - calculated on the front_end following the promotion rules
+//   //       orderCostPrice,
+//   //       businessGoodsIds, - can be an array of businessId goods (3 IDs) "burger with extra cheese and add bacon"
+//   //       allergens,
+//   //       promotionApplyed, - automatically set by the front_end upon creation
+//   //       comments
+//   //    }
+//   //]
 //   try {
+//     // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
+//     const { ordersArr, userId, salesInstanceId, businessId } =
+//       (await req.json()) as {
+//         ordersArr: Partial<IOrder>[];
+//         userId: Types.ObjectId;
+//         salesInstanceId: Types.ObjectId;
+//         businessId: Types.ObjectId;
+//       };
+
+//     // check required fields
+//     if (!ordersArr || !userId || !salesInstanceId || !businessId) {
+//       return new NextResponse(
+//         JSON.stringify({
+//           message:
+//             "OrdersArr, userId, salesInstanceId and businessId are required fields!",
+//         }),
+//         { status: 400, headers: { "Content-Type": "application/json" } }
+//       );
+//     }
+
+//     // validate ids
+//     if (isObjectIdValid([userId, businessId, salesInstanceId]) !== true) {
+//       return new NextResponse(
+//         JSON.stringify({
+//           message:
+//             "BusinessGoodsIds, userId, businessId or salesInstanceId not valid!",
+//         }),
+//         {
+//           status: 400,
+//           headers: { "Content-Type": "application/json" },
+//         }
+//       );
+//     }
+
+//     // validate ordersArr
+//     const ordersArrValidationResult = ordersArrValidation(ordersArr);
+//     if (ordersArrValidationResult !== true) {
+//       return new NextResponse(
+//         JSON.stringify({ message: ordersArrValidationResult }),
+//         { status: 400, headers: { "Content-Type": "application/json" } }
+//       );
+//     }
+
+//     // - FLOW - in case if customer pays at the time of the order
+//     // - CREATE the order with billing status "Open"
+//     // - GET the order by its ID
+//     // - UPDATE the order with the payment method and billing status "Paid"
+//     // - UPDATE the salesInstanceId status to "Closed" (if all orders are paid)
+//     // - *** IMPORTANT ***
+//     // - Because it has been payed, doesn't mean orderStatus is "Done"
+
 //     // connect before first call to DB
 //     await connectDb();
 
-//     const ordersArr = ["669642706e92805872dbfb3e", "6693c0fd0693ec3374a899b5"];
-//     const paymentMethod = [
-//       {
-//         paymentMethodType: "Card",
-//         methodBranch: "Visa",
-//         methodSalesTotal: 20,
-//       },
-//       {
-//         paymentMethodType: "Card",
-//         methodBranch: "Mastercard",
-//         methodSalesTotal: 100,
-//       },
-//       {
-//         paymentMethodType: "Cash",
-//         methodBranch: "Cash",
-//         methodSalesTotal: 90,
-//       },
-//       {
-//         paymentMethodType: "Crypto",
-//         methodBranch: "Bitcoin",
-//         methodSalesTotal: 80,
-//       },
-//       {
-//         paymentMethodType: "Other",
-//         methodBranch: "Voucher",
-//         methodSalesTotal: 150,
-//       },
-//     ];
+//     // Check if salesInstanceId exists and is open
+//     const salesInstance: ISalesInstance | null = await SalesInstance.findById(
+//       salesInstanceId
+//     )
+//       .select("status")
+//       .lean();
 
-//     // @ts-ignore
-//     const result = await closeOrders(ordersArr, paymentMethod);
+//     if (!salesInstance || salesInstance.status === "Closed") {
+//       return new NextResponse(
+//         JSON.stringify({ message: "SalesInstance not found or closed!" }),
+//         { status: 404, headers: { "Content-Type": "application/json" } }
+//       );
+//     }
 
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 200,
-//       headers: { "Content-Type": "application/json" },
-//     });
+//     // get the dailySalesReport reference number
+//     const dailySalesReport: IDailySalesReport | null =
+//       await DailySalesReport.findOne({
+//         isDailyReportOpen: true,
+//         businessId,
+//       })
+//         .select("dailyReferenceNumber")
+//         .lean();
+
+//     if (!dailySalesReport) {
+//       return new NextResponse(
+//         JSON.stringify({ message: "DailySalesReport not found!" }),
+//         { status: 404, headers: { "Content-Type": "application/json" } }
+//       );
+//     }
+
+//     // ***********************************************
+//     // ORDERS CAN BE DUPLICATED WITH DIFFERENT IDs ***
+//     // ***********************************************
+
+//     // orderStatus will always be "Sent" at the time of creation unless user set it to something else manually at the front end
+//     // all orders sent will have their own screen where employees can change the status of the order (kitchen, bar, merchandise, etc.)
+
+//     // Prepare orders for bulk insertion
+//     const ordersToInsert = ordersArr.map((order) => ({
+//       dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
+//       billingStatus: "Open",
+//       orderStatus: "Sent",
+//       userId,
+//       salesInstanceId,
+//       businessId,
+//       orderGrossPrice: order.orderGrossPrice,
+//       orderNetPrice: order.orderNetPrice,
+//       orderCostPrice: order.orderCostPrice,
+//       businessGoodsIds: order.businessGoodsIds,
+//       allergens: order.allergens || undefined,
+//       promotionApplyed: order.promotionApplyed || undefined,
+//       discountPercentage: order.discountPercentage || undefined,
+//     }));
+
+//     // Bulk insert the orders
+//     const ordersCreated = await Order.insertMany(ordersToInsert, { session });
+//     const ordersIdsCreated = ordersCreated.map((order) => order._id);
+//     const businessGoodsIds = ordersCreated.flatMap(
+//       (order) => order.businessGoodsIds
+//     );
+
+//     let updateDynamicCountSupplierGoodResult: any =
+//       await updateDynamicCountSupplierGood(businessGoodsIds, "add");
+
+//     if (updateDynamicCountSupplierGoodResult !== true) {
+//       return new NextResponse(
+//         JSON.stringify({
+//           message:
+//             "updateDynamicCountSupplierGood failed! Error: " +
+//             updateDynamicCountSupplierGoodResult,
+//         }),
+//         { status: 400, headers: { "Content-Type": "application/json" } }
+//       );
+//     }
+
+//     // set the order code for user tracking purposes
+//     // it will be add on the salesInstance.salesGroup array related with this group of orders
+//     const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+//     const day = String(new Date().getDate()).padStart(2, "0");
+//     const month = String(new Date().getMonth() + 1).padStart(2, "0");
+//     const dayOfWeek = weekDays[new Date().getDay()];
+//     const randomNum = String(Math.floor(Math.random() * 9000) + 1000);
+
+//     const orderCode = `${day}${month}${dayOfWeek}${randomNum}`;
+
+//     // After order is created, add order ID to salesInstanceId
+//     await SalesInstance.findByIdAndUpdate(
+//       { _id: salesInstanceId },
+//       {
+//         $push: {
+//           salesGroup: {
+//             orderCode: orderCode,
+//             ordersIds: ordersIdsCreated,
+//             createdAt: new Date(),
+//           },
+//         },
+//       },
+//       { new: true, session }
+//     );
+
+//     // Commit the transaction if both operations succeed
+//     await session.commitTransaction();
+
+//     return new NextResponse(
+//       JSON.stringify({ message: "Orders created successfully!" }),
+//       { status: 201, headers: { "Content-Type": "application/json" } }
+//     );
 //   } catch (error) {
-//     return handleApiError("Function failed!", error);
+//     await session.abortTransaction();
+//     return handleApiError("Create order failed!", error);
+//   } finally {
+//     session.endSession();
 //   }
 // };
+
+export const POST = async (req: Request) => {
+  try {
+    // connect before first call to DB
+    await connectDb();
+
+    const fromSalesInstanceId = "670bf0ba6d2e71fb1856bb81";
+    const guests = 4;
+    const clientName = "testing";
+
+    const toSalesInstanceId = "670bf0ba6d2e71fb1856bb81";
+    const newSalesPointId = "6707a83888a5002362018ccc";
+
+    const ordersArr = ["670a72fe455b93fc7f9ad7ad", "670a72fe455b93fc7f9ad7ae"];
+    // const ordersArr = ["670a72fe455b93fc7f9ad777", "670a72fe455b93fc7f9ad777"];
+
+    const paymentMethod = [
+      {
+        paymentMethodType: "Card",
+        methodBranch: "Visa",
+        methodSalesTotal: 20,
+      },
+      {
+        paymentMethodType: "Card",
+        methodBranch: "Mastercard",
+        methodSalesTotal: 100,
+      },
+      {
+        paymentMethodType: "Cash",
+        methodBranch: "Cash",
+        methodSalesTotal: 90,
+      },
+      {
+        paymentMethodType: "Crypto",
+        methodBranch: "Bitcoin",
+        methodSalesTotal: 80,
+      },
+      {
+        paymentMethodType: "Other",
+        methodBranch: "Voucher",
+        methodSalesTotal: 150,
+      },
+    ];
+
+    // // @ts-ignore
+    // const result = await addDiscountToOrders(ordersArr, 10, "10% Discount for all");
+
+    // // @ts-ignore
+    // const result = await cancelOrders(ordersArr);
+
+    // // @ts-ignore
+    // const result = await changeOrdersBillingStatus(ordersArr, "Invitation");
+
+    // // @ts-ignore
+    // const result = await changeOrdersStatus(ordersArr, "Done");
+
+    // // @ts-ignore
+    // const result = await closeOrders(ordersArr, paymentMethod);
+
+    // @ts-ignore
+    const result = await transferOrdersBetweenSalesInstances(ordersArr, fromSalesInstanceId, undefined, SalesPointId, guests, clientName);
+
+    return new NextResponse(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return handleApiError("Function failed!", error);
+  }
+};

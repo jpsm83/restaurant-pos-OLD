@@ -27,11 +27,11 @@ export const addDiscountToOrders = async (
   if (discountPercentage > 100 || discountPercentage < 0) {
     return "Discount value has to be a number between 0 and 100!";
   }
-  
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     // connect before first call to DB
     await connectDb();
@@ -40,7 +40,7 @@ export const addDiscountToOrders = async (
     const orders = await Order.find({
       _id: { $in: orderIdsArr },
     })
-      .select("promotionApplyed")
+      .select("promotionApplyed orderGrossPrice")
       .lean()
       .session(session);
 

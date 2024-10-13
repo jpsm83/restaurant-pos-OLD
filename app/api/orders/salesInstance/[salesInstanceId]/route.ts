@@ -25,44 +25,46 @@ export const GET = async (
   try {
     const salesInstanceId = context.params.salesInstanceId;
 
+    
     // validate salesInstanceId
     if (isObjectIdValid([salesInstanceId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "User ID is not valid!" }),
+        JSON.stringify({ message: "SalesInstanceId is not valid!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
         }
       );
     }
-
+    
     // connect before first call to DB
     await connectDb();
-
-    const orders = await Order.find(salesInstanceId)
-      .populate({
-        path: "salesInstanceId",
-        select: "salesPointId",
-        populate: {
-          path: "salesPointId",
-          select: "salesPointName",
-          model: SalesPoint,
-        },
-        model: SalesInstance,
-      })
-      .populate({
-        path: "userId",
-        select: "username allUserRoles currentShiftRole",
-        model: User,
-      })
-      .populate({
-        path: "businessGoodsIds",
-        select:
-          "name mainCategory subCategory productionTime sellingPrice allergens",
-        model: BusinessGood,
-      })
-      .lean();
-
+    
+    
+    const orders = await Order.find({ salesInstanceId :salesInstanceId})
+    .populate({
+      path: "salesInstanceId",
+      select: "salesPointId",
+      populate: {
+        path: "salesPointId",
+        select: "salesPointName",
+        model: SalesPoint,
+      },
+      model: SalesInstance,
+    })
+    .populate({
+      path: "userId",
+      select: "username allUserRoles currentShiftRole",
+      model: User,
+    })
+    .populate({
+      path: "businessGoodsIds",
+      select:
+        "name mainCategory subCategory productionTime sellingPrice allergens",
+      model: BusinessGood,
+    })
+    .lean();
+    
     return !orders.length
       ? new NextResponse(JSON.stringify({ message: "No orders found!" }), {
           status: 404,

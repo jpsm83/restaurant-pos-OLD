@@ -39,7 +39,7 @@ const salesInstanceSchema = new Schema(
             ref: "Order",
             default: undefined,
           }, // array of orders made in the table
-          timestamps: true, // date and time when the order was made, will be used to count down the time for the kitchen to prepare the order
+          createdAt: { type: Date }, // date and time when the order was made, will be used to count down the time for the kitchen to prepare the order
         },
       ],
       default: undefined,

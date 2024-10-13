@@ -38,7 +38,7 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const orders = await Order.find(userId)
+    const orders = await Order.find({ userId: userId })
       .populate({
         path: "salesInstanceId",
         select: "salesPointId",
