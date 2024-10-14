@@ -4,7 +4,10 @@ import { IPurchaseItem } from "@/app/lib/interface/IPurchase";
 // imported utils
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
-export const validateInventoryPurchaseItems = (purchaseInventoryItems: IPurchaseItem[]) => {
+export const validateInventoryPurchaseItems = (
+  purchaseInventoryItems: IPurchaseItem[],
+  oneTimePurchase: boolean
+) => {
   // example of a purchase item object
   // purchaseInventoryItems = [
   //   {
@@ -24,20 +27,31 @@ export const validateInventoryPurchaseItems = (purchaseInventoryItems: IPurchase
   //   },
   // ];
 
-  for (const purchaseItem of purchaseInventoryItems) {
-   // validate supplierGood
-   if (!isObjectIdValid([purchaseItem.supplierGoodId])) {
-    return "Incorrect supplier good Id!";
-  }
   if (
-    !purchaseItem.quantityPurchased ||
-    purchaseItem.quantityPurchased === 0
+    !Array.isArray(purchaseInventoryItems) ||
+    purchaseInventoryItems.length === 0
   ) {
-    return "Incorrect quantity purchased!";
+    return "Purchase items is not an array or it is empty!";
   }
-  if (!purchaseItem.purchasePrice || purchaseItem.purchasePrice === 0) {
-    return "Incorrect purchase price!";
+
+  // validate each supplierGood
+  for (const purchaseItem of purchaseInventoryItems) {
+    if (!oneTimePurchase) {
+      if (!isObjectIdValid([purchaseItem.supplierGoodId])) {
+        return "Incorrect supplier good Id!";
+      }
+    }
+
+    if (
+      !purchaseItem.quantityPurchased ||
+      purchaseItem.quantityPurchased === 0
+    ) {
+      return "Incorrect quantity purchased!";
+    }
+
+    if (!purchaseItem.purchasePrice || purchaseItem.purchasePrice === 0) {
+      return "Incorrect purchase price!";
+    }
   }
-}
   return true;
 };

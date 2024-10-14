@@ -44,6 +44,7 @@ const purchaseSchema = new Schema(
     oneTimePurchase: { type: Boolean, default: false }, // If the purchase is a one time purchase
     totalAmount: { type: Number, required: true }, // Total price of the purchase
     receiptId: { type: String, required: true }, // supplier receipt identification from supplier - if not available, system will generate one
+    comment: { type: String }, // Comment on the purchase
   },
   {
     timestamps: true,

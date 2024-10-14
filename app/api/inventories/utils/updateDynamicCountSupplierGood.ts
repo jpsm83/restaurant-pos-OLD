@@ -182,6 +182,8 @@ export const updateDynamicCountSupplierGood = async (
       return "No bulk operations failed!";
     }
 
+    await session.commitTransaction();
+
     return true;
   } catch (error) {
     await session.abortTransaction();

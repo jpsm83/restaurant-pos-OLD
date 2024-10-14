@@ -17,4 +17,5 @@ export interface IPurchase {
   oneTimePurchase?: object;
   totalAmount: number;
   receiptId: string;
+  comment?: string;
 }

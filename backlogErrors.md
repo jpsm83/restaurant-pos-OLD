@@ -9,10 +9,10 @@ suppliers - DONE
 supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
-  
-orders - only miss transferOrdersBetweenSalesInstances whem passing newSalesPointId TESTING
+orders - DONE
 
-purchases
+purchases - getAll and post done and tested
+
 inventories
 notifications - find out all notifications scenario and update notification routes
 cloudinaryActions
