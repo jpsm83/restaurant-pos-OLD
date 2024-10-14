@@ -88,6 +88,10 @@ export const GET = async (req: Request) => {
   }
 };
 
+// ************ IMPORTANT ************
+// 1 purchase can have multiple supplier goods but it is one purchase by receipt
+// ***********************************
+
 // @desc    Create new purchase
 // @route   POST /purchases
 // @access  Private
@@ -99,7 +103,6 @@ export const POST = async (req: Request) => {
     businessId,
     purchasedByUserId,
     purchaseInventoryItems,
-    totalAmount,
     receiptId,
     comment,
   } = (await req.json()) as IPurchase;
@@ -111,13 +114,12 @@ export const POST = async (req: Request) => {
     !businessId ||
     !purchasedByUserId ||
     !purchaseInventoryItems ||
-    !totalAmount ||
     !receiptId
   ) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "SupplierId, purchaseDate, businessId, purchasedByUserId, purchaseInventoryItems, totalAmount and reciptId are required!",
+          "SupplierId, purchaseDate, businessId, purchasedByUserId, purchaseInventoryItems and reciptId are required!",
       }),
       {
         status: 400,
@@ -144,25 +146,11 @@ export const POST = async (req: Request) => {
     );
   }
 
-  // check if totalAmount is the sun of all purchase prices
-  if (
-    purchaseInventoryItems.reduce(
-      (acc: number, item: IPurchaseItem) => acc + item.purchasePrice,
-      0
-    ) !== totalAmount
-  ) {
-    return new NextResponse(
-      JSON.stringify({
-        message: "Total amount is not equal to the sum of all purchase prices!",
-      }),
-      {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-  }
+  // calculate the total amount of the purchase
+  const totalAmount = purchaseInventoryItems.reduce(
+    (acc: number, item: IPurchaseItem) => acc + item.purchasePrice,
+    0
+  );
 
   // get the default supplier id for one time purchase
   let newSupplierId: Types.ObjectId = supplierId;
@@ -244,7 +232,6 @@ export const POST = async (req: Request) => {
   session.startTransaction();
 
   try {
-
     // check if receiptId already exists
     const existingReceiptId = await Purchase.exists({
       receiptId: receiptId,
@@ -301,7 +288,7 @@ export const POST = async (req: Request) => {
             filter: {
               businessId: businessId,
               "inventoryGoods.supplierGoodId": supplierGoodId,
-              setFinalCount: false
+              setFinalCount: false,
             },
             update: {
               $inc: {

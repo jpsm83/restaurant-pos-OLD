@@ -11,7 +11,7 @@ businessGoods - DONE
 promotions - DONE
 orders - DONE
 
-purchases - getAll and post done and tested
+purchases - add/edit/delete from [purchaseId] is ready for test - check performance with chatgpt
 
 inventories
 notifications - find out all notifications scenario and update notification routes

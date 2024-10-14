@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { NextResponse } from "next/server";
 
 // imported utils
@@ -11,6 +11,7 @@ import Purchase from "@/app/lib/models/purchase";
 import Supplier from "@/app/lib/models/supplier";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import { IPurchase } from "@/app/lib/interface/IPurchase";
+import Inventory from "@/app/lib/models/inventory";
 
 // @desc    GET purchase by ID
 // @route   GET /purchases/:purchaseId?startDate=<date>&endDate=<date>
@@ -46,7 +47,8 @@ export const GET = async (
       })
       .populate({
         path: "purchaseInventoryItems.supplierGoodId",
-        select: "name mainCategory subCategory measurementUnit pricePerMeasurementUnit",
+        select:
+          "name mainCategory subCategory measurementUnit pricePerMeasurementUnit",
         model: SupplierGood,
       })
       .lean();
@@ -75,32 +77,40 @@ export const PATCH = async (
   req: Request,
   context: { params: { purchaseId: Types.ObjectId } }
 ) => {
+  const purchaseId = context.params.purchaseId;
+
+  const { title, purchaseDate, businessId, purchasedByUserId, receiptId } =
+    (await req.json()) as IPurchase;
+
+  // businessId is required
+  if (!businessId) {
+    return new NextResponse(
+      JSON.stringify({ message: "Business ID is required!" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  // check if ids are valid
+  if (isObjectIdValid([businessId, purchasedByUserId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({
+        message: "Supplier, business or user IDs not valid!",
+      }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
   try {
-    const purchaseId = context.params.purchaseId;
-    const {
-      title,
-      purchaseDate,
-      businessId,
-      purchasedByUserId,
-      totalAmount,
-      receiptId,
-    } = (await req.json()) as IPurchase;
-
-    // check if ids are valid
-    if (isObjectIdValid([businessId, purchasedByUserId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({
-          message: "Supplier, business or user IDs not valid!",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
     // connect before first call to DB
     await connectDb();
 
@@ -131,7 +141,6 @@ export const PATCH = async (
     if (purchaseDate) updatePurchaseObj.purchaseDate = purchaseDate;
     if (purchasedByUserId)
       updatePurchaseObj.purchasedByUserId = purchasedByUserId;
-    if (totalAmount) updatePurchaseObj.totalAmount = totalAmount;
     if (receiptId) updatePurchaseObj.receiptId = receiptId;
 
     // Update the purchase in a single query
@@ -169,41 +178,88 @@ export const DELETE = async (
   req: Request,
   context: { params: { purchaseId: Types.ObjectId } }
 ) => {
+  const purchaseId = context.params.purchaseId;
+
+  // check if the purchaseId is a valid ObjectId
+  if (!isObjectIdValid([purchaseId])) {
+    return new NextResponse(
+      JSON.stringify({ message: "Purchase ID not valid!" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
+  // start session for transaction
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const purchaseId = context.params.purchaseId;
+    // get the purchase to get its businessId and supplierGoodId
+    const purchase: IPurchase | null = await Purchase.findById(purchaseId)
+      .select("businessId purchaseInventoryItems")
+      .lean();
 
-    // check if the purchaseId is a valid ObjectId
-    if (!isObjectIdValid([purchaseId])) {
-      return new NextResponse(
-        JSON.stringify({ message: "Purchase ID not valid!" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
-    // delete purchase and check if it existed
-    const result = await Purchase.deleteOne({
-      _id: purchaseId,
-    });
-
-    if (result.deletedCount === 0) {
+    if (!purchase) {
       return new NextResponse(
         JSON.stringify({ message: "Purchase not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 
+    // delete purchase and check if it existed
+    const result = await Purchase.deleteOne({
+      _id: purchaseId,
+    }).session(session);
+
+    if (result.deletedCount === 0) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: "Purchase not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // create bulk write operations to update the inventory
+    const bulkWriteOperations = purchase.purchaseInventoryItems?.map((item) => {
+      return {
+        updateOne: {
+          filter: {
+            businessId: purchase.businessId,
+            setFinalCount: false,
+            "inventoryGoods.supplierGoodId": item.supplierGoodId,
+          },
+          update: {
+            $inc: {
+              "inventoryGoods.$.dynamicSystemCount": -item.quantityPurchased,
+            },
+          },
+        },
+      };
+    });
+
+    // update the inventory
+    if (bulkWriteOperations && bulkWriteOperations.length > 0) {
+      await Inventory.bulkWrite(bulkWriteOperations, { session });
+    }
+
+    // Commit transaction
+    await session.commitTransaction();
+
     return new NextResponse(`Purchase ${purchaseId} deleted`, {
       status: 200,
+      headers: { "Content-Type": "text/plain" },
     });
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Delete purchase failed!", error);
+  } finally {
+    session.endSession();
   }
 };

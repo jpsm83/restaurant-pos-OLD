@@ -80,7 +80,8 @@ export const GET = async (
       })
       .populate({
         path: "purchaseInventoryItems.supplierGoodId",
-        select: "name mainCategory subCategory measurementUnit pricePerMeasurementUnit",
+        select:
+          "name mainCategory subCategory measurementUnit pricePerMeasurementUnit",
         model: SupplierGood,
       })
       .lean();
