@@ -306,7 +306,7 @@ export const POST = async (req: Request) => {
     const guests = 4;
     const clientName = "testing";
 
-    const toSalesInstanceId = "670bf0ba6d2e71fb1856bb81";
+    const toSalesInstanceId = "670ccbcac966c93a0bd46f16";
     const newSalesPointId = "6707a83888a5002362018ccc";
 
     const ordersArr = ["670a72fe455b93fc7f9ad7ad", "670a72fe455b93fc7f9ad7ae"];
@@ -356,7 +356,7 @@ export const POST = async (req: Request) => {
     // const result = await closeOrders(ordersArr, paymentMethod);
 
     // @ts-ignore
-    const result = await transferOrdersBetweenSalesInstances(ordersArr, fromSalesInstanceId, undefined, SalesPointId, guests, clientName);
+    const result = await transferOrdersBetweenSalesInstances(ordersArr, fromSalesInstanceId, toSalesInstanceId, undefined, guests, clientName);
 
     return new NextResponse(JSON.stringify(result), {
       status: 200,

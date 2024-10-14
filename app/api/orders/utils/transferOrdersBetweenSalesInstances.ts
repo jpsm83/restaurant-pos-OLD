@@ -46,14 +46,15 @@ export const transferOrdersBetweenSalesInstances = async (
     // connect before first call to DB
     await connectDb();
 
-    // Fetch the original createdAt date from the fromSalesInstanceId's salesGroup
-    const originalSalesGroup = await SalesInstance.findOne(
+    // Fetch the original salesInstance
+    const fromSalesInstance = await SalesInstance.findOne(
       {
         _id: fromSalesInstanceId,
         "salesGroup.ordersIds": { $in: orderIdsArr },
       },
       {
         "salesGroup.$": 1,
+        status: 1,
         businessId: 1,
         responsibleById: 1,
         dailyReferenceNumber: 1,
@@ -61,16 +62,21 @@ export const transferOrdersBetweenSalesInstances = async (
     );
 
     if (
-      !originalSalesGroup ||
-      !originalSalesGroup.salesGroup ||
-      originalSalesGroup.salesGroup.length === 0
+      !fromSalesInstance ||
+      !fromSalesInstance.salesGroup ||
+      fromSalesInstance.salesGroup.length === 0
     ) {
       await session.abortTransaction();
       return "Original salesGroup not found!";
     }
 
+    if (fromSalesInstance.status === "Closed") {
+      await session.abortTransaction();
+      return "Cannot transfer orders from a closed salesInstance!";
+    }
+
     const { salesGroup, businessId, responsibleById, dailyReferenceNumber } =
-      originalSalesGroup;
+      fromSalesInstance;
     const originalCreatedAt = salesGroup[0].createdAt;
     let newOrderCode = salesGroup[0].orderCode;
 
@@ -90,7 +96,9 @@ export const transferOrdersBetweenSalesInstances = async (
     if (toSalesInstanceId) {
       // Fetch existing salesInstance to transfer to
       salesInstanceToTransfer = await SalesInstance.findById(toSalesInstanceId)
-        .select("_id status salesPointId guests openedById clientName")
+        .select(
+          "_id status salesGroup salesPointId guests openedById clientName"
+        )
         .lean();
     }
 
@@ -106,6 +114,17 @@ export const transferOrdersBetweenSalesInstances = async (
         ? clientName
         : salesInstanceToTransfer.clientName;
     } else {
+      const salesPointAvailable = await SalesInstance.exists({
+        dailyReferenceNumber: dailyReferenceNumber,
+        salesPointId: newSalesPointId,
+        status: { $ne: "Closed" },
+      });
+
+      if (salesPointAvailable) {
+        await session.abortTransaction();
+        return "SalesPoint is already occupied!";
+      }
+
       salesInstanceObj.salesPointId = newSalesPointId;
       salesInstanceObj.guests = guests ? guests : undefined;
       salesInstanceObj.openedById = responsibleById;
@@ -116,19 +135,9 @@ export const transferOrdersBetweenSalesInstances = async (
       );
       if (typeof newSalesInstance === "string") {
         await session.abortTransaction();
-        return "SalesInstance creation for transfer failed!";
+        return newSalesInstance;
       } else {
         salesInstanceToTransferId = newSalesInstance._id;
-
-        // set the order code for user tracking purposes
-        // it will be add on the salesInstance.salesGroup array related with this group of orders
-        const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-        const day = String(new Date().getDate()).padStart(2, "0");
-        const month = String(new Date().getMonth() + 1).padStart(2, "0");
-        const dayOfWeek = weekDays[new Date().getDay()];
-        const randomNum = String(Math.floor(Math.random() * 9000) + 1000);
-
-        newOrderCode = `${day}${month}${dayOfWeek}${randomNum}`;
       }
     }
 
@@ -150,21 +159,44 @@ export const transferOrdersBetweenSalesInstances = async (
       await Order.bulkWrite(bulkUpdateOperations, { session }),
 
       // move orders between salesInstances
-      // Update the salesInstance document by adding the order id to it
-      await SalesInstance.findOneAndUpdate(
-        { _id: salesInstanceToTransferId },
-        {
-          $push: {
-            salesGroup: {
-              orderCode: newOrderCode,
-              ordersIds: orderIdsArr,
-              createdAt: originalCreatedAt,
-            },
-          },
-          $set: { status: "Occupied" },
-        },
-        { new: true, session }
-      ),
+      (async () => {
+        if (salesInstanceToTransfer) {
+          const existingSalesGroup = salesInstanceToTransfer?.salesGroup?.find(
+            (group) => group.orderCode === newOrderCode
+          );
+
+          if (existingSalesGroup) {
+            // Update the existing salesGroup entry
+            await SalesInstance.findOneAndUpdate(
+              {
+                _id: salesInstanceToTransferId,
+                "salesGroup.orderCode": newOrderCode,
+              },
+              {
+                $addToSet: { "salesGroup.$.ordersIds": { $each: orderIdsArr } },
+                $set: { status: "Occupied" },
+              },
+              { new: true, session }
+            );
+          } else {
+            // Create a new salesGroup entry
+            await SalesInstance.findOneAndUpdate(
+              { _id: salesInstanceToTransferId },
+              {
+                $push: {
+                  salesGroup: {
+                    orderCode: newOrderCode,
+                    ordersIds: orderIdsArr,
+                    createdAt: originalCreatedAt,
+                  },
+                },
+                $set: { status: "Occupied" },
+              },
+              { new: true, session }
+            );
+          }
+        }
+      })(),
 
       // First, remove specific order IDs from the `ordersIds` array
       await SalesInstance.findOneAndUpdate(
