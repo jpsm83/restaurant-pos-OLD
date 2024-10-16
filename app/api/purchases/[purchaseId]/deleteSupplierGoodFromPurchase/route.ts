@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -15,13 +15,18 @@ import Inventory from "@/app/lib/models/inventory";
 
 // this route is to delete a supplierGood from the purchase that already exists
 // @desc    Delete supplierGood from purchase by ID
-// @route   POST /purchases/:purchaseId/deleteSupplierGoodFromPurchase
+// @route   PATCH /purchases/:purchaseId/deleteSupplierGoodFromPurchase
 // @access  Private
-export const POST = async (req: Request) => {
-  const { supplierGoodId, purchaseId } = await req.json();
+export const PATCH = async (
+  req: Request,
+  context: { params: { purchaseId: Types.ObjectId } }
+) => {
+  const purchaseId = context.params.purchaseId;
+
+  const { purchaseInventoryItemsId } = await req.json();
 
   // check if the purchaseId is a valid ObjectId
-  if (!isObjectIdValid([purchaseId, supplierGoodId])) {
+  if (isObjectIdValid([purchaseId]) !== true) {
     return new NextResponse(
       JSON.stringify({ message: "Purchase or supplier ID not valid!" }),
       {
@@ -42,14 +47,18 @@ export const POST = async (req: Request) => {
 
   try {
     // get the purchase purchaseItem for inventory update
-    const purchase: IPurchase | null = await Purchase.findOne({
-      _id: purchaseId,
-      "purchaseInventoryItems.supplierGoodId": supplierGoodId,
-    })
-      .select("purchaseInventoryItems.$.quantityPurchased")
-      .lean();
+    const purchaseItem: IPurchase | null = await Purchase.findOne(
+      {
+        _id: purchaseId,
+        "purchaseInventoryItems._id": purchaseInventoryItemsId,
+      },
+      {
+        businessId: 1,
+        "purchaseInventoryItems.$": 1, // Only retrieve the matching inventory item
+      }
+    ).lean();
 
-    if (!purchase) {
+    if (!purchaseItem) {
       await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "Purchase item not found!" }),
@@ -63,21 +72,39 @@ export const POST = async (req: Request) => {
     }
 
     const quantityPurchased =
-      purchase?.purchaseInventoryItems?.[0]?.quantityPurchased ?? 0;
+      purchaseItem?.purchaseInventoryItems?.[0].quantityPurchased ?? 0;
 
-    // delete supplierGood from purchase
-    const updatePurchase: IPurchase | null = await Purchase.findOneAndUpdate(
-      {
-        _id: purchaseId,
-      },
-      {
-        $pull: { purchaseInventoryItems: { supplierGoodId: supplierGoodId } },
-        $inc: { totalAmount: -quantityPurchased },
-      },
-      { new: true, session }
-    )
-      .select("businessId")
-      .lean();
+    const [updatePurchase, updatedInventory] = await Promise.all([
+      // delete supplierGood from purchase
+      Purchase.findOneAndUpdate(
+        {
+          _id: purchaseId,
+        },
+        {
+          $pull: { purchaseInventoryItems: { _id: purchaseInventoryItemsId } },
+          $inc: { totalAmount: -quantityPurchased },
+        },
+        { new: true, session }
+      )
+        .select("businessId")
+        .lean(),
+
+      // Update the inventory based on the deleted purchase items
+      Inventory.findOneAndUpdate(
+        {
+          businessId: purchaseItem.businessId,
+          "inventoryGoods.supplierGoodId":
+            purchaseItem?.purchaseInventoryItems?.[0].supplierGoodId,
+          setFinalCount: false,
+        },
+        {
+          $inc: {
+            "inventoryGoods.$.dynamicSystemCount": -quantityPurchased,
+          },
+        },
+        { new: true, session }
+      ).lean(),
+    ]);
 
     if (!updatePurchase) {
       await session.abortTransaction();
@@ -86,21 +113,6 @@ export const POST = async (req: Request) => {
         { status: 404 }
       );
     }
-
-    // Update the inventory based on the deleted purchase items
-    const updatedInventory = await Inventory.findOneAndUpdate(
-      {
-        businessId: updatePurchase.businessId,
-        "inventoryGoods.supplierGoodId": supplierGoodId,
-        setFinalCount: false,
-      },
-      {
-        $inc: {
-          "inventoryGoods.$.dynamicSystemCount": -quantityPurchased,
-        },
-      },
-      { new: true, session }
-    ).lean();
 
     if (!updatedInventory) {
       await session.abortTransaction();

@@ -10,8 +10,13 @@ supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
 orders - DONE
+purchases - DONE
 
-purchases - add/edit/delete from [purchaseId] is ready for test - check performance with chatgpt
+
+
+- test updateDynamicCountSupplierGood when inventory is refactored / it has no errors but need to check on the whole app (actualy not working)
+  
+
 
 inventories
 notifications - find out all notifications scenario and update notification routes
@@ -21,4 +26,4 @@ cloudinaryActions
 - transform cloudinaryActions route to be a function to be used in all the creations that could have images
 - -check if all findByIdAndUpdate is done with $set
 - when a salesInstance is created with qrCode, update the qrLastScanned of the salesPoint
-- test updateDynamicCountSupplierGood when inventory is refactored / it has no errors but need to check on the whole app (actualy not working)
+- add collor themes for the types of businessGoods (or photo)

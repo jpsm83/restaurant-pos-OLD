@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -15,14 +15,18 @@ import Inventory from "@/app/lib/models/inventory";
 
 // this route is to add a supplierGood to the purchase that already exists
 // @desc    Add supplierGood to purchase by ID
-// @route   POST /purchases/:purchaseId/addSupplierGoodToPurchase
+// @route   PATCH /purchases/:purchaseId/addSupplierGoodToPurchase
 // @access  Private
-export const POST = async (req: Request) => {
-  const { supplierGoodId, quantityPurchased, purchasePrice, purchaseId } =
-    await req.json();
+export const PATCH = async (
+  req: Request,
+  context: { params: { purchaseId: Types.ObjectId } }
+) => {
+  const purchaseId = context.params.purchaseId;
+
+  const { supplierGoodId, quantityPurchased, purchasePrice } = await req.json();
 
   // check if the purchaseId is a valid ObjectId
-  if (!isObjectIdValid([purchaseId, supplierGoodId])) {
+  if (isObjectIdValid([supplierGoodId]) !== true) {
     return new NextResponse(
       JSON.stringify({ message: "Purchase or supplier ID not valid!" }),
       {
@@ -91,7 +95,7 @@ export const POST = async (req: Request) => {
         JSON.stringify({
           message: "Inventory not found or update failed.",
         }),
-        { status: 404 }
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
     }
 

@@ -1,22 +1,33 @@
-import { IPurchase } from "@/app/lib/interface/IPurchase";
-import Purchase from "@/app/lib/models/purchase";
+import { NextResponse } from "next/server";
+import mongoose, { Types } from "mongoose";
+
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
-import { NextResponse } from "next/server";
+
+// imported interfaces
+import { IPurchase } from "@/app/lib/interface/IPurchase";
+
+// imported models
+import Purchase from "@/app/lib/models/purchase";
 import Inventory from "@/app/lib/models/inventory";
-import mongoose from "mongoose";
 
 // this route is to edit a supplierGood from the purchase that already exists
 // @desc    Edit supplierGood from purchase by ID
-// @route   POST /purchases/:purchaseId/editSupplierGoodFromPurchase
+// @route   PATCH /purchases/:purchaseId/editSupplierGoodFromPurchase
 // @access  Private
-export const POST = async (req: Request) => {
-  const { supplierGoodId, quantityPurchased, purchasePrice, purchaseId } =
+export const PATCH = async (
+  req: Request,
+  context: { params: { purchaseId: Types.ObjectId } }
+) => {
+  const purchaseId = context.params.purchaseId;
+
+  const { purchaseInventoryItemsId, newQuantityPurchased, newPurchasePrice } =
     await req.json();
 
   // check if the purchaseId is a valid ObjectId
-  if (!isObjectIdValid([purchaseId, supplierGoodId])) {
+  if (isObjectIdValid([purchaseId, purchaseInventoryItemsId]) !== true) {
     return new NextResponse(
       JSON.stringify({ message: "Purchase or supplier ID not valid!" }),
       {
@@ -36,15 +47,16 @@ export const POST = async (req: Request) => {
   session.startTransaction();
 
   try {
-    // get the purchase purchaseItem for comparison
-    const purchaseItem: IPurchase | null = await Purchase.findOne({
-      _id: purchaseId,
-      "purchaseInventoryItems.supplierGoodId": supplierGoodId,
-    })
-      .select(
-        "purchaseInventoryItems.$.quantityPurchased purchaseInventoryItems.$.purchasePrice"
-      )
-      .lean();
+    const purchaseItem: IPurchase | null = await Purchase.findOne(
+      {
+        _id: purchaseId,
+        "purchaseInventoryItems._id": purchaseInventoryItemsId,
+      },
+      {
+        businessId: 1,
+        "purchaseInventoryItems.$": 1, // Only retrieve the matching inventory item
+      }
+    ).lean();
 
     if (!purchaseItem) {
       await session.abortTransaction();
@@ -59,27 +71,49 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // Update the purchaseItem with the new values
-    const updatePurchase: IPurchase | null = await Purchase.findOneAndUpdate(
-      {
-        _id: purchaseId,
-        "purchaseInventoryItems.supplierGoodId": supplierGoodId,
-      },
-      {
-        $set: {
-          "purchaseInventoryItems.$.quantityPurchased": quantityPurchased,
-          "purchaseInventoryItems.$.purchasePrice": purchasePrice,
+    const previousQuantity =
+      purchaseItem?.purchaseInventoryItems?.[0].quantityPurchased ?? 0;
+    const previousPrice =
+      purchaseItem?.purchaseInventoryItems?.[0].purchasePrice ?? 0;
+
+    const [updatePurchase, updatedInventory] = await Promise.all([
+      // Update the purchaseItem with the new values
+      await Purchase.findOneAndUpdate(
+        {
+          _id: purchaseId,
+          "purchaseInventoryItems._id": purchaseInventoryItemsId,
         },
-        $inc: {
-          totalAmount:
-            purchasePrice -
-            (purchaseItem.purchaseInventoryItems?.[0]?.purchasePrice ?? 0),
+        {
+          $set: {
+            "purchaseInventoryItems.$.quantityPurchased": newQuantityPurchased,
+            "purchaseInventoryItems.$.purchasePrice": newPurchasePrice,
+          },
+          $inc: {
+            totalAmount: newPurchasePrice - previousPrice,
+          },
         },
-      },
-      { new: true, session }
-    )
-      .select("businessId purchaseInventoryItems.$.quantityPurchased")
-      .lean();
+        { new: true, session }
+      )
+        .select("businessId")
+        .lean(),
+
+      // Update the inventory based on new purchase items
+      Inventory.findOneAndUpdate(
+        {
+          businessId: purchaseItem.businessId,
+          "inventoryGoods.supplierGoodId":
+            purchaseItem?.purchaseInventoryItems?.[0].supplierGoodId,
+          setFinalCount: false,
+        },
+        {
+          $inc: {
+            "inventoryGoods.$.dynamicSystemCount":
+              newQuantityPurchased - previousQuantity,
+          },
+        },
+        { new: true, session }
+      ).lean(),
+    ]);
 
     if (!updatePurchase) {
       await session.abortTransaction();
@@ -93,23 +127,6 @@ export const POST = async (req: Request) => {
         }
       );
     }
-
-    // Update the inventory based on new purchase items
-    const updatedInventory = await Inventory.findOneAndUpdate(
-      {
-        businessId: updatePurchase.businessId,
-        "inventoryGoods.supplierGoodId": supplierGoodId,
-        setFinalCount: false,
-      },
-      {
-        $inc: {
-          "inventoryGoods.$.dynamicSystemCount":
-            quantityPurchased -
-            (purchaseItem.purchaseInventoryItems?.[0]?.purchasePrice ?? 0),
-        },
-      },
-      { new: true, session }
-    ).lean();
 
     if (!updatedInventory) {
       await session.abortTransaction();
