@@ -12,14 +12,11 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 
+inventories - ongoin
+- updateDynamicCountSupplierGood been teste OK
 
-
-- test updateDynamicCountSupplierGood when inventory is refactored / it has no errors but need to check on the whole app (actualy not working)
-  
-
-
-inventories
 notifications - find out all notifications scenario and update notification routes
+monthlyBusinessReport
 cloudinaryActions
 
 - daily saler report have to be tested once we got all the models tested and with data

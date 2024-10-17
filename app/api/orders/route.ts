@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import mongoose, { Types } from "mongoose";
 
-// import utils
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { updateDynamicCountSupplierGood } from "../inventories/utils/updateDynamicCountSupplierGood";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { ordersArrValidation } from "./utils/validateOrdersArr";
 
-// import interfaces
+// imported interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
-// import models
+// imported models
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import User from "@/app/lib/models/user";
@@ -21,8 +21,8 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
+// importes test utils
 import { closeOrders } from "./utils/closeOrders";
-import { create } from "domain";
 import { cancelOrders } from "./utils/cancelOrders";
 import { addDiscountToOrders } from "./utils/addDiscountToOrders";
 import { changeOrdersBillingStatus } from "./utils/changeOrdersBillingStatus";
@@ -109,11 +109,13 @@ export const GET = async () => {
 // @route   POST /orders
 // @access  Private
 export const POST = async (req: Request) => {
-  // Start a session to handle transactions
-  // with session if any error occurs, the transaction will be aborted
-  // session is created outside of the try block to be able to abort it in the catch/finally block
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // - FLOW - in case if customer pays at the time of the order
+  // - CREATE the order with billing status "Open"
+  // - GET the order by its ID
+  // - UPDATE the order with the payment method and billing status "Paid"
+  // - UPDATE the salesInstanceId status to "Closed" (if all orders are paid)
+  // - *** IMPORTANT ***
+  // - Because it has been payed, doesn't mean orderStatus is "Done"
 
   // *** ordersArr is an array of objects with the order details ***
   // [
@@ -127,61 +129,60 @@ export const POST = async (req: Request) => {
   //       comments
   //    }
   //]
+
+  // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
+  const { ordersArr, userId, salesInstanceId, businessId } =
+    (await req.json()) as {
+      ordersArr: Partial<IOrder>[];
+      userId: Types.ObjectId;
+      salesInstanceId: Types.ObjectId;
+      businessId: Types.ObjectId;
+    };
+
+  // check required fields
+  if (!ordersArr || !userId || !salesInstanceId || !businessId) {
+    return new NextResponse(
+      JSON.stringify({
+        message:
+          "OrdersArr, userId, salesInstanceId and businessId are required fields!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // validate ids
+  if (isObjectIdValid([userId, businessId, salesInstanceId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({
+        message:
+          "BusinessGoodsIds, userId, businessId or salesInstanceId not valid!",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // validate ordersArr
+  const ordersArrValidationResult = ordersArrValidation(ordersArr);
+  if (ordersArrValidationResult !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: ordersArrValidationResult }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
+  // Start a session to handle transactions
+  // with session if any error occurs, the transaction will be aborted
+  // session is created outside of the try block to be able to abort it in the catch/finally block
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
-    const { ordersArr, userId, salesInstanceId, businessId } =
-      (await req.json()) as {
-        ordersArr: Partial<IOrder>[];
-        userId: Types.ObjectId;
-        salesInstanceId: Types.ObjectId;
-        businessId: Types.ObjectId;
-      };
-
-    // check required fields
-    if (!ordersArr || !userId || !salesInstanceId || !businessId) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "OrdersArr, userId, salesInstanceId and businessId are required fields!",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // validate ids
-    if (isObjectIdValid([userId, businessId, salesInstanceId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "BusinessGoodsIds, userId, businessId or salesInstanceId not valid!",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // validate ordersArr
-    const ordersArrValidationResult = ordersArrValidation(ordersArr);
-    if (ordersArrValidationResult !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: ordersArrValidationResult }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // - FLOW - in case if customer pays at the time of the order
-    // - CREATE the order with billing status "Open"
-    // - GET the order by its ID
-    // - UPDATE the order with the payment method and billing status "Paid"
-    // - UPDATE the salesInstanceId status to "Closed" (if all orders are paid)
-    // - *** IMPORTANT ***
-    // - Because it has been payed, doesn't mean orderStatus is "Done"
-
-    // connect before first call to DB
-    await connectDb();
-
     // Check if salesInstanceId exists and is open
     const salesInstance: ISalesInstance | null = await SalesInstance.findById(
       salesInstanceId
@@ -190,6 +191,7 @@ export const POST = async (req: Request) => {
       .lean();
 
     if (!salesInstance || salesInstance.status === "Closed") {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "SalesInstance not found or closed!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -206,6 +208,7 @@ export const POST = async (req: Request) => {
         .lean();
 
     if (!dailySalesReport) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "DailySalesReport not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -238,15 +241,27 @@ export const POST = async (req: Request) => {
 
     // Bulk insert the orders
     const ordersCreated = await Order.insertMany(ordersToInsert, { session });
+
+    if (!ordersCreated || ordersCreated.length === 0) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: "Orders not created!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const ordersIdsCreated = ordersCreated.map((order) => order._id);
     const businessGoodsIds = ordersCreated.flatMap(
       (order) => order.businessGoodsIds
     );
 
+    // update the dynamic count of the supplier goods ingredients
+    // dynamicSystemCount have to decrease because the ingredients are being used
     let updateDynamicCountSupplierGoodResult: any =
-      await updateDynamicCountSupplierGood(businessGoodsIds, "add");
+      await updateDynamicCountSupplierGood(businessGoodsIds, "remove");
 
     if (updateDynamicCountSupplierGoodResult !== true) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message:
@@ -344,7 +359,7 @@ export const POST = async (req: Request) => {
 //     // const result = await addDiscountToOrders(ordersArr, 10, "10% Discount for all");
 
 //     // // @ts-ignore
-//     // const result = await cancelOrders(ordersArr);
+//     // const result = await cancelOrders(["670a72fe455b93fc7f9ad7ad"]);
 
 //     // // @ts-ignore
 //     // const result = await changeOrdersBillingStatus(ordersArr, "Invitation");
@@ -355,8 +370,8 @@ export const POST = async (req: Request) => {
 //     // // @ts-ignore
 //     // const result = await closeOrders(ordersArr, paymentMethod);
 
-//     // @ts-ignore
-//     const result = await transferOrdersBetweenSalesInstances(ordersArr, fromSalesInstanceId, toSalesInstanceId, undefined, guests, clientName);
+//     // // @ts-ignore
+//     // const result = await transferOrdersBetweenSalesInstances(ordersArr, fromSalesInstanceId, toSalesInstanceId, undefined, guests, clientName);
 
 //     return new NextResponse(JSON.stringify(result), {
 //       status: 200,
