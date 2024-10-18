@@ -45,7 +45,7 @@ export const updateUsersDailySalesReport = async (
     // Loop through each userId and process the report
     for (const userId of userIds) {
       try {
-        // Fetch all tables closed by the user for the given dailyReferenceNumber
+        // Fetch all sales instance closed by the user for the given dailyReferenceNumber
         const salesInstance = await SalesInstance.find({
           responsibleById: userId,
           dailyReferenceNumber: dailyReferenceNumber,

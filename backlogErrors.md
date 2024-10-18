@@ -12,7 +12,8 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 
-inventories - ongoin
+inventories - GETall/POST done and tested
+
 - updateDynamicCountSupplierGood been teste OK
 
 notifications - find out all notifications scenario and update notification routes
@@ -24,3 +25,4 @@ cloudinaryActions
 - -check if all findByIdAndUpdate is done with $set
 - when a salesInstance is created with qrCode, update the qrLastScanned of the salesPoint
 - add collor themes for the types of businessGoods (or photo)
+- if a supplier good no in use get to be use, it have to be add to the inventory

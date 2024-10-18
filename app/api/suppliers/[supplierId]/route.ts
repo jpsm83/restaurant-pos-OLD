@@ -194,7 +194,6 @@ export const DELETE = async (
     // **********************************************************************
 
     // Check if any supplier goods referencing this supplier are in use at any business goods
-    // Check if any supplier goods referencing this supplier are in use at any business goods
     const supplierGoodIds = await SupplierGood.find({
       supplierId: supplierId,
     }).distinct("_id");

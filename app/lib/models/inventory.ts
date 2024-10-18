@@ -37,7 +37,7 @@ const inventoryGoodsSchema = new Schema({
     ref: "SupplierGood",
     required: true,
   }, // Good in the inventory
-  monthlyCounts: [inventoryCountSchema], // Array of count events for the month
+  monthlyCounts: [inventoryCountSchema], // Array of count events objects for the month
   averageDeviationPercent: { type: Number, default: 0 }, // sun of all average deviation percent for the month divide by the number of counts
 
   // ************************* IMPORTANT *************************
@@ -57,7 +57,6 @@ const inventorySchema = new Schema(
     // on the first day of the month, the system will create a new inventory with all the supplier goods and setFinalCount to false
     inventoryGoods: {
       type: [inventoryGoodsSchema],
-      required: true,
     }, // all the supplier goods that exists on the business
   },
   {
