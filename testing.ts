@@ -1,194 +1,212 @@
+import mongoose, { Types } from "mongoose";
+import { NextResponse } from "next/server";
+
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported interfaces
+import { IInventory, IInventoryCount } from "@/app/lib/interface/IInventory";
 import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
-import BusinessGood from "@/app/lib/models/businessGood";
+
+// imported models
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
-import convert, { Unit } from "convert-units";
-import mongoose, { Types } from "mongoose";
-import { IInventory } from "@/app/lib/interface/IInventory";
-import path from "path";
 
-// every time an order is created or cancel, we MUST update the supplier goods
-// check all the ingredients of the business goods array of the order
-// each ingredient is a supplier good
-// add or remove the quantity used from the inventoy.inventoryGoods.[the supplier good that applied].dynamicCountFromLastInventory
-// if insted of ingredients we have setMenu
-// get all business goods from the setMenu and repeat the cicle
-export const updateDynamicCountSupplierGood = async (
-  businessGoodsIds: Types.ObjectId[],
-  addOrRemove: "add" | "remove"
+// This PATCH route will update an existing count for an individualy supplier good from the inventory
+// @desc    Update inventory count for a specific supplier good
+// @route   PATCH /inventories/:inventoryId/supplierGood/:supplierGoodIs/updateCountFromSupplierGood
+// @access  Private
+export const PATCH = async (
+  req: Request,
+  context: {
+    params: { inventoryId: Types.ObjectId; supplierGoodId: Types.ObjectId };
+  }
 ) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const { inventoryId, supplierGoodId } = context.params;
+
+  const { currentCountQuantity, countedByUserId, comments, countId, reason } =
+    (await req.json()) as IInventoryCount & {
+      supplierGoodId: Types.ObjectId;
+      countId: Types.ObjectId;
+      reason: string;
+    };
+
+  // Check required fields
+  if (!inventoryId || !supplierGoodId || !countId || !reason) {
+    return new NextResponse(
+      JSON.stringify({
+        message:
+          "InventoryId, supplierGoodId, countId and reason are required!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Check if the IDs are valid
+  if (!isObjectIdValid([inventoryId, supplierGoodId, countId])) {
+    return new NextResponse(
+      JSON.stringify({ message: "One or more IDs are not valid!" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     // Connect to the database
     await connectDb();
 
-    // Fetch all business goods including setMenu and their ingredients
-    const businessGoodsIngredients = await BusinessGood.find({
-      _id: { $in: businessGoodsIds },
-    })
-      .select(
-        "ingredients.supplierGoodId ingredients.measurementUnit ingredients.requiredQuantity setMenuIds"
-      )
-      .populate({
-        path: "setMenuIds",
-        select:
-          "ingredients.supplierGoodId ingredients.measurementUnit ingredients.requiredQuantity",
-        model: BusinessGood,
+    // Fetch inventory and supplier good in a single query
+    const [inventory, supplierGood] = await Promise.all([
+      Inventory.findOne({
+        _id: inventoryId,
+        "inventoryGoods.supplierGoodId": supplierGoodId, // Match specific supplierGoodId
       })
-      .lean();
+        .select("setFinalCount inventoryGoods") // Use $ to project only the matching element from the array
+        .lean() as Promise<IInventory | null>,
+      SupplierGood.findById(supplierGoodId)
+        .select("parLevel")
+        .lean() as Promise<ISupplierGood | null>,
+    ]);
 
-    if (!businessGoodsIngredients || businessGoodsIngredients.length === 0) {
-      return "Business goods not found!";
+    if (!supplierGood) {
+      return new NextResponse(
+        JSON.stringify({ message: "Supplier good not found!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Collect all required ingredients from business goods and setMenus
-    let allIngredientsRequired: {
-      ingredientId: Types.ObjectId;
-      requiredQuantity: number;
-      measurementUnit: string;
-    }[] = [];
-
-    businessGoodsIngredients.forEach((businessGood) => {
-      if (businessGood.ingredients) {
-        businessGood.ingredients.forEach((ing: any) => {
-          allIngredientsRequired.push({
-            ingredientId: ing.supplierGoodId,
-            requiredQuantity: ing.requiredQuantity,
-            measurementUnit: ing.measurementUnit,
-          });
-        });
-      }
-      if (businessGood.setMenuIds) {
-        businessGood.setMenuIds.forEach((setMenuItem: any) => {
-          setMenuItem.ingredients.forEach((ing: any) => {
-            allIngredientsRequired.push({
-              ingredientId: ing.supplierGoodId,
-              requiredQuantity: ing.requiredQuantity,
-              measurementUnit: ing.measurementUnit,
-            });
-          });
-        });
-      }
-    });
-
-    if (allIngredientsRequired.length === 0) return "No ingredients found!";
-
-    // Aggregation to fetch both inventory items and supplier goods in one query
-    const inventoryItems = await Inventory.aggregate([
-      {
-        $match: {
-          setFinalCount: false,
-          "inventoryGoods.supplierGoodId": {
-            $in: allIngredientsRequired.map((ing) => ing.ingredientId),
-          },
-        },
-      },
-      {
-        $project: {
-          inventoryGoods: {
-            $filter: {
-              input: "$inventoryGoods",
-              as: "item",
-              cond: {
-                $in: [
-                  "$$item.supplierGoodId",
-                  allIngredientsRequired.map((ing) => ing.ingredientId),
-                ],
-              },
-            },
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: "suppliergoods",
-          localField: "inventoryGoods.supplierGoodId",
-          foreignField: "_id",
-          as: "supplierGoods",
-        },
-      },
-      {
-        $project: {
-          "inventoryGoods.supplierGoodId": 1,
-          "inventoryGoods.dynamicSystemCount": 1,
-          "supplierGoods._id": 1,
-          "supplierGoods.measurementUnit": 1,
-        },
-      },
-    ]).session(session);
-
-    if (!inventoryItems || inventoryItems.length === 0)
-      return "Inventory not found!";
-
-    // Map supplierGoodId to measurementUnit and dynamicSystemCount
-    const supplierGoodUnitsMap = inventoryItems[0].supplierGoods.reduce(
-      (map: any, good: any) => {
-        map[good._id.toString()] = good.measurementUnit;
-        return map;
-      },
-      {}
-    );
-
-    const inventoryMap = inventoryItems[0].inventoryGoods.reduce(
-      (map: any, invItem: any) => {
-        map[invItem.supplierGoodId.toString()] = invItem;
-        return map;
-      },
-      {}
-    );
-
-    // Perform bulk update to modify dynamic counts
-    const bulkOperations: any = allIngredientsRequired
-      .map((ingredientObj) => {
-        const inventoryItem =
-          inventoryMap[ingredientObj.ingredientId.toString()];
-        const supplierGoodUnit =
-          supplierGoodUnitsMap[ingredientObj.ingredientId.toString()];
-
-        if (!inventoryItem || !supplierGoodUnit)
-          return "InventoryItem or supplierGoodUnit not found!";
-
-        let quantityChange = ingredientObj.requiredQuantity;
-        if (ingredientObj.measurementUnit !== supplierGoodUnit) {
-          // Convert units if necessary
-          quantityChange = convert(quantityChange)
-            .from(ingredientObj.measurementUnit as Unit)
-            .to(supplierGoodUnit as Unit);
-        }
-
-        return {
-          updateOne: {
-            filter: {
-              "inventoryGoods.supplierGoodId": ingredientObj.ingredientId,
-            },
-            update: {
-              $inc: {
-                "inventoryGoods.$.dynamicSystemCount":
-                  addOrRemove === "add" ? quantityChange : -quantityChange,
-              },
-            },
-          },
-        };
-      })
-      .filter(Boolean); // Remove null values
-
-    // Execute bulk update
-    if (bulkOperations.length > 0) {
-      await Inventory.bulkWrite(bulkOperations, { session });
-    } else {
-      return "No bulk operations failed!";
+    if (!inventory) {
+      return new NextResponse(
+        JSON.stringify({ message: "Inventory not found!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    await session.commitTransaction();
+    // Check if the inventory is finalized
+    if (inventory.setFinalCount) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Inventory already set as final count! Cannot update!",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-    return true;
+    // get the supplier good object
+    const supplierGoodObject = inventory.inventoryGoods.find(
+      (good) => good.supplierGoodId.toString() === supplierGoodId.toString()
+    );
+
+    // // get the current count object
+    // const currentCountObject = supplierGoodObject.monthlyCounts.find(
+    //   (count) => count._id.toString() === countId.toString()
+    // );
+
+    let previewDynamicSystemCount = null;
+
+    // calculate the preview dynamic system count
+    previewDynamicSystemCount =
+    inventory.inventoryGoods[0].monthlyCounts[0].currentCountQuantity /
+    (1 -
+      (inventory.inventoryGoods[0].monthlyCounts[0].deviationPercent ?? 0) /
+      100);
+      
+      // Prepare the new inventory count object
+      const updateInventoryCount: IInventoryCount = {
+        currentCountQuantity,
+        quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
+        countedByUserId,
+        deviationPercent:
+        ((previewDynamicSystemCount ?? 0 - currentCountQuantity) /
+        (previewDynamicSystemCount || 1)) *
+        100,
+        comments,
+      };
+      
+      
+      // ======================
+      // ======================
+          return new NextResponse(
+            JSON.stringify(supplierGoodObject),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+      // ======================
+      // ======================
+      
+      
+      
+
+    // // Prepare the reedited object
+    // updateInventoryCount.reedited = {
+    //   reeditedByUserId: countedByUserId,
+    //   date: new Date(),
+    //   reason, // You might want to pass this in the request as well
+    //   originalValues: {
+    //     currentCountQuantity:
+    //       inventory.inventoryGoods[0].monthlyCounts[0].currentCountQuantity,
+    //     deviationPercent:
+    //       inventory.inventoryGoods[0].monthlyCounts[0].deviationPercent ?? null,
+    //     dynamicSystemCount: previewDynamicSystemCount,
+    //   },
+    // };
+
+    // // calculate the average deviation percent
+    // let averageDeviationPercentCalculation = null;
+
+    // if (
+    //   currentCountQuantity !==
+    //   (inventory.inventoryGoods[0].monthlyCounts[0].currentCountQuantity ?? 0)
+    // ) {
+    //   let sunDeviationPercent =
+    //     inventory.inventoryGoods[0].monthlyCounts.reduce(
+    //       (acc, count) => acc + (count.deviationPercent || 0),
+    //       0
+    //     ) -
+    //     (inventory.inventoryGoods[0].monthlyCounts[0].deviationPercent ?? 0) +
+    //     (updateInventoryCount.deviationPercent ?? 0);
+    //   let monthlyCountsWithDeviationPercentNotZero =
+    //     inventory.inventoryGoods[0].monthlyCounts.filter(
+    //       (count) =>
+    //         count.deviationPercent !== 0 || count.deviationPercent !== null
+    //     ).length;
+    //   averageDeviationPercentCalculation =
+    //     sunDeviationPercent / monthlyCountsWithDeviationPercentNotZero;
+    // }
+
+    // // Update the inventory count with optimized query
+    // await Inventory.findOneAndUpdate(
+    //   {
+    //     _id: inventoryId,
+    //     "inventoryGoods.supplierGoodId": supplierGoodId,
+    //     "inventoryGoods.monthlyCounts._id": countId, // Ensure this matches the correct count
+    //   },
+    //   {
+    //     $set: {
+    //       "inventoryGoods.$[elem1].dynamicSystemCount": currentCountQuantity,
+    //       "inventoryGoods.$[elem1].averageDeviationPercent":
+    //         averageDeviationPercentCalculation,
+    //       "inventoryGoods.$[elem1].monthlyCounts.$[elem2]":
+    //         updateInventoryCount, // Correctly reference monthlyCounts
+    //     },
+    //   },
+    //   {
+    //     arrayFilters: [
+    //       { "elem1.supplierGoodId": supplierGoodId }, // Matches supplierGood in inventoryGoods
+    //       { "elem2._id": countId }, // Matches count in monthlyCounts by _id
+    //     ],
+    //     new: true, // Return the updated document
+    //   }
+    // );
+
+    // return new NextResponse(
+    //   JSON.stringify({ message: "Count updated successfully!" }),
+    //   {
+    //     status: 200,
+    //     headers: { "Content-Type": "application/json" },
+    //   }
+    // );
   } catch (error) {
-    await session.abortTransaction();
-    return "Could not update dynamic count supplier good! " + error;
-  } finally {
-    await session.endSession();
+    return handleApiError("Updating count failed!", error);
   }
 };

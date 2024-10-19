@@ -110,7 +110,7 @@ export const PATCH = async (
     let averageDeviationPercentCalculation = null;
 
     // calculate the average deviation percent
-    if (currentCountQuantity !== (inventory.inventoryGoods[0].dynamicSystemCount ?? 0)) {
+    if (currentCountQuantity !== (inventory.inventoryGoods[0].dynamicSystemCount)) {
         if (inventory.inventoryGoods[0].monthlyCounts.length > 0) {
         let sunDeviationPercent =
           inventory.inventoryGoods[0].monthlyCounts.reduce(
@@ -125,6 +125,8 @@ export const PATCH = async (
         averageDeviationPercentCalculation =
           sunDeviationPercent / (monthlyCountsWithDeviationPercentNotZero + 1);
       } averageDeviationPercentCalculation = newInventoryCount.deviationPercent;
+    } else {
+      return new NextResponse(JSON.stringify({ message: "Inventory count didnt change from last count!" }), { headers: { "Content-Type": "application/json" }, status: 200 });
     }
 
     // add to the inventory, at the supplierGood its belong, inside the monthlyCounts array the new inventory count object
