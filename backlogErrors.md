@@ -12,7 +12,8 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 
-inventories - GETall/POST done and tested
+inventories -
+GETall/POST done and tested - business route done and tested
 
 - updateDynamicCountSupplierGood been teste OK
 

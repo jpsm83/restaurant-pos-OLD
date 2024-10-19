@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 export interface IInventoryCount {
+  _id?: Types.ObjectId;
   countedDate?: Date;
   currentCountQuantity: number;
   deviationPercent?: number;
@@ -12,9 +13,9 @@ export interface IInventoryCount {
     date: Date;
     reason: string;
     originalValues: {
-      currentCountQuantity: number;
-      dynamicSystemCount: number;
-      deviationPercent: number;
+      currentCountQuantity: number | null;
+      dynamicSystemCount: number | null;
+      deviationPercent: number | null;
     };
   };
 }

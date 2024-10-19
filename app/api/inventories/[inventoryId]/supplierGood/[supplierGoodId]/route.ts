@@ -11,19 +11,22 @@ import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
 
-// @desc    Get inventories by business ID and range of dates
-// @route   GET /inventories/business/:businessId?monthDate=<monthDate>
+// get the inventories of an especifc supplierGood ID and the month needed
+// @desc    Get inventories by supplierGood ID and range of dates
+// @route   GET /inventories/:inventoryId/supplierGood/:supplierGoodId?monthDate=<monthDate>
 // @access  Private
 export const GET = async (
   req: Request,
-  context: { params: { businessId: Types.ObjectId } }
+  context: {
+    params: { inventoryId: Types.ObjectId; supplierGoodId: Types.ObjectId };
+  }
 ) => {
-  const businessId = context.params.businessId;
+  const { inventoryId, supplierGoodId } = context.params;
 
   // check if the businessId is valid
-  if (isObjectIdValid([businessId]) !== true) {
+  if (!isObjectIdValid([inventoryId, supplierGoodId])) {
     return new NextResponse(
-      JSON.stringify({ message: "Business ID not valid!" }),
+      JSON.stringify({ message: "Inventory or supplier good ID not valid!" }),
       {
         status: 400,
         headers: {
@@ -58,12 +61,13 @@ export const GET = async (
 
   // Build query based on the presence of startDate and endDate
   let query: {
-    businessId: Types.ObjectId;
+    _id: Types.ObjectId;
+    "inventoryGoods.supplierGoodId": Types.ObjectId;
     createdAt?: {
       $gte: Date;
       $lte: Date;
     };
-  } = { businessId: businessId };
+  } = { _id: inventoryId, "inventoryGoods.supplierGoodId": supplierGoodId };
 
   // Build the query object with the optional date range
   if (startDate && endDate) {
@@ -79,6 +83,7 @@ export const GET = async (
 
     // Find inventories with the query
     const inventories = await Inventory.find(query)
+      .select("inventoryGoods.$")
       .populate({
         path: "inventoryGoods.supplierGoodId",
         select:

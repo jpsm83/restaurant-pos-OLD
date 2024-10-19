@@ -15,10 +15,9 @@ import { IInventory } from "@/app/lib/interface/IInventory";
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
-import Business from "@/app/lib/models/business";
 
 // @desc    Get all inventories
-// @route   GET /inventories?startDate=<date>&endDate=<date>
+// @route   GET /inventories
 // @access  Private
 export const GET = async (req: Request) => {
   try {

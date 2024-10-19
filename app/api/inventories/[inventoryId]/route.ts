@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import connectDb from "@/app/lib/utils/connectDb";
+import mongoose, { Types } from "mongoose";
+import moment from "moment";
 
-// import models
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+
+// imported models
 import Inventory from "@/app/lib/models/inventory";
 import SupplierGood from "@/app/lib/models/supplierGood";
-import { Types } from "mongoose";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
 import Supplier from "@/app/lib/models/supplier";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get inventories by ID
 // @route   GET /inventories/:inventoryId
@@ -16,22 +19,22 @@ export const GET = async (
   req: Request,
   context: { params: { inventoryId: Types.ObjectId } }
 ) => {
+  const inventoryId = context.params.inventoryId;
+
+  // check if the inventoryId is a valid ObjectId
+  if (isObjectIdValid([inventoryId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: "Inventory ID not valid!" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
   try {
-    const inventoryId = context.params.inventoryId;
-
-    // check if the inventoryId is a valid ObjectId
-    if (!isObjectIdValid([inventoryId])) {
-      return new NextResponse(
-        JSON.stringify({ message: "Inventory ID not valid!" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
     // connect before first call to DB
     await connectDb();
 
@@ -40,10 +43,10 @@ export const GET = async (
       .populate({
         path: "inventoryGoods.supplierGoodId",
         select:
-          "name mainCategory subCategory supplier budgetImpact imageUrl inventorySchedule parLevel measurementUnit pricePerMeasurementUnit",
+          "name mainCategory subCategory supplierId budgetImpact imageUrl inventorySchedule parLevel measurementUnit pricePerMeasurementUnit",
         model: SupplierGood,
         populate: {
-          path: "supplier",
+          path: "supplierId",
           select: "tradeName",
           model: Supplier,
         },
@@ -73,22 +76,22 @@ export const DELETE = async (
   req: Request,
   context: { params: { inventoryId: Types.ObjectId } }
 ) => {
+  const inventoryId = context.params.inventoryId;
+
+  // check if the inventoryId is a valid ObjectId
+  if (isObjectIdValid([inventoryId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: "Inventory ID not valid!" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
   try {
-    const inventoryId = context.params.inventoryId;
-
-    // check if the inventoryId is a valid ObjectId
-    if (!isObjectIdValid([inventoryId])) {
-      return new NextResponse(
-        JSON.stringify({ message: "Inventory ID not valid!" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
     // connect before first call to DB
     await connectDb();
 
@@ -106,6 +109,7 @@ export const DELETE = async (
 
     return new NextResponse(`Inventory ${inventoryId} deleted`, {
       status: 200,
+      headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
     return handleApiError("Delete inventory failed!", error);

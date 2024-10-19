@@ -24,8 +24,8 @@ const inventoryCountSchema = new Schema({
     reason: { type: String, required: true }, // Reason for the re-edit
     originalValues: {
       currentCountQuantity: { type: Number, required: true },
-      dynamicSystemCount: { type: Number, required: true },
       deviationPercent: { type: Number, required: true },
+      dynamicSystemCount: { type: Number, required: true },
     }, // Original values before re-edit
   },
 });
