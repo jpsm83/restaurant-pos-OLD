@@ -69,18 +69,14 @@ export const PATCH = async (
         .lean() as Promise<ISupplierGood | null>,
     ]);
 
-    if (!supplierGood) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier good not found!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!inventory) {
-      return new NextResponse(
-        JSON.stringify({ message: "Inventory not found!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+    if (!supplierGood || !inventory) {
+      const message = !supplierGood
+        ? "Supplier good not found!"
+        : "Inventory not found!";
+      return new NextResponse(JSON.stringify({ message }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Check if the inventory is finalized
@@ -103,15 +99,27 @@ export const PATCH = async (
       (count: any) => count._id.toString() === countId.toString()
     );
 
-    let previewDynamicSystemCount = null;
+    // if count from currentCountObject is equal to the new count we dont need to update the inventory
+    if (currentCountObject.currentCountQuantity === currentCountQuantity) {
+      return new NextResponse(
+        JSON.stringify({ message: "Count is the same, no need to update!" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
-    // calculate the preview dynamic system count
-    previewDynamicSystemCount =
-      currentCountObject.currentCountQuantity /
-      (1 - (currentCountObject.deviationPercent ?? 0) / 100);
+    let previewDynamicSystemCount = 0;
+    if (currentCountObject.deviationPercent !== 100) {
+      previewDynamicSystemCount =
+        currentCountObject.currentCountQuantity /
+        (1 - currentCountObject.deviationPercent / 100);
+    }
 
     // Prepare the new inventory count object
     const updateInventoryCount: IInventoryCount = {
+      _id: countId,
       currentCountQuantity,
       quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
       countedByUserId,
@@ -120,17 +128,15 @@ export const PATCH = async (
           (previewDynamicSystemCount || 1)) *
         100,
       comments,
-    };
-
-    // Prepare the reedited object
-    updateInventoryCount.reedited = {
-      reeditedByUserId: countedByUserId,
-      date: new Date(),
-      reason, // You might want to pass this in the request as well
-      originalValues: {
-        currentCountQuantity: currentCountObject.currentCountQuantity,
-        deviationPercent: currentCountObject.deviationPercent ?? null,
-        dynamicSystemCount: previewDynamicSystemCount,
+      reedited: {
+        reeditedByUserId: countedByUserId,
+        date: new Date(),
+        reason, // You might want to pass this in the request as well
+        originalValues: {
+          currentCountQuantity: currentCountObject.currentCountQuantity,
+          deviationPercent: currentCountObject.deviationPercent ?? null,
+          dynamicSystemCount: previewDynamicSystemCount,
+        },
       },
     };
 

@@ -12,9 +12,10 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 
-inventories -
-GETall/POST done and tested - business route done and tested
-
+inventories
+- updateCountFromSupplierGood have to be tested and numbers check
+- need to review utils
+- rest is done and checked
 - updateDynamicCountSupplierGood been teste OK
 
 notifications - find out all notifications scenario and update notification routes
