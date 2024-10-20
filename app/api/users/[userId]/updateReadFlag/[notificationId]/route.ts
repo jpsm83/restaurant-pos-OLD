@@ -23,9 +23,9 @@ export const PATCH = async (
     const { userId, notificationId } = context.params;
 
     // validate userId
-    if (isObjectIdValid([userId, notificationId]) !== true) {
+    if (!isObjectIdValid([userId, notificationId])) {
       return new NextResponse(
-        JSON.stringify({ message: "User ID is not valid!" }),
+        JSON.stringify({ message: "User or notification ID is not valid!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -49,7 +49,7 @@ export const PATCH = async (
     // Check if the purchase was found and updated
     if (!updatedUser) {
       return new NextResponse(
-        JSON.stringify({ message: "User or notification not found!" }),
+        JSON.stringify({ message: "User notification not updated!" }),
         {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -59,7 +59,7 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: `Notification ${notificationId} updated successfully!`,
+        message: `User notification updated successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

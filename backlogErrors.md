@@ -13,7 +13,7 @@ orders - DONE
 purchases - DONE
 inventories - DONE
 
-notifications - find out all notifications scenario and update notification routes
+notifications - stop en DELETE, is done, just do the test
 
 monthlyBusinessReport
 reservations
