@@ -42,8 +42,13 @@ export const GET = async () => {
 export const POST = async (req: Request) => {
   try {
     // userRecipientsId have to be an array of user IDs coming from the front end
-    const { notificationType, message, userRecipientsId, businessId, userSenderId } =
-      (await req.json()) as INotification;
+    const {
+      notificationType,
+      message,
+      userRecipientsId,
+      businessId,
+      userSenderId,
+    } = (await req.json()) as INotification;
 
     // check required fields
     if (!notificationType || !message || !userRecipientsId || !businessId) {

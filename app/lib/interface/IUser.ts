@@ -31,6 +31,7 @@ export interface IUser {
   vacationDaysPerYear?: number;
   vacationDaysLeft: number;
   businessId: Types.ObjectId;
+  deviceToken?: string;
   currentShiftRole?: string;
   address?: IAddress;
   imageUrl?: string;

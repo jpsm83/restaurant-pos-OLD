@@ -14,6 +14,7 @@ purchases - DONE
 inventories - DONE
 
 notifications - find out all notifications scenario and update notification routes
+
 monthlyBusinessReport
 reservations
 cloudinaryActions

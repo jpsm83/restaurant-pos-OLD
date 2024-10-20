@@ -1,14 +1,78 @@
-import Image from "next/image";
+"use client"
+
+import { useEffect, useState } from "react";
+import { getToken, getMessaging, isSupported } from "firebase/messaging";
+import { initializeApp } from "firebase/app";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase Messaging
+const messaging = getMessaging(app);
 
 export default function Home() {
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // useEffect(() => {
+  //   const requestPermission = async () => {
+  //     try {
+  //       const supported = await isSupported();
+  //       if (!supported) {
+  //         throw new Error("This browser doesn't support the API's required to use the Firebase SDK.");
+  //       }
+
+  //       const messaging = getMessaging(app);
+  //       const token = await getToken(messaging, {
+  //         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY, // Required for web push notifications
+  //       });
+  //       if (token) {
+  //         console.log("FCM Token:", token);
+  //         // setFcmToken(token);
+  //       } else {
+  //         console.log("No registration token available.");
+  //         setError("No registration token available.");
+  //       }
+  //     } catch (error: any) {
+  //       console.error("An error occurred while retrieving token. ", error);
+  //       setError(error.message);
+  //     }
+  //   };
+
+  //   const registerServiceWorker = async () => {
+  //     try {
+  //       if ('serviceWorker' in navigator) {
+  //         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  //         console.log('Service Worker registered with scope:', registration.scope);
+  //       }
+  //     } catch (error) {
+  //       console.error('Service Worker registration failed:', error);
+  //       setError('Service Worker registration failed.');
+  //     }
+  //   };
+
+  //   registerServiceWorker();
+  //   requestPermission();
+  // }, []);
+
   return (
     <div>
-        <Image
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHQAAAB0CAYAAABUmhYnAAAAAklEQVR4AewaftIAAALPSURBVO3BQa7jSAwFwUxC97/yGy+5KkCQ7OlPMMJ8sMYo1ijFGqVYoxRrlGKNUqxRijVKsUYp1ijFGqVYoxRrlGKNUqxRijXKxUMqv5SEO1S6JNyh8ktJeKJYoxRrlGKNcvGyJLxJ5USlS8IdKl0STpLwJpU3FWuUYo1SrFEuvkzljiTckYSTJHQqXRKeULkjCd9UrFGKNUqxRrkYRuUkCZMVa5RijVKsUS7+OJWTJHQqJ0n4y4o1SrFGKdYoF1+WhG9KQqdyRxKeSMK/pFijFGuUYo1y8TKVX1LpktCpdEnoVLoknKj8y4o1SrFGKdYo5oNBVE6SMFmxRinWKMUa5eIhlS4JnUqXhE6lS0Kn0iXhJAmdyolKl4Q7VLoknKh0SXhTsUYp1ijFGsV88EUqTyShU+mScKJykoROpUtCp9Il4Q6VkyQ8UaxRijVKsUa5eEilS8JJEu5QOVH5JpU7VP5PxRqlWKMUaxTzwQ+p3JGEE5VvSkKncpKEE5UuCW8q1ijFGqVYo5gPHlDpktCpdEnoVLokdCpdEk5U7khCp3JHEjqVLgmdykkSnijWKMUapVijmA/+MJUuCW9S6ZJwotIl4USlS8ITxRqlWKMUa5SLh1R+KQldEjqVLgknKl0SuiScqNyh8k3FGqVYoxRrlIuXJeFNKnckoVPpktAl4USlS0KXhCeS8KZijVKsUYo1ysWXqdyRhDtUnlDpknCHykkSTlS6JDxRrFGKNUqxRrn445JwotKpdEnoVLokdCpdEp5IwpuKNUqxRinWKBd/nMo3qTyh0iWhU+mS8ESxRinWKMUa5eLLkvBNSThROVE5SUKn0qmcJKFT6ZLwpmKNUqxRijXKxctUfknliSR0Kp3KSRJOVE5UuiQ8UaxRijVKsUYxH6wxijVKsUYp1ijFGqVYoxRrlGKNUqxRijVKsUYp1ijFGqVYoxRrlGKN8h+dsx746sV0YgAAAABJRU5ErkJggg=="
-          alt="QR Code"
-          width={400}
-          height={400}
-        />
+      <h1>FCM Token Example</h1>
+      <div style={{ border: "1px solid black", padding: "10px", marginTop: "20px" }}>
+        <h3>FCM Token Result:</h3>
+        {fcmToken && <p>Token: {fcmToken}</p>}
+        {error && <p style={{ color: "red" }}>Error: {error}</p>}
+      </div>
     </div>
   );
 }

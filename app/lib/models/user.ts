@@ -55,6 +55,7 @@ const userSchema = new Schema(
     }, // business where the user works
 
     // optional fields
+    deviceToken: { type: String }, // token for push notifications with Firebase Cloud Messaging
     currentShiftRole: { type: String, enum: userRoles }, // current shift role of the user
     address: addressSchema, // address of the user
     imageUrl: { type: String }, // photo of the user
