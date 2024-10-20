@@ -7,15 +7,16 @@ export interface IInventoryCount {
   deviationPercent?: number;
   quantityNeeded?: number;
   countedByUserId: Types.ObjectId;
+  lastCount?: boolean;
   comments?: string;
   reedited?: {
     reeditedByUserId: Types.ObjectId;
     date: Date;
     reason: string;
     originalValues: {
-      currentCountQuantity: number | null;
-      dynamicSystemCount: number | null;
-      deviationPercent: number | null;
+      currentCountQuantity: number;
+      dynamicSystemCount: number;
+      deviationPercent: number;
     };
   };
 }

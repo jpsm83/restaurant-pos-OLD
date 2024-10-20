@@ -11,15 +11,11 @@ businessGoods - DONE
 promotions - DONE
 orders - DONE
 purchases - DONE
-
-inventories
-- updateCountFromSupplierGood have to be tested and numbers check
-- need to review utils
-- rest is done and checked
-- updateDynamicCountSupplierGood been teste OK
+inventories - DONE
 
 notifications - find out all notifications scenario and update notification routes
 monthlyBusinessReport
+reservations
 cloudinaryActions
 
 - daily saler report have to be tested once we got all the models tested and with data

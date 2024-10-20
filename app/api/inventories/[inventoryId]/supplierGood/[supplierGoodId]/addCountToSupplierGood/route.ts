@@ -68,18 +68,14 @@ export const PATCH = async (
         .lean() as Promise<ISupplierGood | null>,
     ]);
 
-    if (!supplierGood) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier good not found!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!inventory) {
-      return new NextResponse(
-        JSON.stringify({ message: "Inventory not found!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+    if (!supplierGood || !inventory) {
+      let message = !supplierGood
+        ? "Supplier good not found!"
+        : "Inventory not found!";
+      return new NextResponse(JSON.stringify({ message: message }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // check if the inventory is already set as final count (finalized)
@@ -92,66 +88,95 @@ export const PATCH = async (
       );
     }
 
+    // Get the matching supplierGood object
+    const inventoryGood = inventory.inventoryGoods[0];
+
+    // Check if count did not change
+    if (currentCountQuantity === inventoryGood.dynamicSystemCount) {
+      return new NextResponse(
+        JSON.stringify({
+          message: "Inventory count didn't change from last count!",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Prepare the new inventory count object
     const newInventoryCount: IInventoryCount = {
       currentCountQuantity,
       quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
       countedByUserId,
       deviationPercent:
-        ((inventory.inventoryGoods[0].dynamicSystemCount -
-          currentCountQuantity) /
-          (inventory.inventoryGoods[0].dynamicSystemCount === 0
-            ? 1
-            : inventory.inventoryGoods[0].dynamicSystemCount)) *
+        ((inventoryGood.dynamicSystemCount - currentCountQuantity) /
+          (inventoryGood.dynamicSystemCount || 1)) *
         100,
       comments,
     };
 
-    let averageDeviationPercentCalculation = null;
-
     // calculate the average deviation percent
-    if (currentCountQuantity !== (inventory.inventoryGoods[0].dynamicSystemCount)) {
-        if (inventory.inventoryGoods[0].monthlyCounts.length > 0) {
-        let sunDeviationPercent =
-          inventory.inventoryGoods[0].monthlyCounts.reduce(
-            (acc, count) => acc + (count.deviationPercent || 0),
-            0
-          ) + (newInventoryCount.deviationPercent ?? 0);
-        let monthlyCountsWithDeviationPercentNotZero =
-          inventory.inventoryGoods[0].monthlyCounts.filter(
-            (count) =>
-              count.deviationPercent !== 0 || count.deviationPercent !== null
-          ).length;
-        averageDeviationPercentCalculation =
-          sunDeviationPercent / (monthlyCountsWithDeviationPercentNotZero + 1);
-      } averageDeviationPercentCalculation = newInventoryCount.deviationPercent;
-    } else {
-      return new NextResponse(JSON.stringify({ message: "Inventory count didnt change from last count!" }), { headers: { "Content-Type": "application/json" }, status: 200 });
-    }
+    let totalDeviationPercent = inventoryGood.monthlyCounts.reduce(
+      (acc, count) => acc + (count.deviationPercent || 0),
+      0
+    );
+    
+    const monthlyCountsWithDeviation = inventoryGood.monthlyCounts.filter(
+      (count) => count.deviationPercent !== 0
+    ).length;
 
-    // add to the inventory, at the supplierGood its belong, inside the monthlyCounts array the new inventory count object
-    await Inventory.findByIdAndUpdate(
-      inventoryId,
-      {
-        $set: {
-          "inventoryGoods.$[elem].dynamicSystemCount": currentCountQuantity,
-          "inventoryGoods.$[elem].averageDeviationPercent":
-            averageDeviationPercentCalculation,
+    const averageDeviationPercentCalculation =
+      (totalDeviationPercent + (newInventoryCount.deviationPercent ?? 0)) /
+      (monthlyCountsWithDeviation + 1);
+
+    await Promise.all([
+      // First Update: Set the previous lastCount to false
+      Inventory.updateOne(
+        {
+          _id: inventoryId,
+          "inventoryGoods.supplierGoodId": supplierGoodId,
+          "inventoryGoods.monthlyCounts.lastCount": true, // Find the previous "last" count
         },
-        $push: {
-          "inventoryGoods.$[elem].monthlyCounts": newInventoryCount,
+        {
+          $set: {
+            "inventoryGoods.$[elem].monthlyCounts.$[count].lastCount": false,
+          },
         },
-      },
+        {
+          arrayFilters: [
+            { "elem.supplierGoodId": supplierGoodId },
+            { "count.lastCount": true },
+          ],
+        }
+      ),
+
+      // Second Update: Add the new count and update dynamicSystemCount
+      Inventory.updateOne(
+        {
+          _id: inventoryId,
+          "inventoryGoods.supplierGoodId": supplierGoodId,
+        },
+        {
+          $set: {
+            "inventoryGoods.$[elem].dynamicSystemCount": currentCountQuantity,
+            "inventoryGoods.$[elem].averageDeviationPercent":
+              averageDeviationPercentCalculation,
+          },
+          $push: {
+            "inventoryGoods.$[elem].monthlyCounts": newInventoryCount,
+          },
+        },
+        {
+          arrayFilters: [{ "elem.supplierGoodId": supplierGoodId }],
+        }
+      ),
+    ]);
+
+    return new NextResponse(
+      JSON.stringify({ message: "Inventory count added!" }),
       {
-        arrayFilters: [{ "elem.supplierGoodId": supplierGoodId }],
-        new: true,
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       }
     );
-
-    return new NextResponse(JSON.stringify({ message: "Inventory count added!" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
   } catch (error) {
     return handleApiError("Updated inventory failed!", error);
   }

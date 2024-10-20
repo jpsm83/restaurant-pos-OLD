@@ -16,6 +16,7 @@ const inventoryCountSchema = new Schema({
     required: true,
   }, // User who counted, not the user in session but a user that is assigned to count the inventory
   deviationPercent: { type: Number, required: true, default: 0 }, // differece between the dynamicSystemCount and the currentCountQuantity in percentage. For a perfect inventory, this number should be 0
+  lastCount: { type: Boolean, required: true, default: true }, // if this is the last count of the month, only this one can be updated
   comments: { type: String }, // Comments about the inventory
   // counte cannot be re-edited once is send, if there is a mistake, the user will have to contact the admin to re-edit and this will be recorded in the reedited field
   reedited: {

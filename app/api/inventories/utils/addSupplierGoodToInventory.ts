@@ -1,8 +1,11 @@
-import Inventory from "@/app/lib/models/inventory";
+import { Types } from "mongoose";
+
+// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
-import moment from "moment";
-import { Types } from "mongoose";
+
+// imported models
+import Inventory from "@/app/lib/models/inventory";
 
 // if a new supplierGood is added to the system, it will be added to the inventoryGoods array of the inventory
 // for separation of concerns, this function will be created in the inventory utils to be used on the supplierGood route
@@ -19,17 +22,11 @@ const addSupplierGoodToInventory = async (
     // connect before first call to DB
     await connectDb();
 
-    // Get the current month's start and end dates
-    // new supplier good will be add to the inventory of the current month
-    const startOfCurrentMonth = moment().startOf("month").toDate();
-    const endOfCurrentMonth = moment().endOf("month").toDate();
-
     // update the inventory with the new supplierGood
-    const updateInventory = await Inventory.findOneAndUpdate(
+    const updateInventory = await Inventory.updateOne(
       {
         businessId: businessId,
         setFinalCount: false,
-        createdAt: { $gte: startOfCurrentMonth, $lte: endOfCurrentMonth },
       },
       {
         $push: {
@@ -39,8 +36,7 @@ const addSupplierGoodToInventory = async (
             dynamicSystemCount: 0,
           },
         },
-      },
-      { new: true }
+      }
     ).lean();
 
     if (!updateInventory) {

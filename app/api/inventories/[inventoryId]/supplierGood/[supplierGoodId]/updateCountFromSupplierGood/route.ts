@@ -73,7 +73,7 @@ export const PATCH = async (
       const message = !supplierGood
         ? "Supplier good not found!"
         : "Inventory not found!";
-      return new NextResponse(JSON.stringify({ message }), {
+      return new NextResponse(JSON.stringify({ message: message }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -89,16 +89,30 @@ export const PATCH = async (
       );
     }
 
-    // get the supplier good object
+    // get the supplier good object with all the counts
     const supplierGoodObject: any = inventory.inventoryGoods.find(
       (good) => good.supplierGoodId.toString() === supplierGoodId.toString()
     );
 
-    // get the current count object
+    if (!supplierGoodObject) {
+      return new NextResponse(
+        JSON.stringify({ message: "Supplier good not found in inventory!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // get the especific current count object
     const currentCountObject = supplierGoodObject.monthlyCounts.find(
       (count: any) => count._id.toString() === countId.toString()
     );
 
+    if (!currentCountObject) {
+      return new NextResponse(
+        JSON.stringify({ message: "Count not found!" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
     // if count from currentCountObject is equal to the new count we dont need to update the inventory
     if (currentCountObject.currentCountQuantity === currentCountQuantity) {
       return new NextResponse(
@@ -110,6 +124,7 @@ export const PATCH = async (
       );
     }
 
+    // calculate the preview dynamic system count
     let previewDynamicSystemCount = 0;
     if (currentCountObject.deviationPercent !== 100) {
       previewDynamicSystemCount =
@@ -124,7 +139,7 @@ export const PATCH = async (
       quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
       countedByUserId,
       deviationPercent:
-        ((previewDynamicSystemCount ?? 0 - currentCountQuantity) /
+        ((previewDynamicSystemCount - currentCountQuantity) /
           (previewDynamicSystemCount || 1)) *
         100,
       comments,
@@ -134,34 +149,28 @@ export const PATCH = async (
         reason, // You might want to pass this in the request as well
         originalValues: {
           currentCountQuantity: currentCountObject.currentCountQuantity,
-          deviationPercent: currentCountObject.deviationPercent ?? null,
+          deviationPercent: currentCountObject.deviationPercent,
           dynamicSystemCount: previewDynamicSystemCount,
         },
       },
     };
 
-    // calculate the average deviation percent
-    let averageDeviationPercentCalculation = null;
+    // calculate the new average deviation percent
+    let totalDeviationPercent =
+      supplierGoodObject.monthlyCounts.reduce(
+        (acc: number, count: { deviationPercent: number }) =>
+          acc + (count.deviationPercent || 0),
+        0
+      ) -
+      (currentCountObject.deviationPercent) +
+      (updateInventoryCount.deviationPercent ?? 0);
 
-    if (
-      currentCountQuantity !== (currentCountObject.currentCountQuantity ?? 0)
-    ) {
-      let sunDeviationPercent =
-        supplierGoodObject.monthlyCounts.reduce(
-          (acc: number, count: { deviationPercent: number }) =>
-            acc + (count.deviationPercent || 0),
-          0
-        ) -
-        (currentCountObject.deviationPercent ?? 0) +
-        (updateInventoryCount.deviationPercent ?? 0);
-      let monthlyCountsWithDeviationPercentNotZero =
-        supplierGoodObject.monthlyCounts.filter(
-          (count: { deviationPercent: number }) =>
-            count.deviationPercent !== 0 || count.deviationPercent !== null
-        ).length;
-      averageDeviationPercentCalculation =
-        sunDeviationPercent / monthlyCountsWithDeviationPercentNotZero;
-    }
+    const monthlyCountsWithDeviation = supplierGoodObject.monthlyCounts.filter(
+      (count: { deviationPercent: number }) => count.deviationPercent !== 0
+    ).length;
+
+    const averageDeviationPercentCalculation =
+      totalDeviationPercent / monthlyCountsWithDeviation;
 
     // Update the inventory count with optimized query
     await Inventory.findOneAndUpdate(
@@ -172,17 +181,17 @@ export const PATCH = async (
       },
       {
         $set: {
-          "inventoryGoods.$[elem1].dynamicSystemCount": currentCountQuantity,
-          "inventoryGoods.$[elem1].averageDeviationPercent":
+          "inventoryGoods.$[supplierGood].dynamicSystemCount": currentCountQuantity,
+          "inventoryGoods.$[supplierGood].averageDeviationPercent":
             averageDeviationPercentCalculation,
-          "inventoryGoods.$[elem1].monthlyCounts.$[elem2]":
+          "inventoryGoods.$[supplierGood].monthlyCounts.$[count]":
             updateInventoryCount, // Correctly reference monthlyCounts
         },
       },
       {
         arrayFilters: [
-          { "elem1.supplierGoodId": supplierGoodId }, // Matches supplierGood in inventoryGoods
-          { "elem2._id": countId }, // Matches count in monthlyCounts by _id
+          { "supplierGood.supplierGoodId": supplierGoodId }, // Matches supplierGood in inventoryGoods
+          { "count._id": countId }, // Matches count in monthlyCounts by _id
         ],
         new: true, // Return the updated document
       }

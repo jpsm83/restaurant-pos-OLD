@@ -1,402 +1,159 @@
-[
-  {
-      "_id": "66ddae0d8232e0d81f4062ab",
-      "businessId": "6673fed98c45d0a0ca5f34c1",
-      "setFinalCount": false,
-      "inventoryGoods": [
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be444",
-                  "name": "Cheddar cheese",
-                  "mainCategory": "Food",
-                  "subCategory": "Dairy",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Mediun",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 9,
-                  "pricePerMeasurementUnit": 13.5
-              },
-              "monthlyCounts": [
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 20,
-                      "reedited": {
-                          "date": "2024-09-08T15:04:55.288Z"
-                      },
-                      "_id": "66ddbd17b6372f125b82c0b3",
-                      "countedDate": "2024-09-08T15:04:55.288Z"
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 20,
-                      "reedited": null,
-                      "_id": "66ddbda1b6372f125b82c0c6",
-                      "countedDate": "2024-09-08T15:07:13.757Z"
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 20,
-                      "reedited": {
-                          "date": "2024-09-08T15:07:57.563Z"
-                      },
-                      "_id": "66ddbdcdb6372f125b82c0da",
-                      "countedDate": "2024-09-08T15:07:57.563Z"
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 20,
-                      "reedited": {
-                          "date": "2024-09-08T15:10:03.391Z"
-                      },
-                      "_id": "66ddbe4bb6372f125b82c0ef",
-                      "countedDate": "2024-09-08T15:10:03.391Z"
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 20,
-                      "_id": "66ddbe72ab3c579a450dbc99",
-                      "countedDate": "2024-09-08T15:10:42.579Z"
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 20,
-                      "_id": "66ddbf0eab3c579a450dbcb0",
-                      "countedDate": "2024-09-08T15:13:18.733Z"
-                  },
-                  {
-                      "currentCountQuantity": 2,
-                      "quantityNeeded": 7,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 75,
-                      "comments": "comments",
-                      "_id": "66ddbfecab3c579a450dbcc8",
-                      "countedDate": "2024-09-08T15:17:00.518Z"
-                  },
-                  {
-                      "currentCountQuantity": 20,
-                      "quantityNeeded": -11,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 0,
-                      "comments": "comments",
-                      "_id": "66ddc14fab3c579a450dbce1",
-                      "countedDate": "2024-09-08T15:22:55.502Z",
-                      "reedited": {
-                          "reeditedByUserId": "667412df373ad7f1a285534e",
-                          "date": "2024-09-08T15:55:30.093Z",
-                          "reason": "no reason",
-                          "originalValues": {
-                              "currentCountQuantity": 20,
-                              "dynamicSystemCount": 20,
-                              "deviationPercent": 0
-                          }
-                      }
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 60,
-                      "_id": "66ddcc23ab3c579a450dbd73",
-                      "countedDate": "2024-09-08T16:09:07.104Z"
-                  },
-                  {
-                      "currentCountQuantity": 8,
-                      "quantityNeeded": 1,
-                      "countedByUserId": "667412df373ad7f1a285534e",
-                      "deviationPercent": 0,
-                      "_id": "66ddccdbab3c579a450dbd90",
-                      "countedDate": "2024-09-08T16:12:11.232Z"
-                  }
-              ],
-              "averageDeviationPercent": 28.333333333333332,
-              "dynamicSystemCount": 97.995,
-              "_id": "66ddae0d8232e0d81f4062ac"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be448",
-                  "name": "Frozen French Fries",
-                  "mainCategory": "Food",
-                  "subCategory": "Frozen food",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Low",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 60,
-                  "pricePerMeasurementUnit": 2.8
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": -0.5,
-              "_id": "66ddae0d8232e0d81f4062ad"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be445",
-                  "name": "Hamburger patty 400g",
-                  "mainCategory": "Food",
-                  "subCategory": "Bread",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "High",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "unit",
-                  "parLevel": 120,
-                  "pricePerMeasurementUnit": 1.8
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062ae"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be447",
-                  "name": "Onions",
-                  "mainCategory": "Food",
-                  "subCategory": "Vegetable",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Low",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 12,
-                  "pricePerMeasurementUnit": 1.2
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062af"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be44d",
-                  "name": "Hummus",
-                  "mainCategory": "Food",
-                  "subCategory": "Prepared Food",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Mediun",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 4,
-                  "pricePerMeasurementUnit": 8
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b0"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be449",
-                  "name": "Coca Cola small bottle",
-                  "mainCategory": "Beverage",
-                  "subCategory": "Soft Drink",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Mediun",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "ml",
-                  "parLevel": 140,
-                  "pricePerMeasurementUnit": 0.8
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b1"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be44c",
-                  "name": "Lettuce",
-                  "mainCategory": "Food",
-                  "subCategory": "Vegetable",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Low",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 5,
-                  "pricePerMeasurementUnit": 1.8
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b2"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be44e",
-                  "name": "Water small bottle",
-                  "mainCategory": "Beverage",
-                  "subCategory": "Non-Alcoholic",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Small",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "ml",
-                  "parLevel": 240,
-                  "pricePerMeasurementUnit": 0.4
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b3"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be443",
-                  "name": "Bun bread",
-                  "mainCategory": "Food",
-                  "subCategory": "Bread",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Mediun",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "unit",
-                  "parLevel": 120,
-                  "pricePerMeasurementUnit": 1
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 32,
-              "_id": "66ddae0d8232e0d81f4062b4"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be446",
-                  "name": "Tomato",
-                  "mainCategory": "Food",
-                  "subCategory": "Fuit",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Low",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 10,
-                  "pricePerMeasurementUnit": 1
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b5"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be44a",
-                  "name": "Beef Steak",
-                  "mainCategory": "Food",
-                  "subCategory": "Meat",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Hight",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 10,
-                  "pricePerMeasurementUnit": 8
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b6"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "667bfac8d28a7ee19d9be44b",
-                  "name": "Brocolly",
-                  "mainCategory": "Food",
-                  "subCategory": "Vegetable",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "budgetImpact": "Low",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 6,
-                  "pricePerMeasurementUnit": 2
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b7"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "66cb6e9b2761a8a89da9ecf3",
-                  "name": "testing",
-                  "mainCategory": "Food",
-                  "subCategory": "Dairy",
-                  "supplier": null,
-                  "budgetImpact": "Mediun",
-                  "inventorySchedule": "weekly",
-                  "measurementUnit": "kg",
-                  "parLevel": 9,
-                  "pricePerMeasurementUnit": 13.5
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b8"
-          },
-          {
-              "supplierGoodId": {
-                  "_id": "66ddad5d8232e0d81f40629c",
-                  "name": "paper a4",
-                  "mainCategory": "Office",
-                  "subCategory": "paper",
-                  "supplier": {
-                      "_id": "6674414e36e26dff0dc4ee8f",
-                      "tradeName": "supplier1tradeName"
-                  },
-                  "pricePerMeasurementUnit": 10
-              },
-              "monthlyCounts": [],
-              "averageDeviationPercent": 0,
-              "dynamicSystemCount": 0,
-              "_id": "66ddae0d8232e0d81f4062b9"
-          }
-      ],
-      "createdAt": "2024-09-08T14:00:45.849Z",
-      "updatedAt": "2024-09-10T10:26:26.540Z",
-      "__v": 0
-  }
-]
+{
+    "_id": "66ddae0d8232e0d81f4062ab",
+    "setFinalCount": false,
+    "inventoryGoods": [
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be448",
+            "monthlyCounts": [
+                {
+                    "currentCountQuantity": 40,
+                    "quantityNeeded": 20,
+                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "deviationPercent": 60,
+                    "_id": "6713ae25fb3b6d8972f8406f",
+                    "countedDate": "2024-10-19T13:03:33.797Z"
+                },
+                {
+                    "currentCountQuantity": 35,
+                    "quantityNeeded": 25,
+                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "deviationPercent": 12.5,
+                    "_id": "6713ae2cfb3b6d8972f84081",
+                    "countedDate": "2024-10-19T13:03:40.511Z"
+                },
+                {
+                    "currentCountQuantity": 30,
+                    "quantityNeeded": 30,
+                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "deviationPercent": 14.285714285714285,
+                    "_id": "6713ae30fb3b6d8972f84094",
+                    "countedDate": "2024-10-19T13:03:44.487Z"
+                },
+                {
+                    "currentCountQuantity": 40,
+                    "quantityNeeded": 20,
+                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "deviationPercent": 100,
+                    "comments": "commentsUpdated",
+                    "reedited": {
+                        "reeditedByUserId": "66e92e066a5cfcc2a707696b",
+                        "date": "2024-10-19T13:23:11.823Z",
+                        "reason": "no reason",
+                        "originalValues": {
+                            "currentCountQuantity": 30,
+                            "deviationPercent": 0,
+                            "dynamicSystemCount": 30
+                        }
+                    },
+                    "_id": "6713b14ffb3b6d8972f840e7",
+                    "countedDate": "2024-10-19T13:23:11.824Z"
+                },
+                {
+                    "currentCountQuantity": 25,
+                    "quantityNeeded": 35,
+                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "deviationPercent": 37.5,
+                    "lastCount": false,
+                    "_id": "6714973a43e91b4ef06a3aa2",
+                    "countedDate": "2024-10-20T05:38:02.410Z"
+                },
+                {
+                    "currentCountQuantity": 35,
+                    "quantityNeeded": 25,
+                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "deviationPercent": -40,
+                    "lastCount": true,
+                    "_id": "6714975b43e91b4ef06a3aa7",
+                    "countedDate": "2024-10-20T05:38:35.061Z"
+                }
+            ],
+            "averageDeviationPercent": 30.71428571428571,
+            "dynamicSystemCount": 35,
+            "_id": "66ddae0d8232e0d81f4062ad"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be445",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062ae"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be447",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062af"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be44d",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b0"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be449",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b1"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be44c",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b2"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be44e",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b3"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be446",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b5"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be44a",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b6"
+        },
+        {
+            "supplierGoodId": "667bfac8d28a7ee19d9be44b",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b7"
+        },
+        {
+            "supplierGoodId": "66cb6e9b2761a8a89da9ecf3",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b8"
+        },
+        {
+            "supplierGoodId": "66ddad5d8232e0d81f40629c",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "66ddae0d8232e0d81f4062b9"
+        },
+        {
+            "supplierGoodId": "670251034487868185f5a5db",
+            "monthlyCounts": [],
+            "averageDeviationPercent": 0,
+            "dynamicSystemCount": 0,
+            "_id": "67025c8249feb51353972d8d"
+        }
+    ]
+}
