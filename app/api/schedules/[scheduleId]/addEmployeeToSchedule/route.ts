@@ -191,14 +191,14 @@ export const PATCH = async (
           totalEmployeesVacation: vacation ? 1 : 0,
         },
       },
-      { new: true, session }
+      { new: true, lean: true, session }
     );
 
     if (updatedSchedule && vacation) {
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $inc: { vacationDaysLeft: -1 } },
-        { new: true, session }
+        { new: true, lean: true, session }
       );
 
       if (!updatedUser) {

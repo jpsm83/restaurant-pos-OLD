@@ -118,10 +118,9 @@ export const POST = async (req: Request) => {
     }
 
     // Update the new sales location with the QR code
-    await SalesPoint.findByIdAndUpdate(
-      salesPointCreated._id,
-      { $set: { qrCode: qrCode } },
-      { new: true }
+    await SalesPoint.updateOne(
+      { _id: salesPointCreated._id },
+      { $set: { qrCode: qrCode } }
     );
 
     return NextResponse.json(

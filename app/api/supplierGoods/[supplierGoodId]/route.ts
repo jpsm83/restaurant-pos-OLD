@@ -156,6 +156,7 @@ export const PATCH = async (
       { $set: updateSupplierGood },
       {
         new: true,
+        lean: true,
       }
     );
 

@@ -92,10 +92,8 @@ export const PATCH = async (
             totalAmount: newPurchasePrice - previousPrice,
           },
         },
-        { new: true, session }
-      )
-        .select("businessId")
-        .lean(),
+        { new: true, lean: true, session }
+      ).select("businessId"),
 
       // Update the inventory based on new purchase items
       Inventory.findOneAndUpdate(
@@ -111,8 +109,8 @@ export const PATCH = async (
               newQuantityPurchased - previousQuantity,
           },
         },
-        { new: true, session }
-      ).lean(),
+        { new: true, lean: true, session }
+      ),
     ]);
 
     if (!updatePurchase) {

@@ -203,12 +203,9 @@ export const PATCH = async (
     if (description) updatedPromotion.description = description;
 
     // save the updated promotion
-    await Promotion.findByIdAndUpdate(
-      promotionId,
+    await Promotion.updateOne(
+      { _id: promotionId},
       { $set: updatedPromotion },
-      {
-        new: true,
-      }
     );
 
     return new NextResponse(

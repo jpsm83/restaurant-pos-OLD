@@ -167,7 +167,7 @@ export const transferOrdersBetweenSalesInstances = async (
 
           if (existingSalesGroup) {
             // Update the existing salesGroup entry
-            await SalesInstance.findOneAndUpdate(
+            await SalesInstance.updateOne(
               {
                 _id: salesInstanceToTransferId,
                 "salesGroup.orderCode": newOrderCode,
@@ -176,11 +176,11 @@ export const transferOrdersBetweenSalesInstances = async (
                 $addToSet: { "salesGroup.$.ordersIds": { $each: orderIdsArr } },
                 $set: { status: "Occupied" },
               },
-              { new: true, session }
+              { session }
             );
           } else {
             // Create a new salesGroup entry
-            await SalesInstance.findOneAndUpdate(
+            await SalesInstance.updateOne(
               { _id: salesInstanceToTransferId },
               {
                 $push: {
@@ -192,14 +192,14 @@ export const transferOrdersBetweenSalesInstances = async (
                 },
                 $set: { status: "Occupied" },
               },
-              { new: true, session }
+              { session }
             );
           }
         }
       })(),
 
       // First, remove specific order IDs from the `ordersIds` array
-      await SalesInstance.findOneAndUpdate(
+      await SalesInstance.updateOne(
         { _id: fromSalesInstanceId },
         {
           $pull: {
@@ -210,7 +210,7 @@ export const transferOrdersBetweenSalesInstances = async (
       ),
 
       // Then, remove the entire `salesGroup` object if its `ordersIds` array is empty
-      await SalesInstance.findOneAndUpdate(
+      await SalesInstance.updateOne(
         { _id: fromSalesInstanceId },
         {
           $pull: {

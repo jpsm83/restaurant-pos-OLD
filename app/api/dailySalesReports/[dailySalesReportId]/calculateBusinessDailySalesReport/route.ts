@@ -289,10 +289,9 @@ export const PATCH = async (
       comissionPercentage;
 
     // update the document in the database
-    await DailySalesReport.findOneAndUpdate(
+    await DailySalesReport.updateOne(
       { _id: dailySalesReportId },
       dailySalesReportObj,
-      { new: true }
     );
 
     return new NextResponse(

@@ -54,10 +54,7 @@ export const PATCH = async (
     if (
       await SalesInstance.exists({
         _id: salesInstanceId,
-        $or: [
-          { salesGroup: { $size: 0 } },
-          { salesGroup: { $exists: false } },
-        ],
+        $or: [{ salesGroup: { $size: 0 } }, { salesGroup: { $exists: false } }],
       })
     ) {
       await SalesInstance.deleteOne(
@@ -80,14 +77,14 @@ export const PATCH = async (
 
     // if no open orders and closeBy exists, close the table
     if (!hasOpenOrders) {
-      await SalesInstance.findByIdAndUpdate(
-        salesInstanceId,
+      await SalesInstance.updateOne(
+        { _id: salesInstanceId },
         {
           status: "Closed",
           closedAt: new Date(),
           closedById,
         },
-        { new: true, session }
+        { session }
       );
 
       return new NextResponse(

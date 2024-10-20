@@ -6,13 +6,15 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
 import User from "@/app/lib/models/user";
+import Purchase from "@/app/lib/models/purchase";
 
 // Create a mapping between model names and actual models
 const modelMap: { [key: string]: any } = {
   Business,
   BusinessGood,
-  SupplierGood,
+  Purchase,
   Supplier,
+  SupplierGood,
   User,
 };
 

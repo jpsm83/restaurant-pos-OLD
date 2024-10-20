@@ -283,7 +283,7 @@ export const POST = async (req: Request) => {
     const orderCode = `${day}${month}${dayOfWeek}${randomNum}`;
 
     // After order is created, add order ID to salesInstanceId
-    await SalesInstance.findByIdAndUpdate(
+    await SalesInstance.updateOne(
       { _id: salesInstanceId },
       {
         $push: {
@@ -294,7 +294,7 @@ export const POST = async (req: Request) => {
           },
         },
       },
-      { new: true, session }
+      { session }
     );
 
     // Commit the transaction if both operations succeed

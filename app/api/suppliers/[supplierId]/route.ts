@@ -143,9 +143,7 @@ export const PATCH = async (
     if (contactPerson) supplerObj.contactPerson = contactPerson;
 
     // Save the updated supplier
-    await Supplier.findByIdAndUpdate(supplierId, supplerObj, {
-      new: true,
-    });
+    await Supplier.updateOne({ _id: supplierId }, supplerObj);
 
     return new NextResponse(
       JSON.stringify({

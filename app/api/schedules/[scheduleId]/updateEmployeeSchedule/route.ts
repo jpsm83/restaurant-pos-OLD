@@ -208,7 +208,7 @@ export const PATCH = async (
               : 0,
         },
       },
-      { new: true, session }
+      { new: true, lean: true, session }
     );
 
     if (updatedSchedule) {
@@ -224,7 +224,7 @@ export const PATCH = async (
                 : 0,
           },
         },
-        { new: true, session }
+        { new: true, lean: true, session }
       );
 
       if (!updatedUser) {

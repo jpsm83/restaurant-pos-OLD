@@ -98,7 +98,7 @@ export const PATCH = async (
     const updatedReport = await DailySalesReport.findByIdAndUpdate(
       dailySalesReportId,
       { $set: { isDailyReportOpen: false } },
-      { new: true }
+      { new: true, lean: true }
     );
 
     if (!updatedReport) {

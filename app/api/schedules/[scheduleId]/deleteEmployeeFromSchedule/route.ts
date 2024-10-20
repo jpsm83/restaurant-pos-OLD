@@ -90,7 +90,7 @@ export const PATCH = async (
           totalDayEmployeesCost: -(scheduleToDelete?.employeeCost ?? 0),
         },
       },
-      { new: true }
+      { new: true, lean: true }
     );
 
     // update user vacation days left
@@ -98,7 +98,7 @@ export const PATCH = async (
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $inc: { vacationDaysLeft: 1 } },
-        { new: true }
+        { new: true, lean: true }
       );
 
       if (!updatedUser) {

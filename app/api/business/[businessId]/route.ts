@@ -199,7 +199,7 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Business updated successfully"
+        message: "Business updated successfully",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );

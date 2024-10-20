@@ -22,8 +22,8 @@ export const addUserToDailySalesReport = async (
       {
         $addToSet: { usersDailySalesReport: { userId } }, // Avoid duplicates
       },
-      { new: true } // Return the updated document
-    ).lean();
+      { new: true, lean: true } // Return the updated document
+    );
 
     // If no daily sales report found
     if (!updatedDailySalesReport) {

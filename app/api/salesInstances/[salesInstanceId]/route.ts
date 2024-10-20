@@ -189,10 +189,10 @@ export const PATCH = async (
     // function closeOrders will automaticaly close the salesInstance once all OPEN orders are closed
 
     // save the updated salesInstance
-    await SalesInstance.findOneAndUpdate(
+    await SalesInstance.updateOne(
       { _id: salesInstanceId },
       { $set: updatedSalesInstanceObj },
-      { new: true, session }
+      { session }
     );
 
     // Commit the transaction if both operations succeed

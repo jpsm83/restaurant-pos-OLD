@@ -84,10 +84,8 @@ export const PATCH = async (
           $pull: { purchaseInventoryItems: { _id: purchaseInventoryItemsId } },
           $inc: { totalAmount: -quantityPurchased },
         },
-        { new: true, session }
-      )
-        .select("businessId")
-        .lean(),
+        { new: true, lean: true, session }
+      ).select("businessId"),
 
       // Update the inventory based on the deleted purchase items
       Inventory.findOneAndUpdate(
@@ -102,8 +100,8 @@ export const PATCH = async (
             "inventoryGoods.$.dynamicSystemCount": -quantityPurchased,
           },
         },
-        { new: true, session }
-      ).lean(),
+        { new: true, lean: true, session }
+      ),
     ]);
 
     if (!updatePurchase) {

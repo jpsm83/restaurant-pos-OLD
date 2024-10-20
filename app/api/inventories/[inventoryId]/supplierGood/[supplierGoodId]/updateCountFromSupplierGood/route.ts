@@ -173,7 +173,7 @@ export const PATCH = async (
       totalDeviationPercent / monthlyCountsWithDeviation;
 
     // Update the inventory count with optimized query
-    await Inventory.findOneAndUpdate(
+    await Inventory.updateOne(
       {
         _id: inventoryId,
         "inventoryGoods.supplierGoodId": supplierGoodId,
@@ -193,7 +193,6 @@ export const PATCH = async (
           { "supplierGood.supplierGoodId": supplierGoodId }, // Matches supplierGood in inventoryGoods
           { "count._id": countId }, // Matches count in monthlyCounts by _id
         ],
-        new: true, // Return the updated document
       }
     );
 

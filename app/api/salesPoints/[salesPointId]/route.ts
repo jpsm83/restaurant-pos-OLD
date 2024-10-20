@@ -114,18 +114,16 @@ export const PATCH = async (
     // create salesPoint object
     const updatedSalesPoint: Partial<ISalesPoint> = {};
 
-    if (salesPointName)
-      updatedSalesPoint.salesPointName = salesPointName;
+    if (salesPointName) updatedSalesPoint.salesPointName = salesPointName;
     if (salesPointType) updatedSalesPoint.salesPointType = salesPointType;
     if (selfOrdering !== undefined)
       updatedSalesPoint.selfOrdering = selfOrdering;
     if (qrEnabled !== undefined) updatedSalesPoint.qrEnabled = qrEnabled;
 
     // update salesPoint
-    await SalesPoint.findByIdAndUpdate(
-      salesPointId,
-      { $set: updatedSalesPoint },
-      { new: true }
+    await SalesPoint.updateOne(
+      { _id: salesPointId },
+      { $set: updatedSalesPoint }
     );
 
     return new NextResponse(

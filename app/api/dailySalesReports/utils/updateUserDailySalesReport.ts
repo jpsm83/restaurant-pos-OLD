@@ -225,10 +225,9 @@ export const updateUsersDailySalesReport = async (
     }
 
     // Update DailySalesReport after processing all users
-    await DailySalesReport.findOneAndUpdate(
+    await DailySalesReport.updateOne(
       { dailyReferenceNumber },
       { $set: { usersDailySalesReport: userReports } },
-      { new: true } // This option returns the updated document
     );
 
     // Return both successful reports and errors

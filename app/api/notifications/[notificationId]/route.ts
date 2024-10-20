@@ -94,9 +94,13 @@ export const PATCH = async (
 
     // update notification
     const updatedNotification: INotification | null =
-      await Notification.findByIdAndUpdate(notificationId, updateObj, {
-        new: true,
-      }).lean();
+      await Notification.findByIdAndUpdate(
+        notificationId,
+        { $set: updateObj },
+        {
+          new: true,
+        }
+      ).lean();
 
     if (updatedNotification) {
       // find the userRecipientsId that were added
@@ -132,7 +136,10 @@ export const PATCH = async (
 
         // update the readFlag for each new userRecipientsId
         User.updateMany(
-          { _id: { $in: userRecipientsId }, "notifications._id": notificationId },
+          {
+            _id: { $in: userRecipientsId },
+            "notifications._id": notificationId,
+          },
           { $set: { "notifications.$.readFlag": false } }
         ),
       ]);

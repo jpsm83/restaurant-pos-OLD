@@ -275,10 +275,9 @@ export const PATCH = async (
     }
 
     // update the business good
-    await BusinessGood.findByIdAndUpdate(
-      businessGoodId,
-      { $set: updatedBusinessGoodObj },
-      { new: true }
+    await BusinessGood.updateOne(
+      { _id: businessGoodId },
+      { $set: updatedBusinessGoodObj }
     );
 
     return new NextResponse(

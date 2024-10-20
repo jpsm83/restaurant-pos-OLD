@@ -86,8 +86,8 @@ export const PATCH = async (
           "inventoryGoods.$.dynamicSystemCount": quantityPurchased,
         },
       },
-      { new: true, session }
-    ).lean();
+      { new: true, lean: true, session }
+    );
 
     if (!updatedInventory) {
       await session.abortTransaction();

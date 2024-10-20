@@ -147,8 +147,8 @@ export const closeOrders = async (
     );
 
     if (allOrdersPaid) {
-      await SalesInstance.findByIdAndUpdate(
-        salesInstance._id,
+      await SalesInstance.updateOne(
+        { _id: salesInstance._id },
         {
           status: "Closed",
           closedAt: new Date(),
