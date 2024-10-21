@@ -13,7 +13,7 @@ orders - DONE
 purchases - DONE
 inventories - DONE
 
-notifications - stop en DELETE, is done, just do the test
+notifications - get/getAll/post/patch/delete basic done
 
 monthlyBusinessReport
 reservations

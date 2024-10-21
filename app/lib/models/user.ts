@@ -72,6 +72,7 @@ const userSchema = new Schema(
             ref: "Notification",
           },
           readFlag: { type: Boolean, default: false },
+          deletedFlag: { type: Boolean, default: false },
         },
       ],
       default: undefined,

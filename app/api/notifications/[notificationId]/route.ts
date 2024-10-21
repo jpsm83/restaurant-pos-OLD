@@ -198,7 +198,12 @@ export const PATCH = async (
               _id: { $in: userRecipientsId },
               "notifications.notificationId": notificationId,
             },
-            { $set: { "notifications.$.readFlag": false } },
+            {
+              $set: {
+                "notifications.$.readFlag": false,
+                "notifications.$.deletedFlag": false,
+              },
+            },
             { session }
           )
         : Promise.resolve(true), // Resolve with a success flag if no recipients added
@@ -268,14 +273,14 @@ export const DELETE = async (
 
   try {
     // Delete the notification and retrieve the affected users in one step
-    const notificationDeleted = await Notification.findByIdAndDelete(
+    const notificationDeleted = (await Notification.findByIdAndDelete(
       notificationId,
       {
         session,
         select: "userRecipientsId",
         lean: true,
       }
-    ) as INotification | null;
+    )) as INotification | null;
 
     if (!notificationDeleted) {
       await session.abortTransaction();

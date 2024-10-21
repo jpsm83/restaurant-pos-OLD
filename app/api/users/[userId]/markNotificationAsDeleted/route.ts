@@ -11,7 +11,7 @@ import User from "@/app/lib/models/user";
 import Notification from "@/app/lib/models/notification";
 
 // @desc    Create new users
-// @route   PATCH /users/:userId/deleteNotificationRelation
+// @route   PATCH /users/:userId/markNotificationAsDeleted
 // @access  Private
 export const PATCH = async (
   req: Request,
@@ -60,32 +60,22 @@ export const PATCH = async (
       );
     }
 
-    // Pull the notification from the user's notifications array and update the notification
-    const [userUpdateResult, notificationUpdateResult] = await Promise.all([
-      User.updateOne(
-        { _id: userId },
-        { $pull: { notifications: { notificationId } } },
-        { session }
-      ),
-
-      Notification.updateOne(
-        { _id: notificationId },
-        { $pull: { userRecipientsId: userId } },
-        { session }
-      ),
-    ]);
+    // user can mark notification as deleted but never delete it for data integrity
+    const notificationUpdate = await User.updateOne(
+      { _id: userId, "notifications.notificationId": notificationId },
+      {
+        $set: {
+          "notifications.$.deletedFlag": true,
+          "notifications.$.readFlag": true,
+        },
+      },
+      { session }
+    );
 
     // Check if the updates were successful
-    if (
-      userUpdateResult.modifiedCount === 0 ||
-      notificationUpdateResult.modifiedCount === 0
-    ) {
+    if (notificationUpdate.modifiedCount === 0) {
       await session.abortTransaction();
-      const message =
-        userUpdateResult.modifiedCount === 0
-          ? "User not found!"
-          : "Notification not found!";
-      return new NextResponse(JSON.stringify({ message: message }), {
+      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
@@ -95,7 +85,7 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: `User notification relation deleted successfully!`,
+        message: `User notification mark as deleted successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
