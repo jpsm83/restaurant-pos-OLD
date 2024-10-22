@@ -7,7 +7,7 @@ import { addUserToDailySalesReport } from "./utils/addUserToDailySalesReport";
 import { createDailySalesReport } from "./utils/createDailySalesReport";
 
 // import models
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import { updateUsersDailySalesReport } from "./utils/updateUserDailySalesReport";
 

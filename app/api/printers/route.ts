@@ -10,7 +10,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // import user model
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import Printer from "@/app/lib/models/printer";
 import SalesPoint from "@/app/lib/models/salesPoint";
 

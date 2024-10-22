@@ -1,6 +1,6 @@
 business - DONE
 salesPoint - DONE
-users - DONE
+employees - DONE
 dailySalesReports - DONE
 
 
@@ -8,6 +8,7 @@ salesInstance - DONE
 - create logic for self ordering
 - user has to have an account
 - logic to pay
+- create user for clients differente of user for employee
 
 
 printers - DONE

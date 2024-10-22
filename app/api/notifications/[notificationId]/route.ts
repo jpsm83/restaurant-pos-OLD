@@ -11,7 +11,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 
 // @desc    Get notification by ID
 // @route   GET /notifications/:notificationId

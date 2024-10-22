@@ -11,7 +11,7 @@ import { cancelOrders } from "../utils/cancelOrders";
 
 // import models
 import Order from "@/app/lib/models/order";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";

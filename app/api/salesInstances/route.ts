@@ -13,7 +13,7 @@ import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
 import Business from "@/app/lib/models/business";

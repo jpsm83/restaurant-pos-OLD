@@ -8,7 +8,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 
 // @desc    Get all notifications by user ID
 // @route   GET /notifications/user/:userId

@@ -12,7 +12,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc    Get printer by ID

@@ -16,7 +16,7 @@ import SalesPoint from "@/app/lib/models/salesPoint";
 import { createDailySalesReport } from "@/app/api/dailySalesReports/utils/createDailySalesReport";
 import { createSalesInstance } from "../../utils/createSalesInstance";
 import { Types } from "mongoose";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 
 // first create a empty salesInstance, then update it with the salesGroup.ordersIds
 // @desc    Create new salesInstances

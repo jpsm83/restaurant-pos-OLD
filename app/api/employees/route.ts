@@ -5,14 +5,14 @@ import { hash } from "bcrypt";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IUser";
+import { IUser } from "@/app/lib/interface/IEmployee";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "./utils/calculateVacationProportional";
 
 // imported models
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "./utils/salaryValidation";
 

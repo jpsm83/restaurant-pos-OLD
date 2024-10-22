@@ -1,4 +1,4 @@
-import { ISalary } from "@/app/lib/interface/IUser";
+import { ISalary } from "@/app/lib/interface/IEmployee";
 
 const salaryValidation = (salary: ISalary) => {
   const validKeys = ["payFrequency", "grossSalary", "netSalary"];

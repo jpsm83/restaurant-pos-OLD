@@ -11,7 +11,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 
 // @desc    Get schedule by ID
 // @route   GET /schedules/:scheduleId

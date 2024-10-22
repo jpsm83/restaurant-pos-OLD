@@ -11,12 +11,12 @@ import getWeekdaysInMonth from "../../utils/getWeekDaysInMonth";
 import calculateEmployeeCost from "../../utils/calculateEmployeeCost";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IUser";
+import { IUser } from "@/app/lib/interface/IEmployee";
 import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 
 // @desc    Create new schedules
 // @route   PATCH /schedules/:schedulesId/updateEmployeeSchedule

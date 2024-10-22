@@ -6,7 +6,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { NextResponse } from "next/server";
 import Order from "@/app/lib/models/order";

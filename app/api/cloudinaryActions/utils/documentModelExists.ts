@@ -4,7 +4,7 @@ import Business from "@/app/lib/models/business";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import Purchase from "@/app/lib/models/purchase";
 
 const documentModelExists = async (

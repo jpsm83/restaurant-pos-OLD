@@ -10,7 +10,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import Order from "@/app/lib/models/order";
 import BusinessGood from "@/app/lib/models/businessGood";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc   Get salesInstances by bussiness ID

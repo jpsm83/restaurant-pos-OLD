@@ -10,7 +10,7 @@ import connectDb from "@/app/lib/utils/connectDb";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 
 export const saveTokenIntoUser = async (
   userId: Types.ObjectId,

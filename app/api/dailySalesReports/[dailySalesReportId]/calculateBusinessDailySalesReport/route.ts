@@ -11,11 +11,11 @@ import {
   IGoodsReduced,
   IUserDailySalesReport,
 } from "@/app/lib/interface/IDailySalesReport";
-import { IUser } from "@/app/lib/interface/IUser";
+import { IUser } from "@/app/lib/interface/IEmployee";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import Business from "@/app/lib/models/business";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";

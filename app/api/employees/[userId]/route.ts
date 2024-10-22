@@ -10,10 +10,10 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "../utils/calculateVacationProportional";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IUser";
+import { IUser } from "@/app/lib/interface/IEmployee";
 
 // imported models
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "../utils/salaryValidation";
 import Printer from "@/app/lib/models/printer";

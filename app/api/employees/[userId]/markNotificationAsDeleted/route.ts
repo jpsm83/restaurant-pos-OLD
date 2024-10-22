@@ -7,7 +7,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
-import User from "@/app/lib/models/user";
+import User from "@/app/lib/models/employee";
 import Notification from "@/app/lib/models/notification";
 
 // @desc    Create new users
