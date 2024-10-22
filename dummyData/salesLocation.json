@@ -7,12 +7,12 @@
       "status": "Closed",
       "openedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "responsibleBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "business": "6673fed98c45d0a0ca5f34c1",
@@ -29,12 +29,12 @@
       "status": "Closed",
       "openedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "responsibleBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "business": "6673fed98c45d0a0ca5f34c1",
@@ -51,12 +51,12 @@
       "status": "Closed",
       "openedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "responsibleBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "business": "6673fed98c45d0a0ca5f34c1",
@@ -155,7 +155,7 @@
       "closedAt": "2024-04-23T23:53:31.970Z",
       "closedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       }
   },
@@ -167,12 +167,12 @@
       "status": "Closed",
       "openedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "responsibleBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "business": "6673fed98c45d0a0ca5f34c1",
@@ -183,7 +183,7 @@
       "closedAt": "2024-04-23T09:59:05.694Z",
       "closedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       }
   },
@@ -195,12 +195,12 @@
       "status": "Closed",
       "openedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "responsibleBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       },
       "business": "6673fed98c45d0a0ca5f34c1",
@@ -256,7 +256,7 @@
       "closedAt": "2024-04-23T09:30:12.339Z",
       "closedBy": {
           "_id": "66758b8904c4e6f5bbaa6b81",
-          "username": "user3",
+          "employeeName": "employee3",
           "currentShiftRole": "Manager"
       }
   }

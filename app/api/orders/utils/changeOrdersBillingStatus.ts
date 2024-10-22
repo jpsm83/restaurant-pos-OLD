@@ -14,7 +14,7 @@ export const changeOrdersBillingStatus = async (
   orderIdsArr: Types.ObjectId[],
   newBillingStatus: string
 ) => {
-  // validate userId
+  // validate employeeId
   if (isObjectIdValid(orderIdsArr) !== true) {
     return "OrderIdsArr not valid!";
   }

@@ -5,55 +5,55 @@ import { hash } from "bcrypt";
 import connectDb from "@/app/lib/utils/connectDb";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IEmployee";
+import { IEmployee } from "@/app/lib/interface/IEmployee";
 import { personalDetailsValidation } from "./utils/personalDetailsValidation";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "./utils/calculateVacationProportional";
 
 // imported models
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "./utils/salaryValidation";
 
-// @desc    Get all users
-// @route   GET /users
+// @desc    Get all employees
+// @route   GET /employees
 // @access  Private
 export const GET = async (req: Request) => {
   try {
     // connect before first call to DB
     await connectDb();
 
-    const users = await User.find().select("-password").lean();
+    const employees = await Employee.find().select("-password").lean();
 
-    return !users?.length
-      ? new NextResponse(JSON.stringify({ message: "No users found" }), {
+    return !employees?.length
+      ? new NextResponse(JSON.stringify({ message: "No employees found" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         })
-      : new NextResponse(JSON.stringify(users), {
+      : new NextResponse(JSON.stringify(employees), {
           status: 200,
           headers: {
             "Content-Type": "application/json",
           },
         });
   } catch (error) {
-    return handleApiError("Get all users failed!", error);
+    return handleApiError("Get all employees failed!", error);
   }
 };
 
-// @desc    Create new user
-// @route   POST /users
+// @desc    Create new employee
+// @route   POST /employees
 // @access  Private
 export const POST = async (req: Request) => {
   try {
     const {
-      username,
+      employeeName,
       email,
       password,
       idType,
       idNumber,
-      allUserRoles,
+      allEmployeeRoles,
       personalDetails,
       taxNumber,
       joinDate,
@@ -65,16 +65,16 @@ export const POST = async (req: Request) => {
       contractHoursWeek, // in milliseconds
       salary,
       comments,
-    } = (await req.json()) as IUser;
+    } = (await req.json()) as IEmployee;
 
     // check required fields
     if (
-      !username ||
+      !employeeName ||
       !email ||
       !password ||
       !idType ||
       !idNumber ||
-      !allUserRoles ||
+      !allEmployeeRoles ||
       !personalDetails ||
       !taxNumber ||
       !joinDate ||
@@ -83,7 +83,7 @@ export const POST = async (req: Request) => {
       return new NextResponse(
         JSON.stringify({
           message:
-            "Username, email, password, idType, idNumber, allUserRoles, personalDetails, taxNumber, joinDate and businessId are required fields!",
+            "EmployeeName, email, password, idType, idNumber, allEmployeeRoles, personalDetails, taxNumber, joinDate and businessId are required fields!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -138,16 +138,16 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDb();
 
-    // check for duplicates username, email, taxNumber and idNumber with same businessId ID
-    const duplicateUser: IUser | null = await User.findOne({
+    // check for duplicates employeeName, email, taxNumber and idNumber with same businessId ID
+    const duplicateEmployee: IEmployee | null = await Employee.findOne({
       businessId,
-      $or: [{ username }, { email }, { taxNumber }, { idNumber }],
+      $or: [{ employeeName }, { email }, { taxNumber }, { idNumber }],
     }).lean();
 
-    if (duplicateUser) {
-      const message = duplicateUser.active
-        ? "Username, email, taxNumber, or idNumber already exists and user is active!"
-        : "Username, email, taxNumber, or idNumber already exists in an inactive user!";
+    if (duplicateEmployee) {
+      const message = duplicateEmployee.active
+        ? "EmployeeName, email, taxNumber, or idNumber already exists and employee is active!"
+        : "EmployeeName, email, taxNumber, or idNumber already exists in an inactive employee!";
 
       return new NextResponse(JSON.stringify({ message }), {
         status: 409,
@@ -164,20 +164,20 @@ export const POST = async (req: Request) => {
       : 0;
 
     // convert hours to milliseconds
-    // user might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
+    // employee might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
     let contractHoursWeekMls;
     if (contractHoursWeek) {
       contractHoursWeekMls = contractHoursWeek * 3600000;
     }
 
-    // Create the user object
-    const newUser = {
-      username,
+    // Create the employee object
+    const newEmployee = {
+      employeeName,
       email,
       password: hashedPassword,
       idType,
       idNumber,
-      allUserRoles, // array
+      allEmployeeRoles, // array
       personalDetails, // object
       taxNumber,
       joinDate,
@@ -192,17 +192,19 @@ export const POST = async (req: Request) => {
       comments: comments || undefined,
     };
 
-    // create user
-    await User.create(newUser);
+    // create employee
+    await Employee.create(newEmployee);
 
     return new NextResponse(
-      JSON.stringify({ message: `New user ${username} created successfully!` }),
+      JSON.stringify({
+        message: `New employee ${employeeName} created successfully!`,
+      }),
       {
         status: 201,
         headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    return handleApiError("Create user failed!", error);
+    return handleApiError("Create employee failed!", error);
   }
 };

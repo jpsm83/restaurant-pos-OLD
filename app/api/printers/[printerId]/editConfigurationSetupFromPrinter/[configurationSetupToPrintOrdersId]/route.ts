@@ -27,7 +27,7 @@ export const PATCH = async (
 ) => {
   try {
     const { printerId, configurationSetupToPrintOrdersId } = context.params;
-    const { mainCategory, subCategories, salesPointIds, excludeUserIds } =
+    const { mainCategory, subCategories, salesPointIds, excludeEmployeeIds } =
       (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // Validate input
@@ -62,16 +62,16 @@ export const PATCH = async (
       );
     }
 
-    // if excludeUserIds is provided, check if it is a valid array of ObjectIds
-    if (excludeUserIds) {
+    // if excludeEmployeeIds is provided, check if it is a valid array of ObjectIds
+    if (excludeEmployeeIds) {
       if (
-        !Array.isArray(excludeUserIds) ||
-        excludeUserIds.length === 0 ||
-        isObjectIdValid(excludeUserIds) !== true
+        !Array.isArray(excludeEmployeeIds) ||
+        excludeEmployeeIds.length === 0 ||
+        isObjectIdValid(excludeEmployeeIds) !== true
       ) {
         return new NextResponse(
           JSON.stringify({
-            message: "excludeUserIds must be an array of ObjectIds!",
+            message: "excludeEmployeeIds must be an array of ObjectIds!",
           }),
           {
             status: 400,
@@ -131,7 +131,8 @@ export const PATCH = async (
       {
         $set: {
           "configurationSetupToPrintOrders.$.salesPointIds": salesPointIds, // Update salesPointIds
-          "configurationSetupToPrintOrders.$.excludeUserIds": excludeUserIds, // Update excludeUserIds
+          "configurationSetupToPrintOrders.$.excludeEmployeeIds":
+            excludeEmployeeIds, // Update excludeEmployeeIds
           "configurationSetupToPrintOrders.$.mainCategory": mainCategory, // Update mainCategories
           "configurationSetupToPrintOrders.$.subCategories": subCategories
             ? subCategories

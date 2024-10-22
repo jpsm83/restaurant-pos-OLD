@@ -15,7 +15,7 @@ const configurationSetupToPrintOrdersSchema = new Schema({
     ref: "SalesPoint",
     required: true,
   }, // which sales point will use this print with this configuration
-  excludeUserIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users are not allowed to print from this printer
+  excludeEmployeeIds: { type: [Schema.Types.ObjectId], ref: "Employee" }, // which employees are not allowed to print from this printer
 });
 
 const printerSchema = new Schema(
@@ -36,7 +36,10 @@ const printerSchema = new Schema(
       required: true,
     }, // business that owns the printer
     backupPrinterId: { type: Schema.Types.ObjectId, ref: "Printer" }, // printer reference to print if this printer has an error
-    usersAllowedToPrintDataIds: { type: [Schema.Types.ObjectId], ref: "User" }, // which users can print data - users are allowed to print from one printer only - ex: bills, sales reports, etc
+    employeesAllowedToPrintDataIds: {
+      type: [Schema.Types.ObjectId],
+      ref: "Employee",
+    }, // which employees can print data - employees are allowed to print from one printer only - ex: bills, sales reports, etc
     configurationSetupToPrintOrders: [configurationSetupToPrintOrdersSchema], // array of objects that will dictate what the printer will print and from wich sales point, it can be multiple variations of prints, thats why it is an array
   },
   { timestamps: true }

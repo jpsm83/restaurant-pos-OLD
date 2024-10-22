@@ -8,7 +8,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc    Get printers by businessId ID
@@ -44,9 +44,9 @@ export const GET = async (
         model: Printer,
       })
       .populate({
-        path: "usersAllowedToPrintDataIds",
-        select: "username",
-        model: User,
+        path: "employeesAllowedToPrintDataIds",
+        select: "employeeName",
+        model: Employee,
       })
       .populate({
         path: "configurationSetupToPrintOrders.salesPointIds",
@@ -54,9 +54,9 @@ export const GET = async (
         model: SalesPoint,
       })
       .populate({
-        path: "configurationSetupToPrintOrders.excludeUserIds",
-        select: "username",
-        model: User,
+        path: "configurationSetupToPrintOrders.excludeEmployeeIds",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 

@@ -11,12 +11,12 @@ import getWeekdaysInMonth from "../../utils/getWeekDaysInMonth";
 import calculateEmployeeCost from "../../utils/calculateEmployeeCost";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IEmployee";
+import { IEmployee } from "@/app/lib/interface/IEmployee";
 import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
 // @desc    Create new schedules
 // @route   PATCH /schedules/:schedulesId/updateEmployeeSchedule
@@ -42,14 +42,14 @@ export const PATCH = async (
   }
 
   try {
-    const { employeeSchedule, userScheduleId } = (await req.json()) as {
+    const { employeeSchedule, employeeScheduleId } = (await req.json()) as {
       employeeSchedule: IEmployeeSchedule;
-      userScheduleId: Types.ObjectId;
+      employeeScheduleId: Types.ObjectId;
     };
 
     const scheduleId = context.params.scheduleId;
 
-    const { userId, role, timeRange, vacation } = employeeSchedule;
+    const { employeeId, role, timeRange, vacation } = employeeSchedule;
     const startTime = new Date(timeRange.startTime);
     const endTime = new Date(timeRange.endTime);
 
@@ -76,16 +76,16 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // Fetch schedule and user data concurrently
-    const [schedule, user] = await Promise.all([
+    // Fetch schedule and employee data concurrently
+    const [schedule, employee] = await Promise.all([
       Schedule.findById(scheduleId)
         .select(
-          "employeesSchedules._id employeesSchedules.userId employeesSchedules.vacation employeesSchedules.timeRange"
+          "employeesSchedules._id employeesSchedules.employeeId employeesSchedules.vacation employeesSchedules.timeRange"
         )
         .lean<ISchedule | null>(),
-      User.findById(userId)
+      Employee.findById(employeeId)
         .select("salary.grossSalary salary.payFrequency")
-        .lean<IUser | null>(),
+        .lean<IEmployee | null>(),
     ]);
 
     if (!schedule) {
@@ -97,10 +97,10 @@ export const PATCH = async (
       );
     }
 
-    if (!user) {
+    if (!employee) {
       return new NextResponse(
         JSON.stringify({
-          message: "User not found!",
+          message: "Employee not found!",
         }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
@@ -108,7 +108,7 @@ export const PATCH = async (
 
     // Find the specific employee schedule to update
     const employeeScheduleToUpdate = schedule.employeesSchedules.find(
-      (empSch) => empSch._id.toString() === userScheduleId.toString()
+      (empSch) => empSch._id.toString() === employeeScheduleId.toString()
     );
 
     if (!employeeScheduleToUpdate) {
@@ -123,8 +123,8 @@ export const PATCH = async (
     // check if the employee is scheduled more than once
     const employeeAlreadyScheduled = schedule.employeesSchedules.filter(
       (emp) =>
-        emp.userId.toString() === userId.toString() &&
-        emp._id.toString() !== userScheduleId.toString()
+        emp.employeeId.toString() === employeeId.toString() &&
+        emp._id.toString() !== employeeScheduleId.toString()
     );
 
     // if there are more than one schedule for the employee, it means he cant be on vacation
@@ -163,18 +163,18 @@ export const PATCH = async (
     );
     let employeeCost = 0;
 
-    if (user?.salary) {
+    if (employee?.salary) {
       employeeCost = calculateEmployeeCost(
-        user.salary,
+        employee.salary,
         shiftDurationMs,
         weekdaysInMonth
       );
     }
 
-    // prepare the user schedule update object
-    const updateUserSchedule = {
-      _id: userScheduleId,
-      userId,
+    // prepare the employee schedule update object
+    const updateEmployeeSchedule = {
+      _id: employeeScheduleId,
+      employeeId,
       role,
       timeRange: {
         startTime,
@@ -188,10 +188,10 @@ export const PATCH = async (
     const updatedSchedule = await Schedule.findOneAndUpdate(
       {
         _id: scheduleId,
-        "employeesSchedules._id": userScheduleId, // Match the employee schedule by its _id
+        "employeesSchedules._id": employeeScheduleId, // Match the employee schedule by its _id
       },
       {
-        $set: { "employeesSchedules.$": updateUserSchedule }, // Use the positional operator to update the matched element
+        $set: { "employeesSchedules.$": updateEmployeeSchedule }, // Use the positional operator to update the matched element
         $inc: {
           totalDayEmployeesCost: employeeCost,
           totalEmployeesScheduled:
@@ -212,8 +212,8 @@ export const PATCH = async (
     );
 
     if (updatedSchedule) {
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
+      const updatedEmployee = await Employee.findByIdAndUpdate(
+        employeeId,
         {
           $inc: {
             vacationDaysLeft:
@@ -227,11 +227,11 @@ export const PATCH = async (
         { new: true, lean: true, session }
       );
 
-      if (!updatedUser) {
+      if (!updatedEmployee) {
         return new NextResponse(
           JSON.stringify({
             message:
-              "Update user vacation days left failed upon adding user to schedule!",
+              "Update employee vacation days left failed upon adding employee to schedule!",
           }),
           { status: 500, headers: { "Content-Type": "application/json" } }
         );

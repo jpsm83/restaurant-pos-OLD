@@ -12,13 +12,35 @@ export const mainCategories = [
   "Other",
 ];
 
-export const paymentMethods = ['Cash', 'Card', 'Crypto', 'Other'];
+export const paymentMethods = ["Cash", "Card", "Crypto", "Other"];
 
-export const cardTypes = ['Visa', 'Mastercard', 'American Express', 'Discover', 'Diners Club', 'Maestro'];
+export const cardTypes = [
+  "Visa",
+  "Mastercard",
+  "American Express",
+  "Discover",
+  "Diners Club",
+  "Maestro",
+];
 
-export const cryptoTypes = ['Bitcoin', 'Ethereum', 'Litecoin', 'Ripple', 'Cardano', 'Polkadot', 'Dogecoin'];
+export const cryptoTypes = [
+  "Bitcoin",
+  "Ethereum",
+  "Litecoin",
+  "Ripple",
+  "Cardano",
+  "Polkadot",
+  "Dogecoin",
+];
 
-export const otherPaymentTypes = ['Voucher', 'Paypal', 'Venmo', 'Apple Pay', 'Google Pay', 'Samsung Pay'];
+export const otherPaymentTypes = [
+  "Voucher",
+  "Paypal",
+  "Venmo",
+  "Apple Pay",
+  "Google Pay",
+  "Samsung Pay",
+];
 
 export const purchaseUnit = [
   "Unit",
@@ -42,9 +64,17 @@ export const purchaseUnit = [
   "Gallon",
 ];
 
-export const printerStatus = ['Online', 'Offline', 'Out of paper', 'Error'];
+export const printerStatus = ["Online", "Offline", "Out of paper", "Error"];
 
-export const locationTypes = ["Table", "Room", "Seat", "Bar", "Counter", "Spot", "Other"];
+export const locationTypes = [
+  "Table",
+  "Room",
+  "Seat",
+  "Bar",
+  "Counter",
+  "Spot",
+  "Other",
+];
 
 export const notificationTypes = ["Warning", "Emergency", "Info", "Message"];
 
@@ -54,7 +84,7 @@ export const subscription = ["Free", "Basic", "Premium", "Enterprise"];
 
 export const idTypes = ["National ID", "Passport", "Driving License"];
 
-export const userRoles = [
+export const employeeRoles = [
   "General Manager",
   "Manager",
   "Assistant Manager",
@@ -88,7 +118,7 @@ export const billingStatus = ["Open", "Paid", "Void", "Cancel", "Invitation"];
 // OPEN - order is open and can be paid
 // PAID - order is paid and can't be changed
 // VOID - order been done but is voided by manager, good been lost and business will not be paid, ex: client left without paying, good was badly done and have to be remake, mistake was made
-// CANCEL - good been order but has not been done and is cancel by manager, there is no lost for the business, ex: user order by mistake and cancel it before it is done
+// CANCEL - good been order but has not been done and is cancel by manager, there is no lost for the business, ex: employee order by mistake and cancel it before it is done
 // INVITATION - order is an invitation, no payment is required, ex: business is offering a free meal to a client
 
 // metric abreveations for the convert-units library
@@ -133,7 +163,7 @@ export const budgetImpact = ["Very Low", "Low", "Medium", "High", "Very High"];
 export const inventorySchedule = ["daily", "weekly", "monthly"];
 
 // not in use
-// user can be free to create those subcategories as they wish
+// employee can be free to create those subcategories as they wish
 export const foodSubCategory = [
   "Add-ons", // for example, extra cheese, extra bacon, etc.
   "Appetizer",

@@ -5,14 +5,14 @@ import mongoose, { Types } from "mongoose";
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
-import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
+import { addEmployeeToDailySalesReport } from "../../dailySalesReports/utils/addEmployeeToDailySalesReport";
 
 // import interfaces
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // import models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
@@ -50,8 +50,8 @@ export const GET = async (
       })
       .populate({
         path: "openedById responsibleById closedById",
-        select: "username currentShiftRole",
-        model: User,
+        select: "employeeName currentShiftRole",
+        model: Employee,
       })
       .populate({
         path: "salesGroup.ordersIds",
@@ -79,7 +79,7 @@ export const GET = async (
           headers: { "Content-Type": "application/json" },
         });
   } catch (error) {
-    return handleApiError("Get user by its id failed!", error);
+    return handleApiError("Get employee by its id failed!", error);
   }
 };
 
@@ -101,7 +101,7 @@ export const PATCH = async (
   try {
     const salesInstanceId = context.params.salesInstanceId;
 
-    // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so user can see the total price, net price, net paid and tips in real time
+    // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so employee can see the total price, net price, net paid and tips in real time
     const { guests, status, responsibleById, clientName } =
       (await req.json()) as ISalesInstance;
 
@@ -149,7 +149,8 @@ export const PATCH = async (
       );
       return new NextResponse(
         JSON.stringify({
-          message: "Occupied salesInstance with no salesGroup has been deleted!",
+          message:
+            "Occupied salesInstance with no salesGroup has been deleted!",
         }),
         {
           status: 200,
@@ -166,17 +167,17 @@ export const PATCH = async (
     if (clientName) updatedSalesInstanceObj.clientName = clientName;
     if (responsibleById) {
       updatedSalesInstanceObj.responsibleById = responsibleById;
-      // if salesInstance is transferred to another user, and that is the first salesInstance from the new user, update the dailySalesReport to create a new userDailySalesReport for the new user
+      // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
       if (responsibleById !== salesInstance?.openedById) {
-        // check if user exists in the dailySalesReport
+        // check if employee exists in the dailySalesReport
         if (
           !(await DailySalesReport.exists({
             isDailyReportOpen: true,
             business: salesInstance?.businessId,
-            "usersDailySalesReport.userId": responsibleById,
+            "employeesDailySalesReport.employeeId": responsibleById,
           }))
         ) {
-          await addUserToDailySalesReport(
+          await addEmployeeToDailySalesReport(
             responsibleById,
             salesInstance.businessId
           );

@@ -8,20 +8,20 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
-// @desc    Get all notifications by user ID
-// @route   GET /notifications/user/:userId
+// @desc    Get all notifications by employee ID
+// @route   GET /notifications/employee/:employeeId
 // @access  Public
 export const GET = async (
   req: Request,
   context: {
-    params: { userId: Types.ObjectId };
+    params: { employeeId: Types.ObjectId };
   }
 ) => {
-  const userId = context.params.userId;
+  const employeeId = context.params.employeeId;
 
-  if (!isObjectIdValid([userId])) {
+  if (!isObjectIdValid([employeeId])) {
     return new NextResponse(
       JSON.stringify({ message: "Invalid business ID!" }),
       {
@@ -36,12 +36,12 @@ export const GET = async (
     await connectDb();
 
     const notifications = await Notification.find({
-      userRecipientsId: userId,
+      employeeRecipientsId: employeeId,
     })
       .populate({
-        path: "userRecipientsId",
-        select: "username",
-        model: User,
+        path: "employeeRecipientsId",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 
@@ -57,6 +57,6 @@ export const GET = async (
           },
         });
   } catch (error) {
-    return handleApiError("Get users by business id failed!", error);
+    return handleApiError("Get employees by business id failed!", error);
   }
 };

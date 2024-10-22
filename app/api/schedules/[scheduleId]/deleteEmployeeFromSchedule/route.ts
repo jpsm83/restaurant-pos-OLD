@@ -11,7 +11,7 @@ import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
 // @desc    Create new schedules
 // @route   PATCH /schedules/:schedulesId/deleteEmployeeFromSchedule
@@ -22,19 +22,21 @@ export const PATCH = async (
 ) => {
   // delete employee from schedule
   try {
-    // we beed userScheduleId because one user can be duplicated in the schedule
-    const { userId, userScheduleId } = (await req.json()) as {
-      userId: Types.ObjectId;
-      userScheduleId: Types.ObjectId;
+    // we beed employeeScheduleId because one employee can be duplicated in the schedule
+    const { employeeId, employeeScheduleId } = (await req.json()) as {
+      employeeId: Types.ObjectId;
+      employeeScheduleId: Types.ObjectId;
     };
 
     const scheduleId = context.params.scheduleId;
 
     // check if the schedule ID is valid
-    if (isObjectIdValid([scheduleId, userId, userScheduleId]) !== true) {
+    if (
+      isObjectIdValid([scheduleId, employeeId, employeeScheduleId]) !== true
+    ) {
       return new NextResponse(
         JSON.stringify({
-          message: "Invalid schedule, user or userSchedule Id!",
+          message: "Invalid schedule, employee or employeeSchedule Id!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -46,7 +48,7 @@ export const PATCH = async (
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById({
       _id: scheduleId,
-      employeeSchedules: { $elemMatch: { userId: userId } },
+      employeeSchedules: { $elemMatch: { employeeId: employeeId } },
     })
       .select("_id employeeSchedules")
       .lean();
@@ -61,7 +63,7 @@ export const PATCH = async (
     // check if the employee is in the schedule
     const employeeSchedule: IEmployeeSchedule | null =
       schedule.employeesSchedules.find(
-        (emp) => emp._id == userScheduleId && emp.userId == userId
+        (emp) => emp._id == employeeScheduleId && emp.employeeId == employeeId
       ) || null;
 
     if (!employeeSchedule) {
@@ -72,14 +74,14 @@ export const PATCH = async (
     }
 
     let scheduleToDelete = schedule.employeesSchedules.find(
-      (schedule) => schedule._id == userScheduleId
+      (schedule) => schedule._id == employeeScheduleId
     );
 
     // Delete the employee from the schedule
     const updatedSchedule = await Schedule.findByIdAndUpdate(
       scheduleId,
       {
-        $pull: { employeesSchedules: { _id: userScheduleId } },
+        $pull: { employeesSchedules: { _id: employeeScheduleId } },
         $inc: {
           totalEmployeesScheduled: -(schedule?.employeesSchedules.length > 0
             ? 0
@@ -93,19 +95,19 @@ export const PATCH = async (
       { new: true, lean: true }
     );
 
-    // update user vacation days left
+    // update employee vacation days left
     if (updatedSchedule && scheduleToDelete?.vacation === true) {
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
+      const updatedEmployee = await Employee.findByIdAndUpdate(
+        employeeId,
         { $inc: { vacationDaysLeft: 1 } },
         { new: true, lean: true }
       );
 
-      if (!updatedUser) {
+      if (!updatedEmployee) {
         return new NextResponse(
           JSON.stringify({
             message:
-              "Update user vacation days left failed upon user schedule deletation!",
+              "Update employee vacation days left failed upon employee schedule deletation!",
           }),
           { status: 500, headers: { "Content-Type": "application/json" } }
         );

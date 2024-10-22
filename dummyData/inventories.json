@@ -8,7 +8,7 @@
                 {
                     "currentCountQuantity": 40,
                     "quantityNeeded": 20,
-                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "countedByEmployeeId": "66e92e066a5cfcc2a707696b",
                     "deviationPercent": 60,
                     "_id": "6713ae25fb3b6d8972f8406f",
                     "countedDate": "2024-10-19T13:03:33.797Z"
@@ -16,7 +16,7 @@
                 {
                     "currentCountQuantity": 35,
                     "quantityNeeded": 25,
-                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "countedByEmployeeId": "66e92e066a5cfcc2a707696b",
                     "deviationPercent": 12.5,
                     "_id": "6713ae2cfb3b6d8972f84081",
                     "countedDate": "2024-10-19T13:03:40.511Z"
@@ -24,7 +24,7 @@
                 {
                     "currentCountQuantity": 30,
                     "quantityNeeded": 30,
-                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "countedByEmployeeId": "66e92e066a5cfcc2a707696b",
                     "deviationPercent": 14.285714285714285,
                     "_id": "6713ae30fb3b6d8972f84094",
                     "countedDate": "2024-10-19T13:03:44.487Z"
@@ -32,11 +32,11 @@
                 {
                     "currentCountQuantity": 40,
                     "quantityNeeded": 20,
-                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "countedByEmployeeId": "66e92e066a5cfcc2a707696b",
                     "deviationPercent": 100,
                     "comments": "commentsUpdated",
                     "reedited": {
-                        "reeditedByUserId": "66e92e066a5cfcc2a707696b",
+                        "reeditedByEmployeeId": "66e92e066a5cfcc2a707696b",
                         "date": "2024-10-19T13:23:11.823Z",
                         "reason": "no reason",
                         "originalValues": {
@@ -51,7 +51,7 @@
                 {
                     "currentCountQuantity": 25,
                     "quantityNeeded": 35,
-                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "countedByEmployeeId": "66e92e066a5cfcc2a707696b",
                     "deviationPercent": 37.5,
                     "lastCount": false,
                     "_id": "6714973a43e91b4ef06a3aa2",
@@ -60,7 +60,7 @@
                 {
                     "currentCountQuantity": 35,
                     "quantityNeeded": 25,
-                    "countedByUserId": "66e92e066a5cfcc2a707696b",
+                    "countedByEmployeeId": "66e92e066a5cfcc2a707696b",
                     "deviationPercent": -40,
                     "lastCount": true,
                     "_id": "6714975b43e91b4ef06a3aa7",

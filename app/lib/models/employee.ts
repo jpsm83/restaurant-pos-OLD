@@ -1,6 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
-import { idTypes, userRoles } from "../enums.js";
+import { idTypes, employeeRoles } from "../enums.js";
 
 const personalDetailsSchema = new Schema({
   // required fields
@@ -18,52 +18,52 @@ const salarySchema = new Schema({
     enum: ["Hourly", "Daily", "Weekly", "Monthly"],
     required: true,
   }, // frequency of the payment
-  grossSalary: { type: Number, required: true }, // hourly user salary before taxes
-  netSalary: { type: Number, required: true }, // net user salary after taxes
+  grossSalary: { type: Number, required: true }, // hourly employee salary before taxes
+  netSalary: { type: Number, required: true }, // net employee salary after taxes
 });
 
-const userSchema = new Schema(
+const employeeSchema = new Schema(
   {
     // required fields
-    username: { type: String, required: true, unique: true }, // username for the user
+    employeeName: { type: String, required: true, unique: true }, // employeeName for the employee
     email: { type: String, required: true, unique: true }, // email
-    password: { type: String, required: true }, // password for the user
+    password: { type: String, required: true }, // password for the employee
     idType: {
       type: String,
       enum: idTypes,
       required: true,
-    }, // type of ID used by the user
-    idNumber: { type: String, required: true, unique: true }, // ID number of the user
-    allUserRoles: [
+    }, // type of ID used by the employee
+    idNumber: { type: String, required: true, unique: true }, // ID number of the employee
+    allEmployeeRoles: [
       {
         type: String,
-        enum: userRoles,
+        enum: employeeRoles,
         required: true,
       },
-    ], // all roles of the user, can be multiple
-    personalDetails: { type: personalDetailsSchema, required: true }, // personal details of the user
-    taxNumber: { type: String, required: true, unique: true }, // tax number of the user
-    joinDate: { type: Date, required: true }, // date when the user joined the business
-    active: { type: Boolean, required: true, default: true }, // if the user is active, could be a sesonality worker
-    onDuty: { type: Boolean, required: true, default: false }, // if the user is on duty, shift working right now
+    ], // all roles of the employee, can be multiple
+    personalDetails: { type: personalDetailsSchema, required: true }, // personal details of the employee
+    taxNumber: { type: String, required: true, unique: true }, // tax number of the employee
+    joinDate: { type: Date, required: true }, // date when the employee joined the business
+    active: { type: Boolean, required: true, default: true }, // if the employee is active, could be a sesonality worker
+    onDuty: { type: Boolean, required: true, default: false }, // if the employee is on duty, shift working right now
     vacationDaysPerYear: { type: Number }, // days of holidays per year
     vacationDaysLeft: { type: Number }, // days of holidays left
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
-    }, // business where the user works
+    }, // business where the employee works
 
     // optional fields
     deviceToken: { type: String }, // token for push notifications with Firebase Cloud Messaging
-    currentShiftRole: { type: String, enum: userRoles }, // current shift role of the user
-    address: addressSchema, // address of the user
-    imageUrl: { type: String }, // photo of the user
+    currentShiftRole: { type: String, enum: employeeRoles }, // current shift role of the employee
+    address: addressSchema, // address of the employee
+    imageUrl: { type: String }, // photo of the employee
     // *** IMPORTANTE ***
-    // user might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
+    // employee might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
     contractHoursWeek: { type: Number }, // contract hours per week in milliseconds
-    salary: { type: salarySchema }, // salary of the user
-    terminatedDate: { type: Date }, // date when the user left the business
+    salary: { type: salarySchema }, // salary of the employee
+    terminatedDate: { type: Date }, // date when the employee left the business
     notifications: {
       type: [
         {
@@ -76,11 +76,11 @@ const userSchema = new Schema(
         },
       ],
       default: undefined,
-    }, // if the user wants to receive notifications
-    comments: { type: String }, // comments about the user
+    }, // if the employee wants to receive notifications
+    comments: { type: String }, // comments about the employee
   },
   { timestamps: true }
 );
 
-const User = models.User || model("User", userSchema);
-export default User;
+const Employee = models.Employee || model("Employee", employeeSchema);
+export default Employee;

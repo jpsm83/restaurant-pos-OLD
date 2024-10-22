@@ -7,25 +7,27 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
-// @desc    Create new users
-// @route   PATCH /users/:userId/updateReadFlag/:notificationId
+// @desc    Create new employees
+// @route   PATCH /employees/:employeeId/updateReadFlag/:notificationId
 // @access  Private
 export const PATCH = async (
   req: Request,
   context: {
-    params: { userId: Types.ObjectId; notificationId: Types.ObjectId };
+    params: { employeeId: Types.ObjectId; notificationId: Types.ObjectId };
   }
 ) => {
-  // update notification readFlag from user
+  // update notification readFlag from employee
   try {
-    const { userId, notificationId } = context.params;
+    const { employeeId, notificationId } = context.params;
 
-    // validate userId
-    if (!isObjectIdValid([userId, notificationId])) {
+    // validate employeeId
+    if (!isObjectIdValid([employeeId, notificationId])) {
       return new NextResponse(
-        JSON.stringify({ message: "User or notification ID is not valid!" }),
+        JSON.stringify({
+          message: "Employee or notification ID is not valid!",
+        }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -37,9 +39,9 @@ export const PATCH = async (
     await connectDb();
 
     // Update the readFlag for the specific notification
-    const updatedUser = await User.findOneAndUpdate(
+    const updatedEmployee = await Employee.findOneAndUpdate(
       {
-        _id: userId,
+        _id: employeeId,
         "notifications.notificationId": notificationId,
       },
       { $set: { "notifications.$.readFlag": true } },
@@ -47,9 +49,9 @@ export const PATCH = async (
     );
 
     // Check if the purchase was found and updated
-    if (!updatedUser) {
+    if (!updatedEmployee) {
       return new NextResponse(
-        JSON.stringify({ message: "User notification not updated!" }),
+        JSON.stringify({ message: "Employee notification not updated!" }),
         {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -59,13 +61,13 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: `User notification updated successfully!`,
+        message: `Employee notification updated successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     return handleApiError(
-      "Update notification read flag from user failed!",
+      "Update notification read flag from employee failed!",
       error
     );
   }

@@ -12,7 +12,7 @@ export interface IPurchase {
   imageUrl?: string;
   purchaseDate: Date;
   businessId: Types.ObjectId;
-  purchasedByUserId: Types.ObjectId;
+  purchasedByEmployeeId: Types.ObjectId;
   purchaseInventoryItems?: IPurchaseItem[];
   oneTimePurchase?: object;
   totalAmount: number;

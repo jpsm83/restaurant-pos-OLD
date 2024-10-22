@@ -10,17 +10,17 @@ const inventoryCountSchema = new Schema({
   // *************************************************************
 
   quantityNeeded: { type: Number, default: 0 }, // quantity needed to reach the parLevel. Difference between the parLevel and the currentCountQuantity. parLevel is defined in the supplierGood - all related with the MEASUREMENTUNIT
-  countedByUserId: {
+  countedByEmployeeId: {
     type: Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Employee",
     required: true,
-  }, // User who counted, not the user in session but a user that is assigned to count the inventory
+  }, // Employee who counted, not the employee in session but a employee that is assigned to count the inventory
   deviationPercent: { type: Number, required: true, default: 0 }, // differece between the dynamicSystemCount and the currentCountQuantity in percentage. For a perfect inventory, this number should be 0
   lastCount: { type: Boolean, required: true, default: true }, // if this is the last count of the month, only this one can be updated
   comments: { type: String }, // Comments about the inventory
-  // counte cannot be re-edited once is send, if there is a mistake, the user will have to contact the admin to re-edit and this will be recorded in the reedited field
+  // counte cannot be re-edited once is send, if there is a mistake, the employee will have to contact the admin to re-edit and this will be recorded in the reedited field
   reedited: {
-    reeditedByUserId: { type: Schema.Types.ObjectId, ref: "User" }, // User who re-edited - user in session
+    reeditedByEmployeeId: { type: Schema.Types.ObjectId, ref: "Employee" }, // Employee who re-edited - employee in session
     date: { type: Date }, // Date when the re-edit occurred
     reason: { type: String, required: true }, // Reason for the re-edit
     originalValues: {

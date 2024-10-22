@@ -46,7 +46,7 @@ export const GET = async (req: Request) => {
           },
         });
   } catch (error) {
-    return handleApiError("Get all users failed!", error);
+    return handleApiError("Get all promotions failed!", error);
   }
 };
 

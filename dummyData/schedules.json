@@ -16,7 +16,7 @@
             "shiftHours": 28800000,
             "employeeCost": 80,
             "_id": {"$oid":"66f94e6d3d7f3cfc4877d0c4"},
-            "userId": {"$oid":"66e92e066a5cfcc2a707696b"}
+            "employeeId": {"$oid":"66e92e066a5cfcc2a707696b"}
         },
         {
             "timeRange": {
@@ -28,7 +28,7 @@
             "shiftHours": 28800000,
             "employeeCost": 80,
             "_id": {"$oid":"66f94e6d3d7f3cfc4877d0c3"},
-            "userId": {"$oid":"66e92e066a5cfcc2a707696b"}
+            "employeeId": {"$oid":"66e92e066a5cfcc2a707696b"}
         }, {
             "timeRange": {
                 "startTime": "2024-09-22T19:00:00.000Z",
@@ -39,7 +39,7 @@
             "shiftHours": 28800000,
             "employeeCost": 80,
             "_id": {"$oid":"66f94e6d3d7f3cfc4877d0c2"},
-            "userId": {"$oid":"66e92e066a5cfcc2a707696b"}
+            "employeeId": {"$oid":"66e92e066a5cfcc2a707696b"}
         }
     ],
     "createdAt": "2024-09-24T10:54:06.080Z",

@@ -75,7 +75,7 @@ export const GET = async (
 
     // fetch daily reports with the given business ID and date
     const dailySalesReports = await DailySalesReport.find(query)
-      .populate("usersDailySalesReport.userId", "username")
+      .populate("employeesDailySalesReport.employeeId", "employeeName")
       .lean();
 
     return !dailySalesReports.length

@@ -9,8 +9,8 @@ import { checkPrinterConnection } from "./utils/checkPrinterConnection";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
-// import user model
-import User from "@/app/lib/models/employee";
+// import employee model
+import Employee from "@/app/lib/models/employee";
 import Printer from "@/app/lib/models/printer";
 import SalesPoint from "@/app/lib/models/salesPoint";
 
@@ -29,9 +29,9 @@ export const GET = async (req: Request) => {
         model: Printer,
       })
       .populate({
-        path: "usersAllowedToPrintDataIds",
-        select: "username",
-        model: User,
+        path: "employeesAllowedToPrintDataIds",
+        select: "employeeName",
+        model: Employee,
       })
       .populate({
         path: "configurationSetupToPrintOrders.salesPointIds",
@@ -39,9 +39,9 @@ export const GET = async (req: Request) => {
         model: SalesPoint,
       })
       .populate({
-        path: "configurationSetupToPrintOrders.excludeUserIds",
-        select: "username",
-        model: User,
+        path: "configurationSetupToPrintOrders.excludeEmployeeIds",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 
@@ -61,7 +61,7 @@ export const GET = async (req: Request) => {
   }
 };
 
-// printer is created without any definition of what or where it will be printed and also without any user allowed to print data
+// printer is created without any definition of what or where it will be printed and also without any employee allowed to print data
 // all those properties will be add on update routes for the printer
 // @desc    Create new printer
 // @desc    POST /businessId
@@ -75,7 +75,7 @@ export const POST = async (req: Request) => {
       port,
       businessId,
       backupPrinterId,
-      usersAllowedToPrintDataIds,
+      employeesAllowedToPrintDataIds,
     } = (await req.json()) as IPrinter;
 
     // check required fields
@@ -113,16 +113,16 @@ export const POST = async (req: Request) => {
       }
     }
 
-    // validate usersAllowedToPrintDataIds if it exists
-    if (usersAllowedToPrintDataIds) {
+    // validate employeesAllowedToPrintDataIds if it exists
+    if (employeesAllowedToPrintDataIds) {
       if (
-        !Array.isArray(usersAllowedToPrintDataIds) ||
-        isObjectIdValid(usersAllowedToPrintDataIds) !== true
+        !Array.isArray(employeesAllowedToPrintDataIds) ||
+        isObjectIdValid(employeesAllowedToPrintDataIds) !== true
       ) {
         return new NextResponse(
           JSON.stringify({
             message:
-              "UsersAllowedToPrintDataIds have to be an array of valid Ids!",
+              "EmployeesAllowedToPrintDataIds have to be an array of valid Ids!",
           }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
@@ -159,7 +159,7 @@ export const POST = async (req: Request) => {
       port,
       businessId,
       backupPrinterId: backupPrinterId || undefined,
-      usersAllowedToPrintDataIds: usersAllowedToPrintDataIds || [],
+      employeesAllowedToPrintDataIds: employeesAllowedToPrintDataIds || [],
     };
 
     // create a new printer

@@ -16,7 +16,7 @@ import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 // imported models
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
@@ -49,9 +49,9 @@ export const GET = async () => {
         model: SalesInstance,
       })
       .populate({
-        path: "userId",
-        select: "username allUserRoles currentShiftRole",
-        model: User,
+        path: "employeeId",
+        select: "employeeName allEmployeeRoles currentShiftRole",
+        model: Employee,
       })
       .populate({
         path: "businessGoodsIds",
@@ -131,31 +131,31 @@ export const POST = async (req: Request) => {
   //]
 
   // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
-  const { ordersArr, userId, salesInstanceId, businessId } =
+  const { ordersArr, employeeId, salesInstanceId, businessId } =
     (await req.json()) as {
       ordersArr: Partial<IOrder>[];
-      userId: Types.ObjectId;
+      employeeId: Types.ObjectId;
       salesInstanceId: Types.ObjectId;
       businessId: Types.ObjectId;
     };
 
   // check required fields
-  if (!ordersArr || !userId || !salesInstanceId || !businessId) {
+  if (!ordersArr || !employeeId || !salesInstanceId || !businessId) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "OrdersArr, userId, salesInstanceId and businessId are required fields!",
+          "OrdersArr, employeeId, salesInstanceId and businessId are required fields!",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
   // validate ids
-  if (isObjectIdValid([userId, businessId, salesInstanceId]) !== true) {
+  if (isObjectIdValid([employeeId, businessId, salesInstanceId]) !== true) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "BusinessGoodsIds, userId, businessId or salesInstanceId not valid!",
+          "BusinessGoodsIds, employeeId, businessId or salesInstanceId not valid!",
       }),
       {
         status: 400,
@@ -219,7 +219,7 @@ export const POST = async (req: Request) => {
     // ORDERS CAN BE DUPLICATED WITH DIFFERENT IDs ***
     // ***********************************************
 
-    // orderStatus will always be "Sent" at the time of creation unless user set it to something else manually at the front end
+    // orderStatus will always be "Sent" at the time of creation unless employee set it to something else manually at the front end
     // all orders sent will have their own screen where employees can change the status of the order (kitchen, bar, merchandise, etc.)
 
     // Prepare orders for bulk insertion
@@ -227,7 +227,7 @@ export const POST = async (req: Request) => {
       dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
       billingStatus: "Open",
       orderStatus: "Sent",
-      userId,
+      employeeId,
       salesInstanceId,
       businessId,
       orderGrossPrice: order.orderGrossPrice,
@@ -272,7 +272,7 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // set the order code for user tracking purposes
+    // set the order code for employee tracking purposes
     // it will be add on the salesInstance.salesGroup array related with this group of orders
     const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const day = String(new Date().getDate()).padStart(2, "0");

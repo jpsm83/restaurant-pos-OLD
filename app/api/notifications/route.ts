@@ -10,7 +10,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import Business from "@/app/lib/models/business";
 
@@ -24,9 +24,9 @@ export const GET = async () => {
 
     const notifications = await Notification.find()
       .populate({
-        path: "userRecipientsId",
-        select: "username",
-        model: User,
+        path: "employeeRecipientsId",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 
@@ -50,31 +50,34 @@ export const GET = async () => {
 // @route   POST /notifications
 // @access  Private
 export const POST = async (req: Request) => {
-  // userRecipientsId have to be an array of user IDs coming from the front end
+  // employeeRecipientsId have to be an array of employee IDs coming from the front end
   const {
     notificationType,
     message,
-    userRecipientsId,
+    employeeRecipientsId,
     businessId,
-    userSenderId,
+    employeeSenderId,
   } = (await req.json()) as INotification;
 
   // check required fields
-  if (!notificationType || !message || !userRecipientsId || !businessId) {
+  if (!notificationType || !message || !employeeRecipientsId || !businessId) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "NotificationType, message, userRecipientsId and businessId are required!",
+          "NotificationType, message, employeeRecipientsId and businessId are required!",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  // validate userRecipientsId
-  if (!Array.isArray(userRecipientsId) || userRecipientsId.length === 0) {
+  // validate employeeRecipientsId
+  if (
+    !Array.isArray(employeeRecipientsId) ||
+    employeeRecipientsId.length === 0
+  ) {
     return new NextResponse(
       JSON.stringify({
-        message: "Recipients must be an array of user IDs!",
+        message: "Recipients must be an array of employee IDs!",
       }),
       {
         status: 400,
@@ -84,12 +87,12 @@ export const POST = async (req: Request) => {
   }
 
   // validation ids
-  const usersIds = [...userRecipientsId];
-  if (userSenderId) {
-    usersIds.push(userSenderId);
+  const employeesIds = [...employeeRecipientsId];
+  if (employeeSenderId) {
+    employeesIds.push(employeeSenderId);
   }
 
-  if (!isObjectIdValid([...usersIds, businessId])) {
+  if (!isObjectIdValid([...employeesIds, businessId])) {
     return new NextResponse(
       JSON.stringify({
         message: "Invalid array of IDs!",
@@ -105,9 +108,9 @@ export const POST = async (req: Request) => {
   const notificationObj = {
     notificationType,
     message,
-    userRecipientsId,
+    employeeRecipientsId,
     businessId,
-    userSenderId: userSenderId || undefined,
+    employeeSenderId: employeeSenderId || undefined,
   };
 
   // connect before first call to DB
@@ -117,15 +120,17 @@ export const POST = async (req: Request) => {
   session.startTransaction();
 
   try {
-    // check if the business and users exist
-    const [business, users] = await Promise.all([
+    // check if the business and employees exist
+    const [business, employees] = await Promise.all([
       Business.exists({ _id: businessId }),
-      User.exists({ _id: { $in: usersIds } }),
+      Employee.exists({ _id: { $in: employeesIds } }),
     ]);
 
-    if (!business || !users) {
+    if (!business || !employees) {
       await session.abortTransaction();
-      const message = !business ? "Business not found!" : "Users not found!";
+      const message = !business
+        ? "Business not found!"
+        : "Employees not found!";
       return new NextResponse(JSON.stringify({ message: message }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
@@ -149,9 +154,9 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // add the notification to the userRecipientsId users
-    const sendNotifications = await User.updateMany(
-      { _id: { $in: userRecipientsId } },
+    // add the notification to the employeeRecipientsId employees
+    const sendNotifications = await Employee.updateMany(
+      { _id: { $in: employeeRecipientsId } },
       {
         $push: {
           notifications: {
@@ -163,12 +168,12 @@ export const POST = async (req: Request) => {
       { session }
     );
 
-    // check if the notification was added to the users
+    // check if the notification was added to the employees
     if (sendNotifications.modifiedCount === 0) {
       await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
-          message: "Failed to update users with notification!",
+          message: "Failed to update employees with notification!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -178,7 +183,7 @@ export const POST = async (req: Request) => {
 
     return new NextResponse(
       JSON.stringify({
-        message: `Notification message created and sent to users`,
+        message: `Notification message created and sent to employees`,
       }),
       {
         status: 201,

@@ -9,7 +9,7 @@ export interface IOrder {
   orderGrossPrice: number;
   orderNetPrice: number;
   orderCostPrice: number;
-  userId: Types.ObjectId;
+  employeeId: Types.ObjectId;
   salesInstanceId: Types.ObjectId;
   businessGoodsIds: Types.ObjectId[];
   businessId: Types.ObjectId;

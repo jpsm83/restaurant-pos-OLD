@@ -14,14 +14,14 @@ const salesInstanceSchema = new Schema(
     status: { type: String, enum: salesInstanceStatus, default: "Occupied" }, // status of the table
     openedById: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Employee",
       required: true,
-    }, // user that opened the table
+    }, // employee that opened the table
     responsibleById: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Employee",
       required: true,
-    }, // user that is responsible for the table - one user can open, finish the shift then pass the responsability to another user
+    }, // employee that is responsible for the table - one employee can open, finish the shift then pass the responsability to another employee
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
@@ -45,7 +45,7 @@ const salesInstanceSchema = new Schema(
       default: undefined,
     }, // orders separate by groups of time ordered made in the salesInstance
     closedAt: { type: Date }, // date and time when the table was closed
-    closedById: { type: Schema.Types.ObjectId, ref: "User" }, // user that closed the table, same as responsibleBy
+    closedById: { type: Schema.Types.ObjectId, ref: "Employee" }, // employee that closed the table, same as responsibleBy
   },
   { timestamps: true }
 );

@@ -1,6 +1,6 @@
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import { addUserToDailySalesReport } from "../../dailySalesReports/utils/addUserToDailySalesReport";
+import { addEmployeeToDailySalesReport } from "../../dailySalesReports/utils/addEmployeeToDailySalesReport";
 
 // imported interfaces
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
@@ -36,15 +36,15 @@ export const createSalesInstance = async (
     // connect before first call to DB
     await connectDb();
 
-    // Check if the user exists in the dailySalesReport
+    // Check if the employee exists in the dailySalesReport
     if (
       !(await DailySalesReport.exists({
         dailyReferenceNumber: dailyReferenceNumber,
         businessId: businessId,
-        "usersDailySalesReport.userId": openedById,
+        "employeesDailySalesReport.employeeId": openedById,
       }))
     ) {
-      await addUserToDailySalesReport(openedById, businessId);
+      await addEmployeeToDailySalesReport(openedById, businessId);
     }
 
     // Create the sales location and return it

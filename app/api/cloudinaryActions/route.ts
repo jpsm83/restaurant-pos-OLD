@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const businessGoodId = data.get("businessGoodId") || null; // subfolder = "businessGoods"
     const supplierGoodId = data.get("supplierGoodId") || null; // subfolder = "supplierGoods"
     const supplierId = data.get("supplierId") || null; // subfolder = "suppliers"
-    const userId = data.get("userId") || null; // subfolder = "users"
+    const employeeId = data.get("employeeId") || null; // subfolder = "employees"
     const purchaseId = data.get("purchaseId") || null; // subfolder = "purchases"
 
     let documentModelResult: any = await documentModelExists(
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       businessGoodId,
       supplierGoodId,
       supplierId,
-      userId,
+      employeeId,
       purchaseId
     );
 
@@ -127,7 +127,7 @@ export async function DELETE(req: Request) {
       businessGoodId,
       supplierGoodId,
       supplierId,
-      userId,
+      employeeId,
       purchaseId,
     } = await req.json();
 
@@ -145,7 +145,7 @@ export async function DELETE(req: Request) {
       businessGoodId,
       supplierGoodId,
       supplierId,
-      userId,
+      employeeId,
       purchaseId
     );
 

@@ -6,7 +6,7 @@ export const employeesValidation = (employee: IEmployeeSchedule) => {
     return "Invalid employee object";
   }
 
-  const validKeys = ["userId", "role", "timeRange"];
+  const validKeys = ["employeeId", "role", "timeRange"];
 
   // check required fields
   for (const key of validKeys) {

@@ -18,7 +18,7 @@ import Supplier from "@/app/lib/models/supplier";
 import Purchase from "@/app/lib/models/purchase";
 
 // *** This is all the supplier goods that are purchased in a single purchase ***
-// Also there is the option of one time purchase, where the user can add a new supplier and the goods in the same form without the need to create a supplier first
+// Also there is the option of one time purchase, where the employee can add a new supplier and the goods in the same form without the need to create a supplier first
 
 // @desc    Get all purchases
 // @route   GET /purchases?startDate=<date>&endDate=<date>
@@ -101,7 +101,7 @@ export const POST = async (req: Request) => {
     supplierId,
     purchaseDate,
     businessId,
-    purchasedByUserId,
+    purchasedByEmployeeId,
     purchaseInventoryItems,
     receiptId,
     comment,
@@ -112,14 +112,14 @@ export const POST = async (req: Request) => {
     !supplierId ||
     !purchaseDate ||
     !businessId ||
-    !purchasedByUserId ||
+    !purchasedByEmployeeId ||
     !purchaseInventoryItems ||
     !receiptId
   ) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "SupplierId, purchaseDate, businessId, purchasedByUserId, purchaseInventoryItems and reciptId are required!",
+          "SupplierId, purchaseDate, businessId, purchasedByEmployeeId, purchaseInventoryItems and reciptId are required!",
       }),
       {
         status: 400,
@@ -132,10 +132,10 @@ export const POST = async (req: Request) => {
 
   // check if ids are valid
   // we dont validate supplierId because it can be a string "One Time Purchase"
-  if (!isObjectIdValid([businessId, purchasedByUserId])) {
+  if (!isObjectIdValid([businessId, purchasedByEmployeeId])) {
     return new NextResponse(
       JSON.stringify({
-        message: "Business or user IDs not valid!",
+        message: "Business or employee IDs not valid!",
       }),
       {
         status: 400,
@@ -255,7 +255,7 @@ export const POST = async (req: Request) => {
       supplierId: newSupplierId,
       purchaseDate,
       businessId,
-      purchasedByUserId,
+      purchasedByEmployeeId,
       purchaseInventoryItems: newPurchaseInventoryItems,
       oneTimePurchase: isOneTimePurchase,
       totalAmount,

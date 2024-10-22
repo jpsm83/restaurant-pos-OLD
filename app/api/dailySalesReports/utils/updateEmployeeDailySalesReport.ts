@@ -7,7 +7,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 // imported interfaces
 import {
   IGoodsReduced,
-  IUserDailySalesReport,
+  IEmployeeDailySalesReport,
 } from "@/app/lib/interface/IDailySalesReport";
 import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 
@@ -17,37 +17,37 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesInstance from "@/app/lib/models/salesInstance";
 
-// this function will update individual user daily sales report
-// it will be fired individualy when the user closes his daily sales report for the day or if he just want to see the report at current time
-// it also will be fired when manager closes the day sales report, running for all users
-export const updateUsersDailySalesReport = async (
-  userIds: Types.ObjectId[], // Now accepts an array of userIds
+// this function will update individual employee daily sales report
+// it will be fired individualy when the employee closes his daily sales report for the day or if he just want to see the report at current time
+// it also will be fired when manager closes the day sales report, running for all employees
+export const updateEmployeesDailySalesReport = async (
+  employeeIds: Types.ObjectId[], // Now accepts an array of employeeIds
   dailyReferenceNumber: number
 ) => {
   try {
-    // validate userIds
-    if (isObjectIdValid(userIds) !== true) {
-      return "Invalid userIds!";
+    // validate employeeIds
+    if (isObjectIdValid(employeeIds) !== true) {
+      return "Invalid employeeIds!";
     }
 
     // check required fields
     if (!dailyReferenceNumber) {
-      return "UserIds and dailyReferenceNumber are required!";
+      return "EmployeeIds and dailyReferenceNumber are required!";
     }
 
     // connect before first call to DB
     await connectDb();
 
-    // Array to collect results for each user
-    const userReports: IUserDailySalesReport[] = [];
+    // Array to collect results for each employee
+    const employeeReports: IEmployeeDailySalesReport[] = [];
     const errors: string[] = [];
 
-    // Loop through each userId and process the report
-    for (const userId of userIds) {
+    // Loop through each employeeId and process the report
+    for (const employeeId of employeeIds) {
       try {
-        // Fetch all sales instance closed by the user for the given dailyReferenceNumber
+        // Fetch all sales instance closed by the employee for the given dailyReferenceNumber
         const salesInstance = await SalesInstance.find({
-          responsibleById: userId,
+          responsibleById: employeeId,
           dailyReferenceNumber: dailyReferenceNumber,
         })
           .populate({
@@ -64,15 +64,15 @@ export const updateUsersDailySalesReport = async (
                 "_id name mainCategory subCategory sellingPrice costPrice",
             },
             select:
-              "userId paymentMethod billingStatus orderGrossPrice orderNetPrice orderTips orderCostPrice",
+              "employeeId paymentMethod billingStatus orderGrossPrice orderNetPrice orderTips orderCostPrice",
           })
           .select(
             "dailyReferenceNumber status businessId orderNetPrice orderTips guests closedById"
           )
           .lean();
 
-        // Initialize user sales report object
-        let userGoodsReport: {
+        // Initialize employee sales report object
+        let employeeGoodsReport: {
           goodsSold: IGoodsReduced[];
           goodsVoid: IGoodsReduced[];
           goodsInvited: IGoodsReduced[];
@@ -82,10 +82,10 @@ export const updateUsersDailySalesReport = async (
           goodsInvited: [],
         };
 
-        let userDailySalesReportObj: IUserDailySalesReport = {
-          userId: userId,
+        let employeeDailySalesReportObj: IEmployeeDailySalesReport = {
+          employeeId: employeeId,
           hasOpenSalesInstances: false,
-          userPaymentMethods: [] as IPaymentMethod[],
+          employeePaymentMethods: [] as IPaymentMethod[],
           totalSalesBeforeAdjustments: 0,
           totalNetPaidAmount: 0,
           totalTipsReceived: 0,
@@ -94,19 +94,19 @@ export const updateUsersDailySalesReport = async (
           averageCustomerExpenditure: 0,
         };
 
-// ******************************************
-// MUST REFACTOR THSI CODE BLOCK
-// salesInstance.ordersIds does not exist anymore
-// now it is salesInstance.salesGroup.ordersIds
-// ****************************************
+        // ******************************************
+        // MUST REFACTOR THSI CODE BLOCK
+        // salesInstance.ordersIds does not exist anymore
+        // now it is salesInstance.salesGroup.ordersIds
+        // ****************************************
 
-        // Process each table for the user
+        // Process each table for the employee
         if (salesInstance && salesInstance.length > 0) {
           salesInstance.forEach((eachTableDocument) => {
-            userDailySalesReportObj.hasOpenSalesInstances =
+            employeeDailySalesReportObj.hasOpenSalesInstances =
               eachTableDocument.status !== "Closed"
                 ? true
-                : userDailySalesReportObj.hasOpenSalesInstances;
+                : employeeDailySalesReportObj.hasOpenSalesInstances;
 
             // Process orders in the table
             if (
@@ -116,7 +116,7 @@ export const updateUsersDailySalesReport = async (
               eachTableDocument.ordersIds.forEach((order: any) => {
                 order.paymentMethod.forEach((payment: IPaymentMethod) => {
                   const existingPayment =
-                    userDailySalesReportObj?.userPaymentMethods?.find(
+                    employeeDailySalesReportObj?.employeePaymentMethods?.find(
                       (p: any) =>
                         p.paymentMethodType === payment.paymentMethodType &&
                         p.methodBranch === payment.methodBranch
@@ -126,7 +126,7 @@ export const updateUsersDailySalesReport = async (
                     existingPayment.methodSalesTotal +=
                       payment.methodSalesTotal;
                   } else {
-                    userDailySalesReportObj?.userPaymentMethods?.push({
+                    employeeDailySalesReportObj?.employeePaymentMethods?.push({
                       paymentMethodType: payment.paymentMethodType,
                       methodBranch: payment.methodBranch,
                       methodSalesTotal: payment.methodSalesTotal,
@@ -134,13 +134,13 @@ export const updateUsersDailySalesReport = async (
                   }
                 });
 
-                userDailySalesReportObj.totalNetPaidAmount +=
+                employeeDailySalesReportObj.totalNetPaidAmount +=
                   order.orderNetPrice ?? 0;
-                userDailySalesReportObj.totalTipsReceived +=
+                employeeDailySalesReportObj.totalTipsReceived +=
                   order.orderTips ?? 0;
-                userDailySalesReportObj.totalSalesBeforeAdjustments +=
+                employeeDailySalesReportObj.totalSalesBeforeAdjustments +=
                   order.orderGrossPrice ?? 0;
-                userDailySalesReportObj.totalCostOfGoodsSold +=
+                employeeDailySalesReportObj.totalCostOfGoodsSold +=
                   order.orderCostPrice ?? 0;
 
                 // Update business goods sales report
@@ -171,13 +171,13 @@ export const updateUsersDailySalesReport = async (
                     // Update the correct array based on billing status
                     switch (order.billingStatus) {
                       case "Paid":
-                        updateGoodsArray(userGoodsReport.goodsSold);
+                        updateGoodsArray(employeeGoodsReport.goodsSold);
                         break;
                       case "Void":
-                        updateGoodsArray(userGoodsReport.goodsVoid);
+                        updateGoodsArray(employeeGoodsReport.goodsVoid);
                         break;
                       case "Invitation":
-                        updateGoodsArray(userGoodsReport.goodsInvited);
+                        updateGoodsArray(employeeGoodsReport.goodsInvited);
                         break;
                       default:
                         break;
@@ -188,54 +188,55 @@ export const updateUsersDailySalesReport = async (
             }
 
             // Update total customers served
-            userDailySalesReportObj.totalCustomersServed +=
+            employeeDailySalesReportObj.totalCustomersServed +=
               eachTableDocument.guests ?? 0;
           });
         }
 
         // Calculate average customer expenditure
-        if ((userDailySalesReportObj.totalCustomersServed ?? 0) > 0) {
-          userDailySalesReportObj.averageCustomerExpenditure =
-            (userDailySalesReportObj.totalSalesBeforeAdjustments ?? 0) /
-            (userDailySalesReportObj.totalCustomersServed ?? 0);
+        if ((employeeDailySalesReportObj.totalCustomersServed ?? 0) > 0) {
+          employeeDailySalesReportObj.averageCustomerExpenditure =
+            (employeeDailySalesReportObj.totalSalesBeforeAdjustments ?? 0) /
+            (employeeDailySalesReportObj.totalCustomersServed ?? 0);
         }
 
-        // Add goods reports to user object
-        userDailySalesReportObj.soldGoods = userGoodsReport.goodsSold;
-        userDailySalesReportObj.voidedGoods = userGoodsReport.goodsVoid;
-        userDailySalesReportObj.invitedGoods = userGoodsReport.goodsInvited;
+        // Add goods reports to employee object
+        employeeDailySalesReportObj.soldGoods = employeeGoodsReport.goodsSold;
+        employeeDailySalesReportObj.voidedGoods = employeeGoodsReport.goodsVoid;
+        employeeDailySalesReportObj.invitedGoods =
+          employeeGoodsReport.goodsInvited;
 
-        userDailySalesReportObj.totalVoidValue =
-          userGoodsReport.goodsVoid.reduce(
+        employeeDailySalesReportObj.totalVoidValue =
+          employeeGoodsReport.goodsVoid.reduce(
             (acc, curr) => acc + curr.totalPrice,
             0
           );
-        userDailySalesReportObj.totalInvitedValue =
-          userGoodsReport.goodsInvited.reduce(
+        employeeDailySalesReportObj.totalInvitedValue =
+          employeeGoodsReport.goodsInvited.reduce(
             (acc, curr) => acc + curr.totalPrice,
             0
           );
 
         // Add the updated result to the array
-        userReports.push(userDailySalesReportObj);
+        employeeReports.push(employeeDailySalesReportObj);
       } catch (error: any) {
-        // Log errors for specific users
-        errors.push(`Error updating user ${userId}: ${error.message}`);
+        // Log errors for specific employees
+        errors.push(`Error updating employee ${employeeId}: ${error.message}`);
       }
     }
 
-    // Update DailySalesReport after processing all users
+    // Update DailySalesReport after processing all employees
     await DailySalesReport.updateOne(
       { dailyReferenceNumber },
-      { $set: { usersDailySalesReport: userReports } },
+      { $set: { employeesDailySalesReport: employeeReports } }
     );
 
     // Return both successful reports and errors
     return {
-      updatedUsers: userReports,
+      updatedEmployees: employeeReports,
       errors,
     };
   } catch (error: any) {
-    return `Failed to update user daily sales reports! ${error.message}`;
+    return `Failed to update employee daily sales reports! ${error.message}`;
   }
 };

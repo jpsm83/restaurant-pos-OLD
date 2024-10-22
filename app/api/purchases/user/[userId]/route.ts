@@ -12,17 +12,17 @@ import Supplier from "@/app/lib/models/supplier";
 import SupplierGood from "@/app/lib/models/supplierGood";
 
 // @desc    GET purchase by ID
-// @route   GET /purchases/user/:userId?startDate=<date>&endDate=<date>
+// @route   GET /purchases/employee/:employeeId?startDate=<date>&endDate=<date>
 // @access  Private
 export const GET = async (
   req: Request,
-  context: { params: { userId: Types.ObjectId } }
+  context: { params: { employeeId: Types.ObjectId } }
 ) => {
   try {
-    const userId = context.params.userId;
+    const employeeId = context.params.employeeId;
 
-    // check if the userId is a valid ObjectId
-    if (!isObjectIdValid([userId])) {
+    // check if the employeeId is a valid ObjectId
+    if (!isObjectIdValid([employeeId])) {
       return new NextResponse(
         JSON.stringify({ message: "Purchase ID not valid!" }),
         {
@@ -44,12 +44,12 @@ export const GET = async (
 
     // Build query based on the presence of startDate and endDate
     let query: {
-      purchasedByUserId: Types.ObjectId;
+      purchasedByEmployeeId: Types.ObjectId;
       purchaseDate?: {
         $gte: Date;
         $lte: Date;
       };
-    } = { purchasedByUserId: userId };
+    } = { purchasedByEmployeeId: employeeId };
 
     // Build the query object with the optional date range
     if (startDate && endDate) {

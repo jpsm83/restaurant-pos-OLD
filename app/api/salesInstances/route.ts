@@ -13,12 +13,10 @@ import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
-import Business from "@/app/lib/models/business";
 import SalesInstance from "@/app/lib/models/salesInstance";
-import path from "path";
 import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc    Get all salesInstances
@@ -37,8 +35,8 @@ export const GET = async (req: Request) => {
       })
       .populate({
         path: "openedById responsibleById closedById",
-        select: "username currentShiftRole",
-        model: User,
+        select: "employeeName currentShiftRole",
+        model: Employee,
       })
       .populate({
         path: "salesGroup.ordersIds",
@@ -78,13 +76,8 @@ export const GET = async (req: Request) => {
 // @access  Private
 export const POST = async (req: Request) => {
   try {
-    const {
-      salesPointId,
-      guests,
-      openedById,
-      businessId,
-      clientName,
-    } = (await req.json()) as ISalesInstance;
+    const { salesPointId, guests, openedById, businessId, clientName } =
+      (await req.json()) as ISalesInstance;
 
     // check required fields
     if (!salesPointId || !guests || !openedById || !businessId) {

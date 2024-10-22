@@ -5,7 +5,7 @@ import { goodsReducedSchema } from "./dailySalesReport";
 const monthlyBusinessReportSchema = new Schema(
   {
     isReportOpen: { type: Boolean, required: true, default: true },
-    // Indicates if the monthly report is still open for edits. When true, users can still add sales. When false, the report is locked for further edits, and all calculations are final.
+    // Indicates if the monthly report is still open for edits. When true, employees can still add sales. When false, the report is locked for further edits, and all calculations are final.
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",

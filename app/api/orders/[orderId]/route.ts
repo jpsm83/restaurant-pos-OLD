@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 // import interfaces
 import { Types } from "mongoose";
-import { IOrder } from "@/app/lib/interface/IOrder";
 
 // import utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
@@ -11,7 +10,7 @@ import { cancelOrders } from "../utils/cancelOrders";
 
 // import models
 import Order from "@/app/lib/models/order";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
@@ -55,9 +54,9 @@ export const GET = async (
         model: SalesInstance,
       })
       .populate({
-        path: "userId",
-        select: "username allUserRoles currentShiftRole",
-        model: User,
+        path: "employeeId",
+        select: "employeeName allEmployeeRoles currentShiftRole",
+        model: Employee,
       })
       .populate({
         path: "businessGoodsIds",

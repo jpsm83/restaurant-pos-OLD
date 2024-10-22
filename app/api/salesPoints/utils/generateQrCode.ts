@@ -15,21 +15,21 @@ export const generateQrCode = async (businessId: Types.ObjectId) => {
     // generate randomUniqueId
     const randomUniqueId = new Types.ObjectId().toString();
 
-    // this QR will redirect to a page where user can order and pay - to be developed
+    // this QR will redirect to a page where employee can order and pay - to be developed
     //    scan QR
     //    select language
-    //    createSalesLocation function will be called so user will fill the necessary inputs
+    //    createSalesLocation function will be called so employee will fill the necessary inputs
     //      salesLocation - auto generated
-    //      guests - user input
+    //      guests - employee input
     //      openedBy - auto generated
     //      responsibleBy - auto generated
     //      business - auto generated
-    //      clientName - user input
+    //      clientName - employee input
     //      dailyReferenceNumber - auto generated
-    // *** once a table is created, no other user will be able to scan the QR code and create a table till this table is closed ***
-    //    user will be redirected to an order menu page - to be developed
-    //    user will select items and quantity
-    //    user will pay for the order and get a confirmation message with order number to be compare by the waiter
+    // *** once a table is created, no other employee will be able to scan the QR code and create a table till this table is closed ***
+    //    employee will be redirected to an order menu page - to be developed
+    //    employee will select items and quantity
+    //    employee will pay for the order and get a confirmation message with order number to be compare by the waiter
     //    them order will be place to the kitchen/bar
 
     // Generate QR code as a data URL

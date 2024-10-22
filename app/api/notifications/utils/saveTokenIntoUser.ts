@@ -1,6 +1,6 @@
-// this will be used to send push notifications to users
-// tokens have to be saved in the user model
-// firebase cloud messaging tokens are used to send push notifications to users
+// this will be used to send push notifications to employees
+// tokens have to be saved in the employee model
+// firebase cloud messaging tokens are used to send push notifications to employees
 // it is not done yet
 
 import { Types } from "mongoose";
@@ -10,15 +10,15 @@ import connectDb from "@/app/lib/utils/connectDb";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
-export const saveTokenIntoUser = async (
-  userId: Types.ObjectId,
+export const saveTokenIntoEmployee = async (
+  employeeId: Types.ObjectId,
   fcmToken: string
 ) => {
-  // Validate user ID
-  if (!isObjectIdValid([userId])) {
-    return "Invalid user ID!";
+  // Validate employee ID
+  if (!isObjectIdValid([employeeId])) {
+    return "Invalid employee ID!";
   }
 
   // Validate fcmToken
@@ -30,19 +30,19 @@ export const saveTokenIntoUser = async (
     // Connect to the database
     await connectDb();
 
-    // Update the user with the new FCM token
-    const updatedToken = await User.findByIdAndUpdate(
-      userId,
+    // Update the employee with the new FCM token
+    const updatedToken = await Employee.findByIdAndUpdate(
+      employeeId,
       { $set: { fcmToken } },
       { new: true, lean: true }
     );
 
     if (!updatedToken) {
-      return "User not found!";
+      return "Employee not found!";
     }
 
-    return "FCM token saved into user successfully!";
+    return "FCM token saved into employee successfully!";
   } catch (error) {
-    return "Save FCM token into user failed! Error: " + error;
+    return "Save FCM token into employee failed! Error: " + error;
   }
 };

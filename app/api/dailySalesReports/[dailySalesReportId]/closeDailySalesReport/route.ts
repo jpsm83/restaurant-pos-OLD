@@ -6,7 +6,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { NextResponse } from "next/server";
 import Order from "@/app/lib/models/order";
@@ -23,14 +23,14 @@ export const PATCH = async (
   try {
     const dailySalesReportId = context.params.dailySalesReportId;
 
-    const { userId } = (await req.json()) as {
-      userId: Types.ObjectId;
+    const { employeeId } = (await req.json()) as {
+      employeeId: Types.ObjectId;
     };
 
     // check if the ID is valid
-    if (isObjectIdValid([dailySalesReportId, userId]) !== true) {
+    if (isObjectIdValid([dailySalesReportId, employeeId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid dailySalesReport or user ID!" }),
+        JSON.stringify({ message: "Invalid dailySalesReport or employee ID!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -38,26 +38,28 @@ export const PATCH = async (
     // connect before first call to DB
     await connectDb();
 
-    // Fetch the user and daily report details in parallel to save time
-    const [user, dailySalesReport] = await Promise.all([
-      User.findById(userId).select("currentShiftRole onDuty businessId").lean(),
+    // Fetch the employee and daily report details in parallel to save time
+    const [employee, dailySalesReport] = await Promise.all([
+      Employee.findById(employeeId)
+        .select("currentShiftRole onDuty businessId")
+        .lean(),
       DailySalesReport.findById(dailySalesReportId)
         .select("dailyReferenceNumber")
         .lean(),
     ]);
 
-    // Validate the user's role and whether they are on duty
+    // Validate the employee's role and whether they are on duty
     if (
-      !user ||
-      Array.isArray(user) ||
+      !employee ||
+      Array.isArray(employee) ||
       ![
         "General Manager",
         "Manager",
         "Assistant Manager",
         "MoD",
         "Admin",
-      ].includes(user.currentShiftRole ?? "") ||
-      !user.onDuty
+      ].includes(employee.currentShiftRole ?? "") ||
+      !employee.onDuty
     ) {
       return new NextResponse(
         JSON.stringify({
@@ -77,7 +79,7 @@ export const PATCH = async (
 
     // Use a single query to check if there are open orders tied to the same business and reference number
     const openOrdersExist = await Order.exists({
-      businessId: user.businessId,
+      businessId: employee.businessId,
       billingStatus: "Open",
       dailyReferenceNumber: Array.isArray(dailySalesReport)
         ? undefined

@@ -7,39 +7,42 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
-// @desc    Get all schedules by user ID
-// @route   GET /schedules/user/:userId
+// @desc    Get all schedules by employee ID
+// @route   GET /schedules/employee/:employeeId
 // @access  Public
 export const GET = async (
   req: Request,
   context: {
-    params: { userId: Types.ObjectId };
+    params: { employeeId: Types.ObjectId };
   }
 ) => {
   try {
-    const userId = context.params.userId;
+    const employeeId = context.params.employeeId;
 
     // check if the schedule ID is valid
-    if (isObjectIdValid([userId]) !== true) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user Id!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (isObjectIdValid([employeeId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid employee Id!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
     await connectDb();
 
     const schedules = await Schedule.find({
-      "employeesSchedules.userId": userId,
+      "employeesSchedules.employeeId": employeeId,
     })
       .populate({
-        path: "employeesSchedules.userId",
-        select: "username allUserRoles",
-        model: User,
+        path: "employeesSchedules.employeeId",
+        select: "employeeName allEmployeeRoles",
+        model: Employee,
       })
       .lean();
 
@@ -55,6 +58,6 @@ export const GET = async (
           },
         });
   } catch (error) {
-    return handleApiError("Get schedule by user id failed!", error);
+    return handleApiError("Get schedule by employee id failed!", error);
   }
 };

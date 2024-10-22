@@ -6,11 +6,11 @@ export interface IInventoryCount {
   currentCountQuantity: number;
   deviationPercent?: number;
   quantityNeeded?: number;
-  countedByUserId: Types.ObjectId;
+  countedByEmployeeId: Types.ObjectId;
   lastCount?: boolean;
   comments?: string;
   reedited?: {
-    reeditedByUserId: Types.ObjectId;
+    reeditedByEmployeeId: Types.ObjectId;
     date: Date;
     reason: string;
     originalValues: {

@@ -7,7 +7,7 @@
         },
         "purchaseDate": "2024-08-30T10:10:10.004Z",
         "businessId": "6673fed98c45d0a0ca5f34c1",
-        "purchasedByUserId": "667412df373ad7f1a285534e",
+        "purchasedByEmployeeId": "667412df373ad7f1a285534e",
         "purchaseItems": [
             {
                 "supplierGoodId": "667bfac8d28a7ee19d9be448",
@@ -36,7 +36,7 @@
         },
         "purchaseDate": "2024-08-29T10:10:10.004Z",
         "businessId": "6673fed98c45d0a0ca5f34c1",
-        "purchasedByUserId": "667412df373ad7f1a285534e",
+        "purchasedByEmployeeId": "667412df373ad7f1a285534e",
         "purchaseItems": [
             {
                 "supplierGoodId": "667bfac8d28a7ee19d9be448",
@@ -66,7 +66,7 @@
         },
         "purchaseDate": "2024-08-30T10:10:10.004Z",
         "businessId": "6673fed98c45d0a0ca5f34c1",
-        "purchasedByUserId": "667412df373ad7f1a285534e",
+        "purchasedByEmployeeId": "667412df373ad7f1a285534e",
         "purchaseItems": [
             {
                 "supplierGoodId": "667bfac8d28a7ee19d9be443",
@@ -96,7 +96,7 @@
         },
         "purchaseDate": "2024-08-30T10:10:10.004Z",
         "businessId": "6673fed98c45d0a0ca5f34c1",
-        "purchasedByUserId": "667412df373ad7f1a285534e",
+        "purchasedByEmployeeId": "667412df373ad7f1a285534e",
         "purchaseItems": [
             {
                 "supplierGoodId": "667bfac8d28a7ee19d9be443",
@@ -126,7 +126,7 @@
         },
         "purchaseDate": "2024-08-30T10:10:10.004Z",
         "businessId": "6673fed98c45d0a0ca5f34c1",
-        "purchasedByUserId": "667412df373ad7f1a285534e",
+        "purchasedByEmployeeId": "667412df373ad7f1a285534e",
         "purchaseItems": [
             {
                 "supplierGoodId": "667bfac8d28a7ee19d9be443",

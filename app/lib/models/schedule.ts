@@ -1,9 +1,9 @@
 import { Schema, model, models } from "mongoose";
 
 const employeesScheduledSchema = new Schema({
-  userId: {
+  employeeId: {
     type: Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Employee",
     required: true,
   }, // employee scheduled
   role: { type: String, required: true }, // role of the employee in the shift
@@ -22,7 +22,7 @@ const employeesScheduledSchema = new Schema({
   employeeCost: {
     type: Number,
     required: true,
-  }, // cost of the employee for the shift, user.grossMonthlySalary / user.contractHoursMonth * shiftHours - calculated in the front end
+  }, // cost of the employee for the shift, employee.grossMonthlySalary / employee.contractHoursMonth * shiftHours - calculated in the front end
 });
 
 const scheduleSchema = new Schema(
@@ -38,12 +38,12 @@ const scheduleSchema = new Schema(
       type: Number,
       required: true,
       default: 0,
-    }, // total users scheduled
+    }, // total employees scheduled
     totalEmployeesVacation: {
       type: Number,
       required: true,
       default: 0,
-    }, // total users on vacation
+    }, // total employees on vacation
     totalDayEmployeesCost: {
       type: Number,
       required: true,

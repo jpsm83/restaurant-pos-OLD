@@ -2,25 +2,25 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { Types } from "mongoose";
 
-// add user to daily sales report
-export const addUserToDailySalesReport = async (
-  userId: Types.ObjectId,
+// add employee to daily sales report
+export const addEmployeeToDailySalesReport = async (
+  employeeId: Types.ObjectId,
   businessId: Types.ObjectId
 ) => {
   try {
     // validate ids
-    if (isObjectIdValid([userId, businessId]) !== true) {
-      return "Invalid user or business ID!";
+    if (isObjectIdValid([employeeId, businessId]) !== true) {
+      return "Invalid employee or business ID!";
     }
 
-    // Find the open daily sales report and add the user in one operation
+    // Find the open daily sales report and add the employee in one operation
     const updatedDailySalesReport = await DailySalesReport.findOneAndUpdate(
       {
         isDailyReportOpen: true,
         businessId: businessId,
       },
       {
-        $addToSet: { usersDailySalesReport: { userId } }, // Avoid duplicates
+        $addToSet: { employeesDailySalesReport: { employeeId } }, // Avoid duplicates
       },
       { new: true, lean: true } // Return the updated document
     );
@@ -31,8 +31,8 @@ export const addUserToDailySalesReport = async (
     }
 
     // no need to return the updated document - just for testing purposes
-    return "User added to daily report successfully!";
+    return "Employee added to daily report successfully!";
   } catch (error) {
-    return "Failed to add user to daily report! " + error;
+    return "Failed to add employee to daily report! " + error;
   }
 };

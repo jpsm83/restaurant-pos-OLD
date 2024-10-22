@@ -8,10 +8,10 @@ export interface IGoodsReduced {
   totalCostPrice: number; // total cost price of the good sold or void
 }
 
-export interface IUserDailySalesReport {
-  userId: Types.ObjectId;
+export interface IEmployeeDailySalesReport {
+  employeeId: Types.ObjectId;
   hasOpenSalesInstances?: boolean;
-  userPaymentMethods?: IPaymentMethod[];
+  employeePaymentMethods?: IPaymentMethod[];
   totalSalesBeforeAdjustments?: number;
   totalNetPaidAmount?: number;
   totalTipsReceived?: number;
@@ -30,7 +30,7 @@ export interface IDailySalesReport {
   dailyReferenceNumber: number;
   isDailyReportOpen: boolean;
   timeCountdownToClose: number;
-  usersDailySalesReport: IUserDailySalesReport[];
+  employeesDailySalesReport: IEmployeeDailySalesReport[];
   businessId: Types.ObjectId;
   businessPaymentMethods?: IPaymentMethod[];
   dailyTotalSalesBeforeAdjustments?: number;

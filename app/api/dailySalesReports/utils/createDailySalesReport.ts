@@ -31,7 +31,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
       dailyReferenceNumber: currentTimeUnix,  // This should be a valid number
       isDailyReportOpen: true,
       timeCountdownToClose: countdownToClose,
-      usersDailySalesReport: [],
+      employeesDailySalesReport: [],
       businessId: businessId,
     };
 

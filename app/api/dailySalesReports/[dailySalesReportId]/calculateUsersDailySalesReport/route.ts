@@ -5,44 +5,46 @@ import { Types } from "mongoose";
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
-import { updateUsersDailySalesReport } from "../../utils/updateUserDailySalesReport";
+import { updateEmployeesDailySalesReport } from "../../utils/updateEmployeeDailySalesReport";
 
 // imported interfaces
 import {
   IDailySalesReport,
-  IUserDailySalesReport,
+  IEmployeeDailySalesReport,
 } from "@/app/lib/interface/IDailySalesReport";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
-// @desc    Calculate the user daily sales report
-// @route   PATCH /dailySalesReports/:dailySalesReportId/calculateUsersDailySalesReport
+// @desc    Calculate the employee daily sales report
+// @route   PATCH /dailySalesReports/:dailySalesReportId/calculateEmployeesDailySalesReport
 // @access  Private
 export const PATCH = async (
   req: Request,
   context: { params: { dailySalesReportId: Types.ObjectId } }
 ) => {
-  // this function will call the updateUsersDailySalesReport function to update individual user daily sales report or many at time
-  // this will be call by the user when it shif is done or just to see the report at the current time
-  // and also will be call by manangers or admin to update all users daily sales report at once
+  // this function will call the updateEmployeesDailySalesReport function to update individual employee daily sales report or many at time
+  // this will be call by the employee when it shif is done or just to see the report at the current time
+  // and also will be call by manangers or admin to update all employees daily sales report at once
   try {
     const dailySalesReportId = context.params.dailySalesReportId;
 
-    const { userIds } = (await req.json()) as { userIds: Types.ObjectId[] };
+    const { employeeIds } = (await req.json()) as {
+      employeeIds: Types.ObjectId[];
+    };
 
-    // Ensure userIds is an array and not empty
-    if (!Array.isArray(userIds) || userIds.length === 0) {
+    // Ensure employeeIds is an array and not empty
+    if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
       return new NextResponse(
-        JSON.stringify({ message: "User IDs must be a non-empty array!" }),
+        JSON.stringify({ message: "Employee IDs must be a non-empty array!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // check if the ID is valid
-    if (isObjectIdValid([dailySalesReportId, ...userIds]) !== true) {
+    if (isObjectIdValid([dailySalesReportId, ...employeeIds]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "Invalid dailySalesReport or user ID!" }),
+        JSON.stringify({ message: "Invalid dailySalesReport or employee ID!" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -63,17 +65,17 @@ export const PATCH = async (
       );
     }
 
-    // Call the function to update the daily sales reports for the users
-    const result = (await updateUsersDailySalesReport(
-      userIds,
+    // Call the function to update the daily sales reports for the employees
+    const result = (await updateEmployeesDailySalesReport(
+      employeeIds,
       dailySalesReport.dailyReferenceNumber
-    )) as { updatedUsers: IUserDailySalesReport[]; errors: string[] };
+    )) as { updatedEmployees: IEmployeeDailySalesReport[]; errors: string[] };
 
     // Check if there were any errors
     if (result.errors && result.errors.length > 0) {
       return new NextResponse(
         JSON.stringify({
-          message: "Some errors occurred while updating users!",
+          message: "Some errors occurred while updating employees!",
           errors: result.errors,
         }),
         {
@@ -83,12 +85,15 @@ export const PATCH = async (
       );
     }
 
-    // If successful, return the updated users' reports
-    return new NextResponse(JSON.stringify(result.updatedUsers), {
+    // If successful, return the updated employees' reports
+    return new NextResponse(JSON.stringify(result.updatedEmployees), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return handleApiError("Get daily sales report by user id failed!", error);
+    return handleApiError(
+      "Get daily sales report by employee id failed!",
+      error
+    );
   }
 };

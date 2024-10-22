@@ -4,7 +4,7 @@ export interface IConfigurationSetupToPrintOrders {
     mainCategory: string;
     subCategories?: string[];
     salesPointIds: Types.ObjectId[];
-    excludeUserIds?: Types.ObjectId[];
+    excludeEmployeeIds?: Types.ObjectId[];
 }
 
 export interface IPrinter {
@@ -15,6 +15,6 @@ export interface IPrinter {
     port: number;
     businessId: Types.ObjectId;
     backupPrinterId?: Types.ObjectId;
-    usersAllowedToPrintDataIds?: Types.ObjectId[];
+    employeesAllowedToPrintDataIds?: Types.ObjectId[];
     configurationSetupToPrintOrders?: IConfigurationSetupToPrintOrders[];
 }

@@ -11,7 +11,7 @@ const orderSchema = new Schema(
       enum: billingStatus,
       default: "Open",
       required: true,
-    }, // general status regarding the payment of the order - only VOID, CANCEL and INVITATION can be manually changed by user
+    }, // general status regarding the payment of the order - only VOID, CANCEL and INVITATION can be manually changed by employee
     orderStatus: {
       type: String,
       enum: orderStatus,
@@ -21,7 +21,11 @@ const orderSchema = new Schema(
     orderGrossPrice: { type: Number, required: true }, // final price of the sun of product being sold regardless of any discounts, voids, or cancellations
     orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, voids, invitations, discounts and promotions
     orderCostPrice: { type: Number, required: true }, // cost price of the sun of product being sold regardless of any discounts, voids, or cancellations
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // user that made the order
+    employeeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Employee",
+      required: true,
+    }, // employee that made the order
     salesInstanceId: {
       type: Schema.Types.ObjectId,
       ref: "SalesInstance",
@@ -44,7 +48,7 @@ const orderSchema = new Schema(
       type: [paymentMethod],
       default: undefined,
     },
-    allergens: { type: [String], enum: allergens, default: undefined }, // this property is manualy added by the user, the pos will filter all the business goods allergens that applyed and dont offer them to be purchased, this value will go to the kitcken
+    allergens: { type: [String], enum: allergens, default: undefined }, // this property is manualy added by the employee, the pos will filter all the business goods allergens that applyed and dont offer them to be purchased, this value will go to the kitcken
     promotionApplyed: { type: String }, // check if promotion is applyed by promotion date and time - done on the front end
     discountPercentage: { type: Number }, // percentage discount applyed manually to the order - cannot apply discount if promotion is applyed
     comments: { type: String }, // if discount, void or cancel are applyed, the reason for it or if or if kitchen needs to know something

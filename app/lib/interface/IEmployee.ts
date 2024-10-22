@@ -16,13 +16,13 @@ export interface IPersonalDetails {
   phoneNumber: string;
 }
 
-export interface IUser {
-  username: string;
+export interface IEmployee {
+  employeeName: string;
   email: string;
   password: string;
   idType: string;
   idNumber: string;
-  allUserRoles: string[];
+  allEmployeeRoles: string[];
   personalDetails: IPersonalDetails;
   taxNumber: string;
   joinDate: Date;

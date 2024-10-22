@@ -4,7 +4,7 @@ export interface INotification {
   _id?: Types.ObjectId;
   notificationType: string;
   message: string;
-  userRecipientsId: Types.ObjectId[];
+  employeeRecipientsId: Types.ObjectId[];
   businessId: Types.ObjectId;
-  userSenderId?: Types.ObjectId;
+  employeeSenderId?: Types.ObjectId;
 }

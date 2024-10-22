@@ -79,7 +79,7 @@ export const PATCH = async (
 ) => {
   const purchaseId = context.params.purchaseId;
 
-  const { title, purchaseDate, businessId, purchasedByUserId, receiptId } =
+  const { title, purchaseDate, businessId, purchasedByEmployeeId, receiptId } =
     (await req.json()) as IPurchase;
 
   // businessId is required
@@ -96,10 +96,10 @@ export const PATCH = async (
   }
 
   // check if ids are valid
-  if (isObjectIdValid([businessId, purchasedByUserId]) !== true) {
+  if (isObjectIdValid([businessId, purchasedByEmployeeId]) !== true) {
     return new NextResponse(
       JSON.stringify({
-        message: "Supplier, business or user IDs not valid!",
+        message: "Supplier, business or employee IDs not valid!",
       }),
       {
         status: 400,
@@ -139,8 +139,8 @@ export const PATCH = async (
 
     if (title) updatePurchaseObj.title = title;
     if (purchaseDate) updatePurchaseObj.purchaseDate = purchaseDate;
-    if (purchasedByUserId)
-      updatePurchaseObj.purchasedByUserId = purchasedByUserId;
+    if (purchasedByEmployeeId)
+      updatePurchaseObj.purchasedByEmployeeId = purchasedByEmployeeId;
     if (receiptId) updatePurchaseObj.receiptId = receiptId;
 
     // Update the purchase in a single query

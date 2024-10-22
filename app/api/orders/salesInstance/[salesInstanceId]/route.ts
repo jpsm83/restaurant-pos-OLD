@@ -8,7 +8,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Order from "@/app/lib/models/order";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import SalesPoint from "@/app/lib/models/salesPoint";
@@ -25,7 +25,6 @@ export const GET = async (
   try {
     const salesInstanceId = context.params.salesInstanceId;
 
-    
     // validate salesInstanceId
     if (isObjectIdValid([salesInstanceId]) !== true) {
       return new NextResponse(
@@ -36,35 +35,34 @@ export const GET = async (
         }
       );
     }
-    
+
     // connect before first call to DB
     await connectDb();
-    
-    
-    const orders = await Order.find({ salesInstanceId :salesInstanceId})
-    .populate({
-      path: "salesInstanceId",
-      select: "salesPointId",
-      populate: {
-        path: "salesPointId",
-        select: "salesPointName",
-        model: SalesPoint,
-      },
-      model: SalesInstance,
-    })
-    .populate({
-      path: "userId",
-      select: "username allUserRoles currentShiftRole",
-      model: User,
-    })
-    .populate({
-      path: "businessGoodsIds",
-      select:
-        "name mainCategory subCategory productionTime sellingPrice allergens",
-      model: BusinessGood,
-    })
-    .lean();
-    
+
+    const orders = await Order.find({ salesInstanceId: salesInstanceId })
+      .populate({
+        path: "salesInstanceId",
+        select: "salesPointId",
+        populate: {
+          path: "salesPointId",
+          select: "salesPointName",
+          model: SalesPoint,
+        },
+        model: SalesInstance,
+      })
+      .populate({
+        path: "employeeId",
+        select: "employeeName allEmployeeRoles currentShiftRole",
+        model: Employee,
+      })
+      .populate({
+        path: "businessGoodsIds",
+        select:
+          "name mainCategory subCategory productionTime sellingPrice allergens",
+        model: BusinessGood,
+      })
+      .lean();
+
     return !orders.length
       ? new NextResponse(JSON.stringify({ message: "No orders found!" }), {
           status: 404,

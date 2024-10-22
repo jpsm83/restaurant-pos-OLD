@@ -26,12 +26,17 @@ export const PATCH = async (
 ) => {
   const { inventoryId, supplierGoodId } = context.params;
 
-  const { currentCountQuantity, countedByUserId, comments, countId, reason } =
-    (await req.json()) as IInventoryCount & {
-      supplierGoodId: Types.ObjectId;
-      countId: Types.ObjectId;
-      reason: string;
-    };
+  const {
+    currentCountQuantity,
+    countedByEmployeeId,
+    comments,
+    countId,
+    reason,
+  } = (await req.json()) as IInventoryCount & {
+    supplierGoodId: Types.ObjectId;
+    countId: Types.ObjectId;
+    reason: string;
+  };
 
   // Check required fields
   if (!inventoryId || !supplierGoodId || !countId || !reason) {
@@ -107,12 +112,12 @@ export const PATCH = async (
     );
 
     if (!currentCountObject) {
-      return new NextResponse(
-        JSON.stringify({ message: "Count not found!" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+      return new NextResponse(JSON.stringify({ message: "Count not found!" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-    
+
     // if count from currentCountObject is equal to the new count we dont need to update the inventory
     if (currentCountObject.currentCountQuantity === currentCountQuantity) {
       return new NextResponse(
@@ -137,14 +142,14 @@ export const PATCH = async (
       _id: countId,
       currentCountQuantity,
       quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
-      countedByUserId,
+      countedByEmployeeId,
       deviationPercent:
         ((previewDynamicSystemCount - currentCountQuantity) /
           (previewDynamicSystemCount || 1)) *
         100,
       comments,
       reedited: {
-        reeditedByUserId: countedByUserId,
+        reeditedByEmployeeId: countedByEmployeeId,
         date: new Date(),
         reason, // You might want to pass this in the request as well
         originalValues: {
@@ -162,7 +167,7 @@ export const PATCH = async (
           acc + (count.deviationPercent || 0),
         0
       ) -
-      (currentCountObject.deviationPercent) +
+      currentCountObject.deviationPercent +
       (updateInventoryCount.deviationPercent ?? 0);
 
     const monthlyCountsWithDeviation = supplierGoodObject.monthlyCounts.filter(
@@ -181,7 +186,8 @@ export const PATCH = async (
       },
       {
         $set: {
-          "inventoryGoods.$[supplierGood].dynamicSystemCount": currentCountQuantity,
+          "inventoryGoods.$[supplierGood].dynamicSystemCount":
+            currentCountQuantity,
           "inventoryGoods.$[supplierGood].averageDeviationPercent":
             averageDeviationPercentCalculation,
           "inventoryGoods.$[supplierGood].monthlyCounts.$[count]":

@@ -27,7 +27,7 @@ export const PATCH = async (
   // this function will set the count quantity of a individual supplier good in an inventory
   const { inventoryId, supplierGoodId } = context.params;
 
-  const { currentCountQuantity, countedByUserId, comments } =
+  const { currentCountQuantity, countedByEmployeeId, comments } =
     (await req.json()) as IInventoryCount & {
       supplierGoodId: Types.ObjectId;
     };
@@ -44,7 +44,7 @@ export const PATCH = async (
   }
 
   // check if the inventoryId is valid
-  if (!isObjectIdValid([inventoryId, supplierGoodId, countedByUserId])) {
+  if (!isObjectIdValid([inventoryId, supplierGoodId, countedByEmployeeId])) {
     return new NextResponse(
       JSON.stringify({ message: "InventoryId or supplierGoodId not valid!" }),
       { status: 400, headers: { "Content-Type": "application/json" } }
@@ -105,7 +105,7 @@ export const PATCH = async (
     const newInventoryCount: IInventoryCount = {
       currentCountQuantity,
       quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
-      countedByUserId,
+      countedByEmployeeId,
       deviationPercent:
         ((inventoryGood.dynamicSystemCount - currentCountQuantity) /
           (inventoryGood.dynamicSystemCount || 1)) *
@@ -118,7 +118,7 @@ export const PATCH = async (
       (acc, count) => acc + (count.deviationPercent || 0),
       0
     );
-    
+
     const monthlyCountsWithDeviation = inventoryGood.monthlyCounts.filter(
       (count) => count.deviationPercent !== 0
     ).length;

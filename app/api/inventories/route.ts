@@ -138,7 +138,7 @@ export const POST = async (req: Request) => {
       .lean();
 
     // *** IMPORTANT ***
-    // we also dont check if supplierGoods is null because once inventory can get created automatically before user set the supplier goods
+    // we also dont check if supplierGoods is null because once inventory can get created automatically before employee set the supplier goods
 
     // Create the inventoryGoods array
     const inventoryGoodsArr = supplierGoods.map((supplierGood: any) => {

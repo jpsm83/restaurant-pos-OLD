@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 // import utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { addUserToDailySalesReport } from "./utils/addUserToDailySalesReport";
+import { addEmployeeToDailySalesReport } from "./utils/addEmployeeToDailySalesReport";
 import { createDailySalesReport } from "./utils/createDailySalesReport";
 
 // import models
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { updateUsersDailySalesReport } from "./utils/updateUserDailySalesReport";
+import { updateEmployeesDailySalesReport } from "./utils/updateEmployeeDailySalesReport";
 
 // @desc    Get all daily reports
 // @route   GET /dailySalesReports
@@ -21,9 +21,9 @@ export const GET = async (req: Request) => {
 
     const dailySalesReports = await DailySalesReport.find()
       .populate({
-        path: "usersDailySalesReport.userId",
-        select: "username",
-        model: User,
+        path: "employeesDailySalesReport.employeeId",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 
@@ -44,18 +44,18 @@ export const GET = async (req: Request) => {
 // // POST request for helper funtions
 // export const POST = async (req: Request) => {
 //   try {
-//     const userId = "66e92e066a5cfcc2a707696b";
+//     const employeeId = "66e92e066a5cfcc2a707696b";
 //     const dailyReferenceNumber = 1726831208559;
 //     const businessId = "66e169a709901431386c97cb";
 
 //     // @ts-ignore
-//     const result = await addUserToDailySalesReport(userId, businessId);
+// const result = await addEmployeeToDailySalesReport(employeeId, businessId);
 
 //     // // @ts-ignore
 //     // const result = await createDailySalesReport(businessId);
 
 //     // // @ts-ignore
-//     // const result = await updateUsersDailySalesReport([userId], dailyReferenceNumber);
+//     // const result = await updateEmployeesDailySalesReport([employeeId], dailyReferenceNumber);
 
 //     return new NextResponse(JSON.stringify({ message: result }), {
 //       status: 201,

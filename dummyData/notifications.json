@@ -23,7 +23,7 @@
         "recipients": [
             {
                 "_id": "667412df373ad7f1a285534e",
-                "username": "user1"
+                "employeeName": "employee1"
             }
         ],
         "business": "6673fed98c45d0a0ca5f34c1",
@@ -41,7 +41,7 @@
         "recipients": [
             {
                 "_id": "667412df373ad7f1a285534e",
-                "username": "user1"
+                "employeeName": "employee1"
             }
         ],
         "business": "6673fef88c45d0a0ca5f34c5",

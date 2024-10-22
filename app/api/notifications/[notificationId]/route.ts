@@ -11,7 +11,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
 // @desc    Get notification by ID
 // @route   GET /notifications/:notificationId
@@ -36,9 +36,9 @@ export const GET = async (
 
     const notification = await Notification.findById(notificationId)
       .populate({
-        path: "userRecipientsId",
-        select: "username",
-        model: User,
+        path: "employeeRecipientsId",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 
@@ -67,14 +67,17 @@ export const PATCH = async (
 ) => {
   const notificationId = context.params.notificationId;
 
-  const { notificationType, message, userRecipientsId, userSenderId } =
+  const { notificationType, message, employeeRecipientsId, employeeSenderId } =
     (await req.json()) as INotification;
 
-  // validate userRecipientsId
-  if (!Array.isArray(userRecipientsId) || userRecipientsId.length === 0) {
+  // validate employeeRecipientsId
+  if (
+    !Array.isArray(employeeRecipientsId) ||
+    employeeRecipientsId.length === 0
+  ) {
     return new NextResponse(
       JSON.stringify({
-        message: "Recipients must be an array of user IDs!",
+        message: "Recipients must be an array of employee IDs!",
       }),
       {
         status: 400,
@@ -84,12 +87,12 @@ export const PATCH = async (
   }
 
   // validation ids
-  const usersIds = [...userRecipientsId];
-  if (userSenderId) {
-    usersIds.push(userSenderId);
+  const employeesIds = [...employeeRecipientsId];
+  if (employeeSenderId) {
+    employeesIds.push(employeeSenderId);
   }
 
-  if (!isObjectIdValid([...usersIds, notificationId])) {
+  if (!isObjectIdValid([...employeesIds, notificationId])) {
     return new NextResponse(
       JSON.stringify({
         message: "Invalid array of IDs!",
@@ -108,21 +111,21 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
-    // check all users exist and get notification object
-    const [users, notification] = await Promise.all([
+    // check all employees exist and get notification object
+    const [employees, notification] = await Promise.all([
       // "exists" will return true if at least one document exists, so we need to use "find" instead
-      User.find({ _id: { $in: usersIds } }, null, { lean: true }), // Fetch users in a single query
+      Employee.find({ _id: { $in: employeesIds } }, null, { lean: true }), // Fetch employees in a single query
       Notification.findById(notificationId)
-        .select("userRecipientsId message")
+        .select("employeeRecipientsId message")
         .lean()
         .session(session) as Promise<INotification | null>,
     ]);
 
-    if (users.length !== usersIds.length || !notification) {
+    if (employees.length !== employeesIds.length || !notification) {
       await session.abortTransaction();
       const message =
-        users.length !== usersIds.length
-          ? "One or more users do not exist!"
+        employees.length !== employeesIds.length
+          ? "One or more employees do not exist!"
           : "Notification not found";
       return new NextResponse(JSON.stringify({ message: message }), {
         status: 400,
@@ -130,21 +133,25 @@ export const PATCH = async (
       });
     }
 
-    // Find the userRecipientsId that were added
-    const addedRecipients = userRecipientsId.filter(
-      (userId) =>
-        !notification.userRecipientsId.toString().includes(userId.toString())
+    // Find the employeeRecipientsId that were added
+    const addedRecipients = employeeRecipientsId.filter(
+      (employeeId) =>
+        !notification.employeeRecipientsId
+          .toString()
+          .includes(employeeId.toString())
     );
 
-    // Find the userRecipientsId that were removed
-    const removedRecipients = notification.userRecipientsId.filter(
-      (userId: Types.ObjectId) =>
-        !userRecipientsId.toString().includes(userId.toString())
+    // Find the employeeRecipientsId that were removed
+    const removedRecipients = notification.employeeRecipientsId.filter(
+      (employeeId: Types.ObjectId) =>
+        !employeeRecipientsId.toString().includes(employeeId.toString())
     );
 
-    // Find the userRecipientsId that were not changed
-    const unchangedRecipients = userRecipientsId.filter((userId) =>
-      notification.userRecipientsId.toString().includes(userId.toString())
+    // Find the employeeRecipientsId that were not changed
+    const unchangedRecipients = employeeRecipientsId.filter((employeeId) =>
+      notification.employeeRecipientsId
+        .toString()
+        .includes(employeeId.toString())
     );
 
     // prepare the update object
@@ -153,16 +160,17 @@ export const PATCH = async (
     if (notificationType)
       updateNotification.notificationType = notificationType;
     if (message) updateNotification.message = message;
-    if (userRecipientsId)
-      updateNotification.userRecipientsId = userRecipientsId;
-    if (userSenderId) updateNotification.userSenderId = userSenderId;
+    if (employeeRecipientsId)
+      updateNotification.employeeRecipientsId = employeeRecipientsId;
+    if (employeeSenderId)
+      updateNotification.employeeSenderId = employeeSenderId;
 
-    // handle all the user updates at once
+    // handle all the employee updates at once
     const [
       updatedNotification,
-      userNotficationAdded,
-      userNotificationRemoved,
-      userFlagUpdated,
+      employeeNotficationAdded,
+      employeeNotificationRemoved,
+      employeeFlagUpdated,
     ] = await Promise.all([
       // update notification
       Notification.updateOne(
@@ -173,18 +181,18 @@ export const PATCH = async (
         }
       ),
 
-      // Add notification to new users' notifications array
+      // Add notification to new employees' notifications array
       addedRecipients.length > 0
-        ? User.updateMany(
+        ? Employee.updateMany(
             { _id: { $in: addedRecipients } },
-            { $push: { notifications: { notificationId, readFlag: false } } }, // Set readFlag to false for new users
+            { $push: { notifications: { notificationId, readFlag: false } } }, // Set readFlag to false for new employees
             { session }
           )
         : Promise.resolve(true), // Resolve with a success flag if no recipients added
 
-      // Remove notification from old users' notifications array
+      // Remove notification from old employees' notifications array
       removedRecipients.length > 0
-        ? User.updateMany(
+        ? Employee.updateMany(
             { _id: { $in: removedRecipients } },
             { $pull: { notifications: { notificationId } } },
             { session }
@@ -193,9 +201,9 @@ export const PATCH = async (
 
       // update the readFlag for each unchangedRecipients
       unchangedRecipients.length > 0 && notification.message !== message
-        ? User.updateMany(
+        ? Employee.updateMany(
             {
-              _id: { $in: userRecipientsId },
+              _id: { $in: employeeRecipientsId },
               "notifications.notificationId": notificationId,
             },
             {
@@ -211,18 +219,18 @@ export const PATCH = async (
 
     if (
       !updatedNotification ||
-      !userNotficationAdded ||
-      !userNotificationRemoved ||
-      !userFlagUpdated
+      !employeeNotficationAdded ||
+      !employeeNotificationRemoved ||
+      !employeeFlagUpdated
     ) {
       await session.abortTransaction();
       const message = !updatedNotification
         ? "Failed to update notification!"
-        : !userNotficationAdded
-        ? "Failed to add notification to user!"
-        : !userNotificationRemoved
-        ? "Failed to remove notification from users!"
-        : "Failed to update readFlag for users!";
+        : !employeeNotficationAdded
+        ? "Failed to add notification to employee!"
+        : !employeeNotificationRemoved
+        ? "Failed to remove notification from employees!"
+        : "Failed to update readFlag for employees!";
       return new NextResponse(JSON.stringify({ message: message }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -233,7 +241,7 @@ export const PATCH = async (
 
     return new NextResponse(
       JSON.stringify({
-        message: "Notification and users updated",
+        message: "Notification and employees updated",
       }),
       {
         status: 200,
@@ -272,12 +280,12 @@ export const DELETE = async (
   session.startTransaction();
 
   try {
-    // Delete the notification and retrieve the affected users in one step
+    // Delete the notification and retrieve the affected employees in one step
     const notificationDeleted = (await Notification.findByIdAndDelete(
       notificationId,
       {
         session,
-        select: "userRecipientsId",
+        select: "employeeRecipientsId",
         lean: true,
       }
     )) as INotification | null;
@@ -290,19 +298,19 @@ export const DELETE = async (
       );
     }
 
-    // Remove the notification from all users' notifications arrays
-    const usersUpdated = await User.updateMany(
-      { _id: { $in: notificationDeleted.userRecipientsId } },
+    // Remove the notification from all employees' notifications arrays
+    const employeesUpdated = await Employee.updateMany(
+      { _id: { $in: notificationDeleted.employeeRecipientsId } },
       { $pull: { notifications: { notificationId } } },
       { session }
     );
 
     // Ensure both operations were successful
-    if (usersUpdated.modifiedCount === 0 || !notificationDeleted) {
+    if (employeesUpdated.modifiedCount === 0 || !notificationDeleted) {
       await session.abortTransaction();
       const message =
-        usersUpdated.modifiedCount === 0
-          ? "Failed to update users!"
+        employeesUpdated.modifiedCount === 0
+          ? "Failed to update employees!"
           : "Failed to delete notification!";
       return new NextResponse(JSON.stringify({ message }), {
         status: 400,

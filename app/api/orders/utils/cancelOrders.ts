@@ -11,7 +11,7 @@ import SalesInstance from "@/app/lib/models/salesInstance";
 
 // order with status "Done" or "Dont Make" cannot be canceled
 export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
-  // validate userId
+  // validate employeeId
   if (isObjectIdValid(orderIdsArr) !== true) {
     return "OrderIdsArr not valid!";
   }
@@ -66,7 +66,10 @@ export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
 
     // Update sales instances in bulk
     await SalesInstance.updateMany(
-      { _id: orders[0].salesInstanceId, "salesGroup.ordersIds": { $in: orderIdsArr } },
+      {
+        _id: orders[0].salesInstanceId,
+        "salesGroup.ordersIds": { $in: orderIdsArr },
+      },
       { $pull: { "salesGroup.$.ordersIds": { $in: orderIdsArr } } },
       { session }
     );

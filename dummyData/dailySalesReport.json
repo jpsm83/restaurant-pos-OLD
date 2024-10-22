@@ -4,29 +4,29 @@
         "dayReferenceNumber": 1720908000000,
         "dailyReportOpen": false,
         "countdownTimeToClose": 1721048434981,
-        "usersDailySalesReport": [
+        "employeesDailySalesReport": [
             {
-                "user": {
+                "employee": {
                     "_id": "66758b8904c4e6f5bbaa6b81",
-                    "username": "user3"
+                    "employeeName": "employee3"
                 },
                 "hasOpenSalesInstances": false,
-                "userCardsSales": {
+                "employeeCardsSales": {
                     "cardDetails": []
                 },
-                "userCryptosSales": {
+                "employeeCryptosSales": {
                     "cryptoDetails": []
                 },
-                "userOthersSales": {
+                "employeeOthersSales": {
                     "otherDetails": []
                 },
-                "userCustomersServed": 0,
-                "userAverageCustomersExpended": 0,
-                "userGoodsSoldArray": [],
-                "userGoodsVoidArray": [],
-                "userGoodsInvitedArray": [],
-                "userTotalVoid": 0,
-                "userTotalInvited": 0,
+                "employeeCustomersServed": 0,
+                "employeeAverageCustomersExpended": 0,
+                "employeeGoodsSoldArray": [],
+                "employeeGoodsVoidArray": [],
+                "employeeGoodsInvitedArray": [],
+                "employeeTotalVoid": 0,
+                "employeeTotalInvited": 0,
                 "_id": "66c0774f2d51c878c05d4011"
             }
         ],
@@ -52,50 +52,50 @@
         "dayReferenceNumber": 1721032827939,
         "dailyReportOpen": false,
         "countdownTimeToClose": 1721119227939,
-        "usersDailySalesReport": [
+        "employeesDailySalesReport": [
             {
-                "user": {
+                "employee": {
                     "_id": "667412df373ad7f1a285534e",
-                    "username": "user1"
+                    "employeeName": "employee1"
                 },
-                "userCardsSales": {
+                "employeeCardsSales": {
                     "cardDetails": []
                 },
-                "userCryptosSales": {
+                "employeeCryptosSales": {
                     "cryptoDetails": []
                 },
-                "userOthersSales": {
+                "employeeOthersSales": {
                     "otherDetails": []
                 },
-                "userCustomersServed": 0,
-                "userAverageCustomersExpended": 0,
+                "employeeCustomersServed": 0,
+                "employeeAverageCustomersExpended": 0,
                 "_id": "6694f3983ad92a74cc1996f7",
-                "userGoodsSoldArray": [],
-                "userGoodsVoidArray": [],
-                "userGoodsInvitedArray": []
+                "employeeGoodsSoldArray": [],
+                "employeeGoodsVoidArray": [],
+                "employeeGoodsInvitedArray": []
             },
             {
-                "user": {
+                "employee": {
                     "_id": "66758b8904c4e6f5bbaa6b81",
-                    "username": "user3"
+                    "employeeName": "employee3"
                 },
                 "hasOpenSalesInstances": false,
-                "userCardsSales": {
+                "employeeCardsSales": {
                     "cardDetails": []
                 },
-                "userCryptosSales": {
+                "employeeCryptosSales": {
                     "cryptoDetails": []
                 },
-                "userOthersSales": {
+                "employeeOthersSales": {
                     "otherDetails": []
                 },
-                "userCustomersServed": 0,
-                "userAverageCustomersExpended": 0,
-                "userGoodsSoldArray": [],
-                "userGoodsVoidArray": [],
-                "userGoodsInvitedArray": [],
-                "userTotalVoid": 0,
-                "userTotalInvited": 0,
+                "employeeCustomersServed": 0,
+                "employeeAverageCustomersExpended": 0,
+                "employeeGoodsSoldArray": [],
+                "employeeGoodsVoidArray": [],
+                "employeeGoodsInvitedArray": [],
+                "employeeTotalVoid": 0,
+                "employeeTotalInvited": 0,
                 "_id": "66c0730c2d51c878c05d3ff4"
             }
         ],

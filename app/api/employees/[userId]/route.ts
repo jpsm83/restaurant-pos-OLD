@@ -10,59 +10,64 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "../utils/calculateVacationProportional";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IEmployee";
+import { IEmployee } from "@/app/lib/interface/IEmployee";
 
 // imported models
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "../utils/salaryValidation";
 import Printer from "@/app/lib/models/printer";
 
-// @desc    Get user by ID
-// @route   GET /users/:userId
+// @desc    Get employee by ID
+// @route   GET /employees/:employeeId
 // @access  Private
 export const GET = async (
   req: Request,
-  context: { params: { userId: Types.ObjectId } }
+  context: { params: { employeeId: Types.ObjectId } }
 ) => {
   try {
-    const userId = context.params.userId;
+    const employeeId = context.params.employeeId;
 
-    if (isObjectIdValid([userId]) !== true) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (isObjectIdValid([employeeId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid employee ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
     await connectDb();
 
-    const user = await User.findById(userId).select("-password").lean();
+    const employee = await Employee.findById(employeeId)
+      .select("-password")
+      .lean();
 
-    return !user
-      ? new NextResponse(JSON.stringify({ message: "User not found!" }), {
+    return !employee
+      ? new NextResponse(JSON.stringify({ message: "Employee not found!" }), {
           status: 404,
           headers: { "Content-Type": "application/json" },
         })
-      : new NextResponse(JSON.stringify(user), {
+      : new NextResponse(JSON.stringify(employee), {
           status: 200,
           headers: {
             "Content-Type": "application/json",
           },
         });
   } catch (error) {
-    return handleApiError("Get user by its id failed!", error);
+    return handleApiError("Get employee by its id failed!", error);
   }
 };
 
-// user DO NOT UPDATE notifications, only readFlag
-// @desc    Update user
-// @route   PATCH /users/:userId
+// employee DO NOT UPDATE notifications, only readFlag
+// @desc    Update employee
+// @route   PATCH /employees/:employeeId
 // @access  Private
 export const PATCH = async (
   req: Request,
-  context: { params: { userId: Types.ObjectId } }
+  context: { params: { employeeId: Types.ObjectId } }
 ) => {
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
@@ -71,14 +76,14 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
-    const userId = context.params.userId;
+    const employeeId = context.params.employeeId;
     const {
-      username,
+      employeeName,
       email,
       password,
       idType,
       idNumber,
-      allUserRoles,
+      allEmployeeRoles,
       personalDetails,
       taxNumber,
       joinDate,
@@ -91,12 +96,12 @@ export const PATCH = async (
       salary,
       terminatedDate,
       comments,
-    } = (await req.json()) as IUser;
+    } = (await req.json()) as IEmployee;
 
-    // validate userId
-    if (isObjectIdValid([userId]) !== true) {
+    // validate employeeId
+    if (isObjectIdValid([employeeId]) !== true) {
       return new NextResponse(
-        JSON.stringify({ message: "User ID is not valid!" }),
+        JSON.stringify({ message: "Employee ID is not valid!" }),
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
@@ -105,7 +110,7 @@ export const PATCH = async (
     }
 
     // prepare update object
-    const updateUserObj: Partial<IUser> = {};
+    const updateEmployeeObj: Partial<IEmployee> = {};
 
     // add address fields
     if (address) {
@@ -116,7 +121,7 @@ export const PATCH = async (
           headers: { "Content-Type": "application/json" },
         });
       }
-      updateUserObj.address = address;
+      updateEmployeeObj.address = address;
     }
 
     // check personalDetails validation
@@ -129,7 +134,7 @@ export const PATCH = async (
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
-      updateUserObj.personalDetails = personalDetails;
+      updateEmployeeObj.personalDetails = personalDetails;
     }
 
     if (salary) {
@@ -140,32 +145,35 @@ export const PATCH = async (
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
-      updateUserObj.salary = salary;
+      updateEmployeeObj.salary = salary;
     }
 
     // connect before first call to DB
     await connectDb();
 
-    // check if user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+    // check if employee exists
+    const employee = await Employee.findById(employeeId);
+    if (!employee) {
+      return new NextResponse(
+        JSON.stringify({ message: "Employee not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    // check for duplicates username, email, taxNumber and idNumber with same business ID
-    const duplicateUser: IUser | null = await User.findOne({
-      _id: { $ne: userId },
-      business: user.business,
-      $or: [{ username }, { email }, { taxNumber }, { idNumber }],
+    // check for duplicates employeeName, email, taxNumber and idNumber with same business ID
+    const duplicateEmployee: IEmployee | null = await Employee.findOne({
+      _id: { $ne: employeeId },
+      businessId: employee.businessId,
+      $or: [{ employeeName }, { email }, { taxNumber }, { idNumber }],
     }).lean();
 
-    if (duplicateUser) {
-      const message = duplicateUser.active
-        ? "Username, email, taxNumber, or idNumber already exists and user is active!"
-        : "Username, email, taxNumber, or idNumber already exists in an inactive user!";
+    if (duplicateEmployee) {
+      const message = duplicateEmployee.active
+        ? "EmployeeName, email, taxNumber, or idNumber already exists and employee is active!"
+        : "EmployeeName, email, taxNumber, or idNumber already exists in an inactive employee!";
 
       return new NextResponse(JSON.stringify({ message }), {
         status: 409,
@@ -175,46 +183,46 @@ export const PATCH = async (
 
     // Hash password asynchronously only if it is provided
     if (password) {
-      updateUserObj.password = await hash(password, 10);
+      updateEmployeeObj.password = await hash(password, 10);
     }
 
     // Calculate vacationDaysLeft if relevant fields are updated
     if (vacationDaysPerYear || joinDate) {
-      updateUserObj.vacationDaysLeft = calculateVacationProportional(
-        new Date(joinDate || user.joinDate),
-        vacationDaysPerYear || user.vacationDaysPerYear
+      updateEmployeeObj.vacationDaysLeft = calculateVacationProportional(
+        new Date(joinDate || employee.joinDate),
+        vacationDaysPerYear || employee.vacationDaysPerYear
       );
     }
 
     // convert hours to milliseconds
-    // user might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
+    // employee might input the contract hours per week as a whole hour number on the front of the application and them it will be converted to milliseconds
     let contractHoursWeekMls;
     if (contractHoursWeek) {
       contractHoursWeekMls = contractHoursWeek * 3600000;
     }
 
     // Populate the update object with other provided fields
-    if (username) updateUserObj.username = username;
-    if (email) updateUserObj.email = email;
-    if (idType) updateUserObj.idType = idType;
-    if (idNumber) updateUserObj.idNumber = idNumber;
-    if (allUserRoles) updateUserObj.allUserRoles = allUserRoles;
-    if (taxNumber) updateUserObj.taxNumber = taxNumber;
-    if (joinDate) updateUserObj.joinDate = joinDate;
-    if (active !== undefined) updateUserObj.active = active;
-    if (onDuty !== undefined) updateUserObj.onDuty = onDuty;
+    if (employeeName) updateEmployeeObj.employeeName = employeeName;
+    if (email) updateEmployeeObj.email = email;
+    if (idType) updateEmployeeObj.idType = idType;
+    if (idNumber) updateEmployeeObj.idNumber = idNumber;
+    if (allEmployeeRoles) updateEmployeeObj.allEmployeeRoles = allEmployeeRoles;
+    if (taxNumber) updateEmployeeObj.taxNumber = taxNumber;
+    if (joinDate) updateEmployeeObj.joinDate = joinDate;
+    if (active !== undefined) updateEmployeeObj.active = active;
+    if (onDuty !== undefined) updateEmployeeObj.onDuty = onDuty;
     if (vacationDaysPerYear)
-      updateUserObj.vacationDaysPerYear = vacationDaysPerYear;
-    if (currentShiftRole) updateUserObj.currentShiftRole = currentShiftRole;
+      updateEmployeeObj.vacationDaysPerYear = vacationDaysPerYear;
+    if (currentShiftRole) updateEmployeeObj.currentShiftRole = currentShiftRole;
     if (contractHoursWeek)
-      updateUserObj.contractHoursWeek = contractHoursWeekMls; // in milliseconds
-    if (terminatedDate) updateUserObj.terminatedDate = terminatedDate;
-    if (comments) updateUserObj.comments = comments;
+      updateEmployeeObj.contractHoursWeek = contractHoursWeekMls; // in milliseconds
+    if (terminatedDate) updateEmployeeObj.terminatedDate = terminatedDate;
+    if (comments) updateEmployeeObj.comments = comments;
 
-    // update the user
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { $set: updateUserObj },
+    // update the employee
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      employeeId,
+      { $set: updateEmployeeObj },
       {
         new: true,
         lean: true,
@@ -222,20 +230,22 @@ export const PATCH = async (
       }
     );
 
-    // after updating user, if user id not active, delete printer related data
+    // after updating employee, if employee id not active, delete printer related data
     if (active === false) {
       await Printer.updateMany(
         {
-          businessId: user.businessId,
+          businessId: employee.businessId,
           $or: [
-            { usersAllowedToPrintDataIds: userId },
-            { "configurationSetupToPrintOrders.excludeUserIds": userId },
+            { employeesAllowedToPrintDataIds: employeeId },
+            {
+              "configurationSetupToPrintOrders.excludeEmployeeIds": employeeId,
+            },
           ],
         },
         {
           $pull: {
-            usersAllowedToPrintDataIds: userId,
-            "configurationSetupToPrintOrders.excludeUserIds": userId,
+            employeesAllowedToPrintDataIds: employeeId,
+            "configurationSetupToPrintOrders.excludeEmployeeIds": employeeId,
           },
         },
         {
@@ -249,69 +259,80 @@ export const PATCH = async (
     await session.commitTransaction();
 
     // Check if the purchase was found and updated
-    if (!updatedUser) {
-      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (!updatedEmployee) {
+      return new NextResponse(
+        JSON.stringify({ message: "Employee not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new NextResponse(
       JSON.stringify({
-        message: `User ${updateUserObj.username} updated successfully!`,
+        message: `Employee ${updateEmployeeObj.employeeName} updated successfully!`,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
     await session.abortTransaction();
-    return handleApiError("Update user failed!", error);
+    return handleApiError("Update employee failed!", error);
   } finally {
     session.endSession();
   }
 };
 
-// delete an user shouldnt be allowed for data integrity, historical purposes and analytics
-// the only case where an user should be deleted is if the business itself is deleted
-// If you delete a user from the database and there are other documents that have a relationship with that user, those related documents may still reference the deleted user. This can lead to issues such as orphaned records, broken references, and potential errors when querying or processing those related documents.
-// @desc    Delete user
-// @route   DELETE /users/:userId
+// delete an employee shouldnt be allowed for data integrity, historical purposes and analytics
+// the only case where an employee should be deleted is if the business itself is deleted
+// If you delete a employee from the database and there are other documents that have a relationship with that employee, those related documents may still reference the deleted employee. This can lead to issues such as orphaned records, broken references, and potential errors when querying or processing those related documents.
+// @desc    Delete employee
+// @route   DELETE /employees/:employeeId
 // @access  Private
 export const DELETE = async (
   req: Request,
-  context: { params: { userId: Types.ObjectId } }
+  context: { params: { employeeId: Types.ObjectId } }
 ) => {
   try {
-    const userId = context.params.userId;
+    const employeeId = context.params.employeeId;
 
-    // check if the userId is a valid ObjectId
-    if (!isObjectIdValid([userId])) {
-      return new NextResponse(JSON.stringify({ message: "Invalid user ID!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    // check if the employeeId is a valid ObjectId
+    if (!isObjectIdValid([employeeId])) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid employee ID!" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
     await connectDb();
 
-    // Delete the user
-    const result = await User.deleteOne({ _id: userId });
+    // Delete the employee
+    const result = await Employee.deleteOne({ _id: employeeId });
 
     if (result.deletedCount === 0) {
-      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Employee not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new NextResponse(
-      JSON.stringify({ message: `User id ${userId} deleted successfully` }),
+      JSON.stringify({
+        message: `Employee id ${employeeId} deleted successfully`,
+      }),
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    return handleApiError("Delete user failed!", error);
+    return handleApiError("Delete employee failed!", error);
   }
 };

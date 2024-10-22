@@ -4,7 +4,7 @@ import Business from "@/app/lib/models/business";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SupplierGood from "@/app/lib/models/supplierGood";
 import Supplier from "@/app/lib/models/supplier";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import Purchase from "@/app/lib/models/purchase";
 
 const documentModelExists = async (
@@ -12,7 +12,7 @@ const documentModelExists = async (
   businessGoodId: FormDataEntryValue | null,
   supplierGoodId: FormDataEntryValue | null,
   supplierId: FormDataEntryValue | null,
-  userId: FormDataEntryValue | null,
+  employeeId: FormDataEntryValue | null,
   purchaseId: FormDataEntryValue | null
 ) => {
   // Create a mapping between model names and actual models
@@ -21,7 +21,7 @@ const documentModelExists = async (
     BusinessGood,
     SupplierGood,
     Supplier,
-    User,
+    Employee,
     Purchase,
   };
 
@@ -49,10 +49,10 @@ const documentModelExists = async (
     documentModel.id = supplierId;
   }
 
-  if (userId) {
-    documentModel.restaurantSubfolder = "users";
-    documentModel.name = "User";
-    documentModel.id = userId;
+  if (employeeId) {
+    documentModel.restaurantSubfolder = "employees";
+    documentModel.name = "Employee";
+    documentModel.id = employeeId;
   }
 
   if(purchaseId) {

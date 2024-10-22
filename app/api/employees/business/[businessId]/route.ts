@@ -7,10 +7,10 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
-// @desc   Get user by bussiness ID
-// @route  GET /users/business/:businessId
+// @desc   Get employee by bussiness ID
+// @route  GET /employees/business/:businessId
 // @access Private
 export const GET = async (
   req: Request,
@@ -34,25 +34,27 @@ export const GET = async (
     // connect before first call to DB
     await connectDb();
 
-    const users = await User.find({ businessId: businessId })
+    const employees = await Employee.find({ businessId: businessId })
       .select("-password")
       .lean();
 
-    return !users.length
+    return !employees.length
       ? new NextResponse(
-          JSON.stringify({ message: "No users found within the business id!" }),
+          JSON.stringify({
+            message: "No employees found within the business id!",
+          }),
           {
             status: 404,
             headers: { "Content-Type": "application/json" },
           }
         )
-      : new NextResponse(JSON.stringify(users), {
+      : new NextResponse(JSON.stringify(employees), {
           status: 200,
           headers: {
             "Content-Type": "application/json",
           },
         });
   } catch (error) {
-    return handleApiError("Get users by business id failed!", error);
+    return handleApiError("Get employees by business id failed!", error);
   }
 };

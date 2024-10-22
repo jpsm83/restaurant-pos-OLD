@@ -7,7 +7,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // @desc    Get daily report by ID
@@ -33,9 +33,9 @@ export const GET = async (
 
     const dailySalesReport = await DailySalesReport.findById(dailySalesReportId)
       .populate({
-        path: "usersDailySalesReport.userId",
-        select: "username",
-        model: User,
+        path: "employeesDailySalesReport.employeeId",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 

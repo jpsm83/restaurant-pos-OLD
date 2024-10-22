@@ -12,7 +12,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Printer from "@/app/lib/models/printer";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import SalesPoint from "@/app/lib/models/salesPoint";
 
 // @desc    Get printer by ID
@@ -44,9 +44,9 @@ export const GET = async (
         model: Printer,
       })
       .populate({
-        path: "usersAllowedToPrintDataIds",
-        select: "username",
-        model: User,
+        path: "employeesAllowedToPrintDataIds",
+        select: "employeeName",
+        model: Employee,
       })
       .populate({
         path: "configurationSetupToPrintOrders.salesPointIds",
@@ -54,9 +54,9 @@ export const GET = async (
         model: SalesPoint,
       })
       .populate({
-        path: "configurationSetupToPrintOrders.excludeUserIds",
-        select: "username",
-        model: User,
+        path: "configurationSetupToPrintOrders.excludeEmployeeIds",
+        select: "employeeName",
+        model: Employee,
       })
       .lean();
 
@@ -92,7 +92,7 @@ export const PATCH = async (
       ipAddress,
       port,
       backupPrinterId,
-      usersAllowedToPrintDataIds,
+      employeesAllowedToPrintDataIds,
     } = (await req.json()) as IPrinter;
 
     // check if printerId is valid
@@ -119,16 +119,16 @@ export const PATCH = async (
       }
     }
 
-    // validate usersAllowedToPrintDataIds if it exists
-    if (usersAllowedToPrintDataIds) {
+    // validate employeesAllowedToPrintDataIds if it exists
+    if (employeesAllowedToPrintDataIds) {
       if (
-        !Array.isArray(usersAllowedToPrintDataIds) ||
-        isObjectIdValid(usersAllowedToPrintDataIds) !== true
+        !Array.isArray(employeesAllowedToPrintDataIds) ||
+        isObjectIdValid(employeesAllowedToPrintDataIds) !== true
       ) {
         return new NextResponse(
           JSON.stringify({
             message:
-              "UsersAllowedToPrintDataIds have to be an array of valid Ids!",
+              "EmployeesAllowedToPrintDataIds have to be an array of valid Ids!",
           }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
@@ -149,14 +149,18 @@ export const PATCH = async (
       );
     }
 
-    // combine duplicate printer check and usersAllowedToPrintDataIds check into a single query
+    // combine duplicate printer check and employeesAllowedToPrintDataIds check into a single query
     const conflictingPrinter: IPrinter | null = await Printer.findOne({
       _id: { $ne: printerId },
       businessId: printer.businessId,
       $or: [
         { printerAlias },
         { ipAddress },
-        { usersAllowedToPrintDataIds: { $in: usersAllowedToPrintDataIds } },
+        {
+          employeesAllowedToPrintDataIds: {
+            $in: employeesAllowedToPrintDataIds,
+          },
+        },
       ],
     }).lean();
 
@@ -165,7 +169,7 @@ export const PATCH = async (
         conflictingPrinter.printerAlias === printerAlias ||
         conflictingPrinter.ipAddress === ipAddress
           ? "Printer already exists!"
-          : "UsersAllowedToPrintDataIds are already being used in some other printer!";
+          : "EmployeesAllowedToPrintDataIds are already being used in some other printer!";
       return new NextResponse(JSON.stringify({ message }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -186,8 +190,9 @@ export const PATCH = async (
     if (ipAddress) updatePrinterObj.ipAddress = ipAddress;
     if (port) updatePrinterObj.port = port;
     if (backupPrinterId) updatePrinterObj.backupPrinterId = backupPrinterId;
-    if (usersAllowedToPrintDataIds)
-      updatePrinterObj.usersAllowedToPrintDataIds = usersAllowedToPrintDataIds;
+    if (employeesAllowedToPrintDataIds)
+      updatePrinterObj.employeesAllowedToPrintDataIds =
+        employeesAllowedToPrintDataIds;
 
     // update the printer
     const updatedPrinter = await Printer.findByIdAndUpdate(

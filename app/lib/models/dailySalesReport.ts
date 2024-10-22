@@ -15,27 +15,27 @@ export const goodsReducedSchema = new Schema({
   totalCostPrice: { type: Number, required: true }, // total cost price of the good sold or void
 });
 
-const userDailySalesReportSchema = new Schema({
+const employeeDailySalesReportSchema = new Schema({
   // required fields
-  userId: {
+  employeeId: {
     type: Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Employee",
     required: true,
-  }, // user that closed the salesInstance, salesInstance.responsibleBy
+  }, // employee that closed the salesInstance, salesInstance.responsibleBy
 
   // optional fields on creation, required on update
-  hasOpenSalesInstances: { type: Boolean }, // if the user has open sales instances, the user can view but not close the daily report
-  // those "SALES" refer salesInstance sales closed by the user (salesInstance.responsibleBy)
-  // not "SALES" made by the user, the user can close the salesInstance of another user if shifts are passed and the previous user has opened the tables
-  // when a salesInstance is closed, the sales from the previews user is pass to the new one because the new user is responsible for the salesInstance and will handle the payment in the end
-  userPaymentMethods: [paymentMethod], // array of payment methods used by the user
+  hasOpenSalesInstances: { type: Boolean }, // if the employee has open sales instances, the employee can view but not close the daily report
+  // those "SALES" refer salesInstance sales closed by the employee (salesInstance.responsibleBy)
+  // not "SALES" made by the employee, the employee can close the salesInstance of another employee if shifts are passed and the previous employee has opened the tables
+  // when a salesInstance is closed, the sales from the previews employee is pass to the new one because the new employee is responsible for the salesInstance and will handle the payment in the end
+  employeePaymentMethods: [paymentMethod], // array of payment methods used by the employee
   totalSalesBeforeAdjustments: { type: Number }, // sum of all orders made by the salesInstance.closedBy regardless of promotions, discounts, voids, or cancellations
   totalNetPaidAmount: { type: Number }, // sum of all orders after adjustments have been made to the final price, vois, invitations, discounts, and promotions
   totalTipsReceived: { type: Number }, // sum of all tips
-  totalCostOfGoodsSold: { type: Number }, // sum of the cost price of all goods sold by the user
-  // if salesInstance is passed to another user, new user will be responsible for the previews sales, and also the customers served at the salesInstance will be pass to the new user
-  // we recomment users to close their tables on a shift change, so the individual analitics by user will be more accurate
-  // this has no negative impact on the business analitics, because the sales will be passed to the new user, and the customers served will be passed to the new user
+  totalCostOfGoodsSold: { type: Number }, // sum of the cost price of all goods sold by the employee
+  // if salesInstance is passed to another employee, new employee will be responsible for the previews sales, and also the customers served at the salesInstance will be pass to the new employee
+  // we recomment employees to close their tables on a shift change, so the individual analitics by employee will be more accurate
+  // this has no negative impact on the business analitics, because the sales will be passed to the new employee, and the customers served will be passed to the new employee
   totalCustomersServed: {
     type: Number,
     default: 0,
@@ -44,24 +44,24 @@ const userDailySalesReportSchema = new Schema({
     type: Number,
     default: 0,
   }, // average of customers expended (total of customers served / total of sales)
-  // those "GOODS" refer to the goods sold or void by the user itself, not the one that closed the salesInstance (order.user)
-  soldGoods: [goodsReducedSchema], // array of goods sold by the user
-  voidedGoods: [goodsReducedSchema], // array of goods void by the user
-  invitedGoods: [goodsReducedSchema], // array of goods invited by the user
+  // those "GOODS" refer to the goods sold or void by the employee itself, not the one that closed the salesInstance (order.employee)
+  soldGoods: [goodsReducedSchema], // array of goods sold by the employee
+  voidedGoods: [goodsReducedSchema], // array of goods void by the employee
+  invitedGoods: [goodsReducedSchema], // array of goods invited by the employee
   totalVoidValue: { type: Number }, // sum of the price of the voided items
   totalInvitedValue: { type: Number }, // sum of the price of the invited items
-}); // individual sales report of the user
+}); // individual sales report of the employee
 
 const dailySalesReportSchema = new Schema(
   {
     // required fields
     dailyReferenceNumber: { type: Number, required: true, unique: true }, // This is the reference number of the work day, we cant use dates to refer to work day because one work day can be closed in the next day, therefore we need a reference number to refer to the work day report.
-    isDailyReportOpen: { type: Boolean, required: true, default: true }, // This is the status of the daily report, if it is open or closed, if it is open the user can still add sales to the report, if it is closed the user can only see the report. Once close all the calculations will be done and the report will be closed for editing.
+    isDailyReportOpen: { type: Boolean, required: true, default: true }, // This is the status of the daily report, if it is open or closed, if it is open the employee can still add sales to the report, if it is closed the employee can only see the report. Once close all the calculations will be done and the report will be closed for editing.
     timeCountdownToClose: { type: Number, required: true }, // This date is the limit date to close the daily report, it usualy will be the next 24 hours after the current dailyReferenceNumber is created.
-    usersDailySalesReport: {
-      type: [userDailySalesReportSchema],
+    employeesDailySalesReport: {
+      type: [employeeDailySalesReportSchema],
       required: true,
-    }, // array of objects with each individual sales report of the user
+    }, // array of objects with each individual sales report of the employee
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
@@ -70,13 +70,13 @@ const dailySalesReportSchema = new Schema(
 
     // optional fields for creation, required for update
     businessPaymentMethods: [paymentMethod], // array of all payment methods and its total sales
-    dailyTotalSalesBeforeAdjustments: { type: Number }, // sum of all users sales
-    dailyNetPaidAmount: { type: Number }, // sum of all users netPaid
-    dailyTipsReceived: { type: Number }, // sum of all users tips
+    dailyTotalSalesBeforeAdjustments: { type: Number }, // sum of all employees sales
+    dailyNetPaidAmount: { type: Number }, // sum of all employees netPaid
+    dailyTipsReceived: { type: Number }, // sum of all employees tips
     dailyCostOfGoodsSold: { type: Number }, // sum of all goods costPrice incluiding voids and invitaions
     dailyProfit: { type: Number }, // difference between totalNetPaid and totalCost (totalNetPaid - totalCost)
-    dailyCustomersServed: { type: Number }, // sum of all users customersServed
-    dailyAverageCustomerExpenditure: { type: Number }, // average of all users customersExpended (totalNetPaid / dailyCustomersServed)
+    dailyCustomersServed: { type: Number }, // sum of all employees customersServed
+    dailyAverageCustomerExpenditure: { type: Number }, // average of all employees customersExpended (totalNetPaid / dailyCustomersServed)
     dailySoldGoods: [goodsReducedSchema], // array of goods sold on the day
     dailyVoidedGoods: [goodsReducedSchema], // array of goods void on the day
     dailyInvitedGoods: [goodsReducedSchema], // array of goods invited on the day

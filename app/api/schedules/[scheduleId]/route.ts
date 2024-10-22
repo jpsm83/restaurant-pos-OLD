@@ -11,7 +11,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
 // @desc    Get schedule by ID
 // @route   GET /schedules/:scheduleId
@@ -38,9 +38,9 @@ export const GET = async (
 
     const schedule = await Schedule.findById(scheduleId)
       .populate({
-        path: "employeesSchedules.userId",
-        select: "username allUserRoles",
-        model: User,
+        path: "employeesSchedules.employeeId",
+        select: "employeeName allEmployeeRoles",
+        model: Employee,
       })
       .lean();
 

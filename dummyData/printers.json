@@ -12,10 +12,10 @@
         "description": "printer1description",
         "location": "printer1location",
         "printFor": {
-            "users": [
+            "employees": [
                 {
                     "_id": "66758b8904c4e6f5bbaa6b81",
-                    "username": "user3"
+                    "employeeName": "employee3"
                 }
             ],
             "categories": [],

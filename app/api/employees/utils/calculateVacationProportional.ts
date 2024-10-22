@@ -26,7 +26,7 @@ export const calculateVacationProportional = (
       vacationDaysPerYear * (1 - proportionOfYearPassed)
     );
   } else {
-    // If the user joined in a previous year, they have the full vacation days available
+    // If the employee joined in a previous year, they have the full vacation days available
     vacationDaysLeft = vacationDaysPerYear;
   }
 

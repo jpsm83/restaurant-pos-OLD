@@ -6,11 +6,11 @@ const notificationSchema = new Schema(
     // required fields
     notificationType: { type: notificationTypes, required: true }, // Type of notification "warning", "emergency", "info"
     message: { type: String, required: true }, // notification message
-    userRecipientsId: {
+    employeeRecipientsId: {
       type: [Schema.Types.ObjectId],
-      ref: "User",
+      ref: "Employee",
       required: true,
-    }, // Reference to the user receiving the notification
+    }, // Reference to the employee receiving the notification
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
@@ -18,7 +18,7 @@ const notificationSchema = new Schema(
     }, // Reference to the business where the notification was created
 
     // non required fields
-    userSenderId: { type: Schema.Types.ObjectId, ref: "User" }, // Reference to the user who created the notification, only used on messages
+    employeeSenderId: { type: Schema.Types.ObjectId, ref: "Employee" }, // Reference to the employee who created the notification, only used on messages
   },
   {
     timestamps: true,

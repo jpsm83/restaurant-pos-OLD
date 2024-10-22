@@ -12,13 +12,13 @@ import Printer from "@/app/lib/models/printer";
 // imported interfaces
 import { IConfigurationSetupToPrintOrders } from "@/app/lib/interface/IPrinter";
 
-// this route will add individual configurationSetupToPrintOrders configuration to the printer with their properties and the users that will apply to
+// this route will add individual configurationSetupToPrintOrders configuration to the printer with their properties and the employees that will apply to
 // [
 //     "mainCategory": "Food", this will dictate what the printer will print as main category
 //     "subCategories": ["Ice Cream", "Cake"] this will dictate what the printer will print as sub category from the main category
 //   {
 //     "salesPointIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the sales points id that this configuration will apply
-//     "excludeUserIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the users that this configurarion wont apply
+//     "excludeEmployeeIds": ["60d5ecb8b3333356aef7e633", "60d5ecb8b3333356aef7e633"], those are the employees that this configurarion wont apply
 //   },
 // ]
 
@@ -37,7 +37,7 @@ export const PATCH = async (
       mainCategory, // single string
       subCategories, // array of strings
       salesPointIds, // array of sales point ids
-      excludeUserIds, // array of user ids
+      excludeEmployeeIds, // array of employee ids
     } = (await req.json()) as IConfigurationSetupToPrintOrders;
 
     // validate printerId
@@ -68,16 +68,16 @@ export const PATCH = async (
       );
     }
 
-    // if excludeUserIds is provided, check if it is a valid array of ObjectIds
-    if (excludeUserIds) {
+    // if excludeEmployeeIds is provided, check if it is a valid array of ObjectIds
+    if (excludeEmployeeIds) {
       if (
-        !Array.isArray(excludeUserIds) ||
-        excludeUserIds.length === 0 ||
-        isObjectIdValid(excludeUserIds) !== true
+        !Array.isArray(excludeEmployeeIds) ||
+        excludeEmployeeIds.length === 0 ||
+        isObjectIdValid(excludeEmployeeIds) !== true
       ) {
         return new NextResponse(
           JSON.stringify({
-            message: "ExcludeUserIds must be an array of ObjectIds!",
+            message: "ExcludeEmployeeIds must be an array of ObjectIds!",
           }),
           {
             status: 400,
@@ -141,7 +141,7 @@ export const PATCH = async (
             mainCategory,
             subCategories,
             salesPointIds,
-            excludeUserIds,
+            excludeEmployeeIds,
           },
         },
       },

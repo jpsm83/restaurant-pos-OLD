@@ -11,12 +11,12 @@ import getWeekdaysInMonth from "../../utils/getWeekDaysInMonth";
 import calculateEmployeeCost from "../../utils/calculateEmployeeCost";
 
 // imported interfaces
-import { IUser } from "@/app/lib/interface/IEmployee";
+import { IEmployee } from "@/app/lib/interface/IEmployee";
 import { IEmployeeSchedule, ISchedule } from "@/app/lib/interface/ISchedule";
 
 // imported models
 import Schedule from "@/app/lib/models/schedule";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 
 // @desc    Create new schedules
 // @route   PATCH /schedules/:schedulesId/addEmployeeToSchedule
@@ -48,7 +48,7 @@ export const PATCH = async (
 
     const scheduleId = context.params.scheduleId;
 
-    const { userId, role, timeRange, vacation } = employeeSchedule;
+    const { employeeId, role, timeRange, vacation } = employeeSchedule;
     const startTime = new Date(timeRange.startTime);
     const endTime = new Date(timeRange.endTime);
 
@@ -78,7 +78,7 @@ export const PATCH = async (
     // check if the schedule exists
     const schedule: ISchedule | null = await Schedule.findById(scheduleId)
       .select(
-        "employeesSchedules.userId employeesSchedules.vacation employeesSchedules.timeRange"
+        "employeesSchedules.employeeId employeesSchedules.vacation employeesSchedules.timeRange"
       )
       .lean();
 
@@ -91,7 +91,7 @@ export const PATCH = async (
 
     // check if the employee is already in the schedule
     const employeeAlreadyScheduled = schedule.employeesSchedules.filter(
-      (emp) => emp.userId.toString() === userId.toString()
+      (emp) => emp.employeeId.toString() === employeeId.toString()
     );
 
     // if employee is already on vacation, he can't be scheduled
@@ -136,15 +136,20 @@ export const PATCH = async (
       }
     }
 
-    const userEmployee: IUser | null = await User.findById(userId)
+    const employeeEmployee: IEmployee | null = await Employee.findById(
+      employeeId
+    )
       .select("salary.grossSalary salary.payFrequency")
       .lean();
 
-    if (!userEmployee) {
-      return new NextResponse(JSON.stringify({ message: "User not found!" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (!employeeEmployee) {
+      return new NextResponse(
+        JSON.stringify({ message: "Employee not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Calculate difference in milliseconds
@@ -155,17 +160,17 @@ export const PATCH = async (
     );
     let employeeCost = 0;
 
-    if (userEmployee?.salary) {
+    if (employeeEmployee?.salary) {
       employeeCost = calculateEmployeeCost(
-        userEmployee.salary,
+        employeeEmployee.salary,
         shiftDurationMs,
         weekdaysInMonth
       );
     }
 
-    // prepare the user schedule update object
-    const addUserSchedule = {
-      userId,
+    // prepare the employee schedule update object
+    const addEmployeeSchedule = {
+      employeeId,
       role,
       timeRange: {
         startTime,
@@ -176,13 +181,13 @@ export const PATCH = async (
       employeeCost,
     };
 
-    // Update the schedule and user in a single operation
+    // Update the schedule and employee in a single operation
     const totalEmployeesScheduledIncrement = employeeAlreadyScheduled ? 0 : 1;
 
     const updatedSchedule = await Schedule.findByIdAndUpdate(
       scheduleId,
       {
-        $push: { employeesSchedules: addUserSchedule },
+        $push: { employeesSchedules: addEmployeeSchedule },
         $inc: {
           totalDayEmployeesCost: employeeCost,
           totalEmployeesScheduled: vacation
@@ -195,17 +200,17 @@ export const PATCH = async (
     );
 
     if (updatedSchedule && vacation) {
-      const updatedUser = await User.findByIdAndUpdate(
-        userId,
+      const updatedEmployee = await Employee.findByIdAndUpdate(
+        employeeId,
         { $inc: { vacationDaysLeft: -1 } },
         { new: true, lean: true, session }
       );
 
-      if (!updatedUser) {
+      if (!updatedEmployee) {
         return new NextResponse(
           JSON.stringify({
             message:
-              "Update user vacation days left failed upon adding user to schedule!",
+              "Update employee vacation days left failed upon adding employee to schedule!",
           }),
           { status: 500, headers: { "Content-Type": "application/json" } }
         );

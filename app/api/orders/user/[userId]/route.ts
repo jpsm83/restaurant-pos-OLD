@@ -10,35 +10,38 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Order from "@/app/lib/models/order";
-import User from "@/app/lib/models/employee";
+import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
 import SalesInstance from "@/app/lib/models/salesInstance";
 
-// @desc    Get orders user ID
-// @route   GET /orders/user/:userId
+// @desc    Get orders employee ID
+// @route   GET /orders/employee/:employeeId
 // @access  Private
 export const GET = async (
   req: Request,
   context: {
-    params: { userId: Types.ObjectId };
+    params: { employeeId: Types.ObjectId };
   }
 ) => {
   try {
-    const userId = context.params.userId;
+    const employeeId = context.params.employeeId;
 
-    // check if userId is valid
-    if (isObjectIdValid([userId]) !== true) {
-      return new NextResponse(JSON.stringify({ message: "Invalid userId" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    // check if employeeId is valid
+    if (isObjectIdValid([employeeId]) !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid employeeId" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // connect before first call to DB
     await connectDb();
 
-    const orders = await Order.find({ userId: userId })
+    const orders = await Order.find({ employeeId: employeeId })
       .populate({
         path: "salesInstanceId",
         select: "salesPointId",
@@ -50,9 +53,9 @@ export const GET = async (
         model: SalesInstance,
       })
       .populate({
-        path: "userId",
-        select: "username allUserRoles currentShiftRole",
-        model: User,
+        path: "employeeId",
+        select: "employeeName allEmployeeRoles currentShiftRole",
+        model: Employee,
       })
       .populate({
         path: "businessGoodsIds",
@@ -72,6 +75,6 @@ export const GET = async (
           headers: { "Content-Type": "application/json" },
         });
   } catch (error) {
-    return handleApiError("Get all orders by user ID failed!", error);
+    return handleApiError("Get all orders by employee ID failed!", error);
   }
 };
