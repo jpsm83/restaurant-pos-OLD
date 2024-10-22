@@ -33,8 +33,9 @@ export const generateQrCode = async (businessId: Types.ObjectId) => {
     //    them order will be place to the kitchen/bar
 
     // Generate QR code as a data URL
+    // this is the api url where the qrcode will redirect
     const qrCodeDataUrl = await QRCode.toDataURL(
-      `http://localhost:3000/selfOrder/${randomUniqueId}`
+      `http://localhost:3000/api/salesInstances/selfOrderingLocationId/${randomUniqueId}`
     );
 
     // Prepare the data for Cloudinary upload

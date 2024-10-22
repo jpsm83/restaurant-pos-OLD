@@ -81,7 +81,6 @@ export const POST = async (req: Request) => {
     const {
       salesPointId,
       guests,
-      status = "Occupied",
       openedById,
       businessId,
       clientName,

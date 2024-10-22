@@ -2,7 +2,14 @@ business - DONE
 salesPoint - DONE
 users - DONE
 dailySalesReports - DONE
+
+
 salesInstance - DONE
+- create logic for self ordering
+- user has to have an account
+- logic to pay
+
+
 printers - DONE
 schedules - DONE
 suppliers - DONE
@@ -20,5 +27,5 @@ cloudinaryActions
 
 - daily saler report have to be tested once we got all the models tested and with data
 - transform cloudinaryActions route to be a function to be used in all the creations that could have images
-- when a salesInstance is created with qrCode, update the qrLastScanned of the salesPoint
+- when a salesInstance is created by client using qrCode, update the qrLastScanned of the salesPoint
 - add collor themes for the types of businessGoods (or photo)
