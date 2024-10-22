@@ -12,8 +12,7 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 inventories - DONE
-
-notifications - get/getAll/post/patch/delete basic done
+notifications - DONE
 
 monthlyBusinessReport
 reservations

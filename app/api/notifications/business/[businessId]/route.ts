@@ -1,10 +1,14 @@
-import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
+import { Types } from "mongoose";
+
+// imported utils
+import connectDb from "@/app/lib/utils/connectDb";
+import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Notification from "@/app/lib/models/notification";
-import { Types } from "mongoose";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import User from "@/app/lib/models/user";
 
 // @desc    Get all notifications by business ID
 // @route   GET /notifications/business/:businessId
@@ -15,24 +19,28 @@ export const GET = async (
     params: { businessId: Types.ObjectId };
   }
 ) => {
+  const businessId = context.params.businessId;
+
+  if (!isObjectIdValid([businessId])) {
+    return new NextResponse(
+      JSON.stringify({ message: "Invalid business ID!" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   try {
-    const businessId = context.params.businessId;
-
-    if (!businessId || !Types.ObjectId.isValid(businessId)) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid business ID!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
     // connect before first call to DB
     await connectDb();
 
-    const notifications = await Notification.find({ business: businessId })
-      .populate("recipients", "username")
+    const notifications = await Notification.find({ businessId: businessId })
+      .populate({
+        path: "userRecipientsId",
+        select: "username",
+        model: User,
+      })
       .lean();
 
     return !notifications.length

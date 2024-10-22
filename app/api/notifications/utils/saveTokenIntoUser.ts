@@ -1,3 +1,8 @@
+// this will be used to send push notifications to users
+// tokens have to be saved in the user model
+// firebase cloud messaging tokens are used to send push notifications to users
+// it is not done yet
+
 import { Types } from "mongoose";
 
 // imported utils
