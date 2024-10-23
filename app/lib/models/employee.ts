@@ -1,16 +1,7 @@
 import { Schema, model, models } from "mongoose";
 import { addressSchema } from "./address";
 import { idTypes, employeeRoles } from "../enums.js";
-
-const personalDetailsSchema = new Schema({
-  // required fields
-  firstName: { type: String, required: true }, // first name
-  lastName: { type: String, required: true }, // last name
-  nationality: { type: String, required: true }, // country of birth
-  gender: { type: String, enum: ["Man", "Woman", "Other"], required: true }, // gender
-  birthDate: { type: Date, required: true }, // date of birth
-  phoneNumber: { type: String, required: true }, // phone number
-});
+import { personalDetailsSchema } from "./personalDetails";
 
 const salarySchema = new Schema({
   payFrequency: {
@@ -25,7 +16,7 @@ const salarySchema = new Schema({
 const employeeSchema = new Schema(
   {
     // required fields
-    employeeName: { type: String, required: true, unique: true }, // employeeName for the employee
+    employeeName: { type: String, required: true, unique: true }, // username for the employee
     email: { type: String, required: true, unique: true }, // email
     password: { type: String, required: true }, // password for the employee
     idType: {

@@ -6,7 +6,7 @@ import connectDb from "@/app/lib/utils/connectDb";
 
 // imported interfaces
 import { IEmployee } from "@/app/lib/interface/IEmployee";
-import { personalDetailsValidation } from "./utils/personalDetailsValidation";
+import { personalDetailsValidation } from "../../lib/utils/personalDetailsValidation";
 import { addressValidation } from "@/app/lib/utils/addressValidation";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { calculateVacationProportional } from "./utils/calculateVacationProportional";
@@ -149,7 +149,7 @@ export const POST = async (req: Request) => {
         ? "EmployeeName, email, taxNumber, or idNumber already exists and employee is active!"
         : "EmployeeName, email, taxNumber, or idNumber already exists in an inactive employee!";
 
-      return new NextResponse(JSON.stringify({ message }), {
+      return new NextResponse(JSON.stringify({ message: message }), {
         status: 409,
         headers: { "Content-Type": "application/json" },
       });

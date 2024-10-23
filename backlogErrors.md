@@ -1,14 +1,18 @@
 business - DONE
 salesPoint - DONE
 employees - DONE
+
+
+customer - ready for test
+
+
 dailySalesReports - DONE
-
-
 salesInstance - DONE
 - create logic for self ordering
 - user has to have an account
 - logic to pay
 - create user for clients differente of user for employee
+
 
 
 printers - DONE
@@ -17,7 +21,10 @@ suppliers - DONE
 supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
+
 orders - DONE
+- can have employeeId or customerId, or even better, could by orderById for both
+
 purchases - DONE
 inventories - DONE
 notifications - DONE

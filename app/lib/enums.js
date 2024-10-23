@@ -76,7 +76,7 @@ export const locationTypes = [
   "Other",
 ];
 
-export const notificationTypes = ["Warning", "Emergency", "Info", "Message"];
+export const notificationTypes = ["Warning", "Emergency", "Info", "Message", "Promotion", "Birthday", "Event"];
 
 export const salesInstanceStatus = ["Occupied", "Reserved", "Bill", "Closed"];
 

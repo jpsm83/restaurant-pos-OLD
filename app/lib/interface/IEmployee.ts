@@ -1,19 +1,11 @@
 import { Types } from "mongoose";
 import { IAddress } from "./IAddress";
+import { IPersonalDetails } from "./IPersonalDetails";
 
 export interface ISalary {
   payFrequency: string;
   grossSalary: number;
   netSalary: number;
-}
-
-export interface IPersonalDetails {
-  firstName: string;
-  lastName: string;
-  nationality: string;
-  gender: string;
-  birthDate: Date;
-  phoneNumber: string;
 }
 
 export interface IEmployee {

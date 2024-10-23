@@ -8,6 +8,7 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // imported interfaces
 import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
+import connectDb from "@/app/lib/utils/connectDb";
 
 // this function will create daily report if not exists
 // it will be imported to be used on the salesInstance route
@@ -28,15 +29,18 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
 
     // create daily report object
     const dailySalesReportObj: IDailySalesReport = {
-      dailyReferenceNumber: currentTimeUnix,  // This should be a valid number
+      dailyReferenceNumber: currentTimeUnix, // This should be a valid number
       isDailyReportOpen: true,
       timeCountdownToClose: countdownToClose,
       employeesDailySalesReport: [],
       businessId: businessId,
     };
 
+    // connect before first call to DB
+    await connectDb();
+
     const dailySalesReport = await DailySalesReport.create(dailySalesReportObj);
-    
+
     // return daily reference number
     return dailySalesReport.dailyReferenceNumber;
   } catch (error) {
