@@ -15,7 +15,7 @@ export const changeOrdersStatus = async (
   orderIdsArr: Types.ObjectId[],
   newStatus: string
 ) => {
-  // validate employeeId
+  // validate orderIdsArr
   if (isObjectIdValid(orderIdsArr) !== true) {
     return "OrderIdsArr not valid!";
   }

@@ -28,6 +28,7 @@ import { addDiscountToOrders } from "./utils/addDiscountToOrders";
 import { changeOrdersBillingStatus } from "./utils/changeOrdersBillingStatus";
 import { changeOrdersStatus } from "./utils/changeOrdersStatus";
 import { transferOrdersBetweenSalesInstances } from "./utils/transferOrdersBetweenSalesInstances";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -52,6 +53,11 @@ export const GET = async () => {
         path: "employeeId",
         select: "employeeName allEmployeeRoles currentShiftRole",
         model: Employee,
+      })
+      .populate({
+        path: "customerId",
+        select: "employeeName allEmployeeRoles currentShiftRole",
+        model: Customer,
       })
       .populate({
         path: "businessGoodsIds",
@@ -131,27 +137,46 @@ export const POST = async (req: Request) => {
   //]
 
   // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
-  const { ordersArr, employeeId, salesInstanceId, businessId } =
+  const { ordersArr, employeeId, customerId, salesInstanceId, businessId } =
     (await req.json()) as {
       ordersArr: Partial<IOrder>[];
       employeeId: Types.ObjectId;
+      customerId: Types.ObjectId;
       salesInstanceId: Types.ObjectId;
       businessId: Types.ObjectId;
     };
 
   // check required fields
-  if (!ordersArr || !employeeId || !salesInstanceId || !businessId) {
+  if (!ordersArr || !salesInstanceId || !businessId) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "OrdersArr, employeeId, salesInstanceId and businessId are required fields!",
+          "OrdersArr, salesInstanceId and businessId are required fields!",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
+  // employeeId or customerId is required
+  if ((!employeeId && !customerId) || (employeeId && customerId)) {
+    return new NextResponse(
+      JSON.stringify({
+        message: "EmployeeId or customerId is required!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  let objectIds = [businessId, salesInstanceId];
+
+  if (employeeId) {
+    objectIds.push(employeeId);
+  } else {
+    objectIds.push(customerId);
+  }
+
   // validate ids
-  if (isObjectIdValid([employeeId, businessId, salesInstanceId]) !== true) {
+  if (isObjectIdValid(objectIds) !== true) {
     return new NextResponse(
       JSON.stringify({
         message:
@@ -227,7 +252,8 @@ export const POST = async (req: Request) => {
       dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
       billingStatus: "Open",
       orderStatus: "Sent",
-      employeeId,
+      employeeId: employeeId || undefined,
+      customerId: customerId || undefined,
       salesInstanceId,
       businessId,
       orderGrossPrice: order.orderGrossPrice,

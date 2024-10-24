@@ -13,7 +13,7 @@ export const addDiscountToOrders = async (
   discountPercentage: number,
   comments: string
 ) => {
-  // validate employeeId
+  // validate orderIdsArr
   if (isObjectIdValid(orderIdsArr) !== true) {
     return "OrderIdsArr not valid!";
   }

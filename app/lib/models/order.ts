@@ -21,10 +21,14 @@ const orderSchema = new Schema(
     orderGrossPrice: { type: Number, required: true }, // final price of the sun of product being sold regardless of any discounts, voids, or cancellations
     orderNetPrice: { type: Number, required: true }, // amount after adjustments have been made to the final price, voids, invitations, discounts and promotions
     orderCostPrice: { type: Number, required: true }, // cost price of the sun of product being sold regardless of any discounts, voids, or cancellations
+    // one of the following two fields is required - employeeId or customerId
     employeeId: {
       type: Schema.Types.ObjectId,
       ref: "Employee",
-      required: true,
+    }, // employee that made the order
+    customerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Customer",
     }, // employee that made the order
     salesInstanceId: {
       type: Schema.Types.ObjectId,

@@ -15,6 +15,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import SalesPoint from "@/app/lib/models/salesPoint";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get order by ID
 // @route   GET /orders/:orderId
@@ -57,6 +58,11 @@ export const GET = async (
         path: "employeeId",
         select: "employeeName allEmployeeRoles currentShiftRole",
         model: Employee,
+      })
+      .populate({
+        path: "customerId",
+        select: "employeeName allEmployeeRoles currentShiftRole",
+        model: Customer,
       })
       .populate({
         path: "businessGoodsIds",

@@ -21,10 +21,7 @@ suppliers - DONE
 supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
-
 orders - DONE
-- can have employeeId or customerId, or even better, could by orderById for both
-
 purchases - DONE
 inventories - DONE
 notifications - DONE

@@ -11,7 +11,7 @@ import SalesInstance from "@/app/lib/models/salesInstance";
 
 // order with status "Done" or "Dont Make" cannot be canceled
 export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
-  // validate employeeId
+  // validate orderIdsArr
   if (isObjectIdValid(orderIdsArr) !== true) {
     return "OrderIdsArr not valid!";
   }
