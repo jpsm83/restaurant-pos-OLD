@@ -36,10 +36,10 @@ export const GET = async (
     await connectDb();
 
     const notifications = await Notification.find({
-      employeeRecipientsId: employeeId,
+      recipientsId: employeeId,
     })
       .populate({
-        path: "employeeRecipientsId",
+        path: "recipientsId",
         select: "employeeName",
         model: Employee,
       })

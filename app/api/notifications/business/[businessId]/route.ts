@@ -37,7 +37,7 @@ export const GET = async (
 
     const notifications = await Notification.find({ businessId: businessId })
       .populate({
-        path: "employeeRecipientsId",
+        path: "recipientsId",
         select: "employeeName",
         model: Employee,
       })

@@ -13,6 +13,7 @@ import { handleApiError } from "@/app/lib/utils/handleApiError";
 import Customer from "@/app/lib/models/customer";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { personalDetailsValidation } from "@/app/lib/utils/personalDetailsValidation";
+import Business from "@/app/lib/models/business";
 
 // @desc    Get all customers
 // @route   GET /customers
@@ -113,17 +114,24 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDb();
 
-    // check for duplicates customerName, email, taxNumber and idNumber with same businessId ID
-    const duplicateCustomer: ICustomer | null = await Customer.findOne({
-      businessId,
-      $or: [{ customerName }, { email }, { idNumber }],
-    }).lean();
+    const [duplicateCustomer, businessExists] = await Promise.all([
+      // check for duplicates customerName, email, taxNumber and idNumber with same businessId ID
+      Customer.exists({
+        businessId,
+        $or: [{ customerName }, { email }, { idNumber }],
+      }),
 
-    if (duplicateCustomer) {
+      // check if business exists
+      Business.exists({ _id: businessId }),
+    ]);
+
+    if (duplicateCustomer || !businessExists) {
+      let message = duplicateCustomer
+        ? "Customer with customerName, email or idNumber already exists!"
+        : "Business does not exists!";
       return new NextResponse(
         JSON.stringify({
-          message:
-            "Customer with customerName, email or idNumber already exists!",
+          message: message,
         }),
         {
           status: 409,
@@ -152,7 +160,7 @@ export const POST = async (req: Request) => {
 
     return new NextResponse(
       JSON.stringify({
-        message: `New customer ${customerName} created successfully!`,
+        message: `New customer created successfully`,
       }),
       {
         status: 201,

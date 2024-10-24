@@ -1,9 +1,9 @@
 business - DONE
 salesPoint - DONE
-employees - DONE
+003 - employees - DONE
 
 
-customer - ready for test
+002 - customer - notification need tests
 
 
 dailySalesReports - DONE
@@ -24,7 +24,17 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 inventories - DONE
-notifications - DONE
+
+
+
+
+001 - notifications
+- the main route is refactored and working, follow as example
+- have to be refact because now employees and customers can get notifications
+- consequently customer and employee routes to handle notification have to be reviewed
+
+
+
 
 monthlyBusinessReport
 reservations

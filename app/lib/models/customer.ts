@@ -6,11 +6,11 @@ import { personalDetailsSchema } from "./personalDetails";
 const customerOrdersSchema = new Schema({
   orders: [
     {
-      orderId: {
+      ordersId: {
         type: Schema.Types.ObjectId,
         ref: "Order",
+        required: true,
       },
-      required: true,
     },
   ], // orders made by the customer
   saleDate: { type: Date, required: true }, // date of the sale

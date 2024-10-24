@@ -36,7 +36,7 @@ export const GET = async (
 
     const notification = await Notification.findById(notificationId)
       .populate({
-        path: "employeeRecipientsId",
+        path: "recipientsId",
         select: "employeeName",
         model: Employee,
       })
@@ -67,13 +67,13 @@ export const PATCH = async (
 ) => {
   const notificationId = context.params.notificationId;
 
-  const { notificationType, message, employeeRecipientsId, employeeSenderId } =
+  const { notificationType, message, recipientsId, senderId } =
     (await req.json()) as INotification;
 
-  // validate employeeRecipientsId
+  // validate recipientsId
   if (
-    !Array.isArray(employeeRecipientsId) ||
-    employeeRecipientsId.length === 0
+    !Array.isArray(recipientsId) ||
+    recipientsId.length === 0
   ) {
     return new NextResponse(
       JSON.stringify({
@@ -87,9 +87,9 @@ export const PATCH = async (
   }
 
   // validation ids
-  const employeesIds = [...employeeRecipientsId];
-  if (employeeSenderId) {
-    employeesIds.push(employeeSenderId);
+  const employeesIds = [...recipientsId];
+  if (senderId) {
+    employeesIds.push(senderId);
   }
 
   if (!isObjectIdValid([...employeesIds, notificationId])) {
@@ -116,7 +116,7 @@ export const PATCH = async (
       // "exists" will return true if at least one document exists, so we need to use "find" instead
       Employee.find({ _id: { $in: employeesIds } }, null, { lean: true }), // Fetch employees in a single query
       Notification.findById(notificationId)
-        .select("employeeRecipientsId message")
+        .select("recipientsId message")
         .lean()
         .session(session) as Promise<INotification | null>,
     ]);
@@ -133,23 +133,23 @@ export const PATCH = async (
       });
     }
 
-    // Find the employeeRecipientsId that were added
-    const addedRecipients = employeeRecipientsId.filter(
+    // Find the recipientsId that were added
+    const addedRecipients = recipientsId.filter(
       (employeeId) =>
-        !notification.employeeRecipientsId
+        !notification.recipientsId
           .toString()
           .includes(employeeId.toString())
     );
 
-    // Find the employeeRecipientsId that were removed
-    const removedRecipients = notification.employeeRecipientsId.filter(
+    // Find the recipientsId that were removed
+    const removedRecipients = notification.recipientsId.filter(
       (employeeId: Types.ObjectId) =>
-        !employeeRecipientsId.toString().includes(employeeId.toString())
+        !recipientsId.toString().includes(employeeId.toString())
     );
 
-    // Find the employeeRecipientsId that were not changed
-    const unchangedRecipients = employeeRecipientsId.filter((employeeId) =>
-      notification.employeeRecipientsId
+    // Find the recipientsId that were not changed
+    const unchangedRecipients = recipientsId.filter((employeeId) =>
+      notification.recipientsId
         .toString()
         .includes(employeeId.toString())
     );
@@ -160,10 +160,10 @@ export const PATCH = async (
     if (notificationType)
       updateNotification.notificationType = notificationType;
     if (message) updateNotification.message = message;
-    if (employeeRecipientsId)
-      updateNotification.employeeRecipientsId = employeeRecipientsId;
-    if (employeeSenderId)
-      updateNotification.employeeSenderId = employeeSenderId;
+    if (recipientsId)
+      updateNotification.recipientsId = recipientsId;
+    if (senderId)
+      updateNotification.senderId = senderId;
 
     // handle all the employee updates at once
     const [
@@ -203,7 +203,7 @@ export const PATCH = async (
       unchangedRecipients.length > 0 && notification.message !== message
         ? Employee.updateMany(
             {
-              _id: { $in: employeeRecipientsId },
+              _id: { $in: recipientsId },
               "notifications.notificationId": notificationId,
             },
             {
@@ -285,7 +285,7 @@ export const DELETE = async (
       notificationId,
       {
         session,
-        select: "employeeRecipientsId",
+        select: "recipientsId",
         lean: true,
       }
     )) as INotification | null;
@@ -300,7 +300,7 @@ export const DELETE = async (
 
     // Remove the notification from all employees' notifications arrays
     const employeesUpdated = await Employee.updateMany(
-      { _id: { $in: notificationDeleted.employeeRecipientsId } },
+      { _id: { $in: notificationDeleted.recipientsId } },
       { $pull: { notifications: { notificationId } } },
       { session }
     );

@@ -219,55 +219,54 @@ export const PATCH = async (
     if (terminatedDate) updateEmployeeObj.terminatedDate = terminatedDate;
     if (comments) updateEmployeeObj.comments = comments;
 
-    // update the employee
-    const updatedEmployee = await Employee.findByIdAndUpdate(
-      employeeId,
-      { $set: updateEmployeeObj },
-      {
-        new: true,
-        lean: true,
-        session,
-      }
-    );
-
-    // after updating employee, if employee id not active, delete printer related data
-    if (active === false) {
-      await Printer.updateMany(
+    const [updatedEmployee, updatePrinter] = await Promise.all([
+      // update the employee
+      Employee.updateOne(
+        { _id: employeeId },
+        { $set: updateEmployeeObj },
         {
-          businessId: employee.businessId,
-          $or: [
-            { employeesAllowedToPrintDataIds: employeeId },
-            {
-              "configurationSetupToPrintOrders.excludeEmployeeIds": employeeId,
-            },
-          ],
-        },
-        {
-          $pull: {
-            employeesAllowedToPrintDataIds: employeeId,
-            "configurationSetupToPrintOrders.excludeEmployeeIds": employeeId,
-          },
-        },
-        {
-          new: true,
           session,
         }
-      );
+      ),
+
+      // after updating employee, if employee id not active, delete printer related data
+      active === false
+        ? Printer.updateMany(
+            {
+              businessId: employee.businessId,
+              $or: [
+                { employeesAllowedToPrintDataIds: employeeId },
+                {
+                  "configurationSetupToPrintOrders.excludeEmployeeIds":
+                    employeeId,
+                },
+              ],
+            },
+            {
+              $pull: {
+                employeesAllowedToPrintDataIds: employeeId,
+                "configurationSetupToPrintOrders.excludeEmployeeIds":
+                  employeeId,
+              },
+            },
+            { session }
+          )
+        : Promise.resolve(null), // If active is true, resolve with null
+    ]);
+
+    // Handle the results if needed
+    if (updatedEmployee.modifiedCount === 0) {
+      await session.abortTransaction();
+      throw new Error("Employee not found or not updated");
+    }
+
+    if (updatePrinter && updatePrinter.modifiedCount === 0) {
+      await session.abortTransaction();
+      console.log("No printer data was updated");
     }
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();
-
-    // Check if the purchase was found and updated
-    if (!updatedEmployee) {
-      return new NextResponse(
-        JSON.stringify({ message: "Employee not found!" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
 
     return new NextResponse(
       JSON.stringify({

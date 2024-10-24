@@ -15,6 +15,7 @@ import { calculateVacationProportional } from "./utils/calculateVacationProporti
 import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import salaryValidation from "./utils/salaryValidation";
+import Business from "@/app/lib/models/business";
 
 // @desc    Get all employees
 // @route   GET /employees
@@ -138,21 +139,30 @@ export const POST = async (req: Request) => {
     // connect before first call to DB
     await connectDb();
 
-    // check for duplicates employeeName, email, taxNumber and idNumber with same businessId ID
-    const duplicateEmployee: IEmployee | null = await Employee.findOne({
-      businessId,
-      $or: [{ employeeName }, { email }, { taxNumber }, { idNumber }],
-    }).lean();
+    const [duplicateEmployee, businessExists] = await Promise.all([
+      // check for duplicates employeeName, email, taxNumber and idNumber with same businessId ID
+      Employee.exists({
+        businessId,
+        $or: [{ employeeName }, { email }, { idNumber }],
+      }),
 
-    if (duplicateEmployee) {
-      const message = duplicateEmployee.active
-        ? "EmployeeName, email, taxNumber, or idNumber already exists and employee is active!"
-        : "EmployeeName, email, taxNumber, or idNumber already exists in an inactive employee!";
+      // check if business exists
+      Business.exists({ _id: businessId }),
+    ]);
 
-      return new NextResponse(JSON.stringify({ message: message }), {
-        status: 409,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (duplicateEmployee || !businessExists) {
+      let message = duplicateEmployee
+        ? "Employee with employeeName, email or idNumber already exists!"
+        : "Business does not exists!";
+      return new NextResponse(
+        JSON.stringify({
+          message: message,
+        }),
+        {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Hash password asynchronously

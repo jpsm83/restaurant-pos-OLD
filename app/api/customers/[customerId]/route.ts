@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
-import mongoose, { Types } from "mongoose";
+import { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -13,7 +13,7 @@ import { ICustomer } from "@/app/lib/interface/ICustomer";
 // imported models
 import Customer from "@/app/lib/models/customer";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
-import Printer from "@/app/lib/models/printer";
+import { personalDetailsValidation } from "@/app/lib/utils/personalDetailsValidation";
 
 // @desc    Get customer by ID
 // @route   GET /customers/:customerId
@@ -104,6 +104,19 @@ export const PATCH = async (
       updateCustomerObj.address = address;
     }
 
+        // check personalDetails validation
+        if (personalDetails) {
+          const checkPersonalDetailsValidation =
+            personalDetailsValidation(personalDetails);
+          if (checkPersonalDetailsValidation !== true) {
+            return new NextResponse(
+              JSON.stringify({ message: checkPersonalDetailsValidation }),
+              { status: 400, headers: { "Content-Type": "application/json" } }
+            );
+          }
+          updateCustomerObj.personalDetails = personalDetails;
+        }
+    
     // connect before first call to DB
     await connectDb();
 
@@ -120,11 +133,11 @@ export const PATCH = async (
     }
 
     // check for duplicates customerName, email, taxNumber and idNumber with same business ID
-    const duplicateCustomer: ICustomer | null = await Customer.findOne({
+    const duplicateCustomer = await Customer.exists({
       _id: { $ne: customerId },
       businessId: customer.businessId,
       $or: [{ customerName }, { email }, { idNumber }],
-    }).lean();
+    });
 
     if (duplicateCustomer) {
       return new NextResponse(
@@ -152,17 +165,13 @@ export const PATCH = async (
     if (personalDetails) updateCustomerObj.personalDetails = personalDetails;
 
     // update the customer
-    const updatedCustomer = await Customer.findByIdAndUpdate(
-      customerId,
-      { $set: updateCustomerObj },
-      {
-        new: true,
-        lean: true,
-      }
+    const updatedCustomer = await Customer.updateOne(
+      { _id: customerId },
+      { $set: updateCustomerObj }
     );
 
     // Check if the purchase was found and updated
-    if (!updatedCustomer) {
+    if (updatedCustomer.modifiedCount === 0) {
       return new NextResponse(
         JSON.stringify({ message: "Customer not found!" }),
         {

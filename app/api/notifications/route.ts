@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -13,6 +12,8 @@ import Notification from "@/app/lib/models/notification";
 import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import Business from "@/app/lib/models/business";
+import Customer from "@/app/lib/models/customer";
+import mongoose from "mongoose";
 
 // @desc    Get all notifications
 // @route   GET /notifications
@@ -24,9 +25,14 @@ export const GET = async () => {
 
     const notifications = await Notification.find()
       .populate({
-        path: "employeeRecipientsId",
+        path: "employeesRecipientsIds",
         select: "employeeName",
         model: Employee,
+      })
+      .populate({
+        path: "customersRecipientsIds",
+        select: "customerName",
+        model: Customer,
       })
       .lean();
 
@@ -50,31 +56,45 @@ export const GET = async () => {
 // @route   POST /notifications
 // @access  Private
 export const POST = async (req: Request) => {
-  // employeeRecipientsId have to be an array of employee IDs coming from the front end
+  // employeesRecipientsIds or customersRecipientsIds have to be an array of IDs coming from the front end
   const {
     notificationType,
     message,
-    employeeRecipientsId,
+    employeesRecipientsIds,
+    customersRecipientsIds,
     businessId,
-    employeeSenderId,
+    senderId,
   } = (await req.json()) as INotification;
 
-  // check required fields
-  if (!notificationType || !message || !employeeRecipientsId || !businessId) {
+  // check if employeesRecipientsIds or customersRecipientsIds exist
+  if (
+    (!employeesRecipientsIds && !customersRecipientsIds) ||
+    (employeesRecipientsIds && customersRecipientsIds)
+  ) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "NotificationType, message, employeeRecipientsId and businessId are required!",
+          "EmployeesRecipientsIds or customersRecipientsIds is required!",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  // validate employeeRecipientsId
-  if (
-    !Array.isArray(employeeRecipientsId) ||
-    employeeRecipientsId.length === 0
-  ) {
+  // check required fields
+  if (!notificationType || !message || !businessId) {
+    return new NextResponse(
+      JSON.stringify({
+        message:
+          "NotificationType, message, recipientsId and businessId are required!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const recipientsId = employeesRecipientsIds || customersRecipientsIds;
+
+  // validate recipientsId
+  if (!Array.isArray(recipientsId) || recipientsId.length === 0) {
     return new NextResponse(
       JSON.stringify({
         message: "Recipients must be an array of employee IDs!",
@@ -87,12 +107,12 @@ export const POST = async (req: Request) => {
   }
 
   // validation ids
-  const employeesIds = [...employeeRecipientsId];
-  if (employeeSenderId) {
-    employeesIds.push(employeeSenderId);
+  const objectIds = [...recipientsId];
+  if (senderId) {
+    objectIds.push(senderId);
   }
 
-  if (!isObjectIdValid([...employeesIds, businessId])) {
+  if (!isObjectIdValid([...objectIds, businessId])) {
     return new NextResponse(
       JSON.stringify({
         message: "Invalid array of IDs!",
@@ -104,15 +124,6 @@ export const POST = async (req: Request) => {
     );
   }
 
-  // create new notification object
-  const notificationObj = {
-    notificationType,
-    message,
-    employeeRecipientsId,
-    businessId,
-    employeeSenderId: employeeSenderId || undefined,
-  };
-
   // connect before first call to DB
   await connectDb();
 
@@ -120,28 +131,53 @@ export const POST = async (req: Request) => {
   session.startTransaction();
 
   try {
+    // create new notification object
+    const notificationObj = {
+      notificationType,
+      message,
+      employeesRecipientsIds: employeesRecipientsIds || undefined,
+      customersRecipientsIds: customersRecipientsIds || undefined,
+      senderId: senderId || undefined,
+      businessId,
+    };
+
     // check if the business and employees exist
-    const [business, employees] = await Promise.all([
+    const [business, employees, customers] = await Promise.all([
       Business.exists({ _id: businessId }),
-      Employee.exists({ _id: { $in: employeesIds } }),
+      employeesRecipientsIds
+        ? Employee.exists({ _id: { $in: recipientsId } })
+        : null,
+      customersRecipientsIds
+        ? Customer.exists({ _id: { $in: recipientsId } })
+        : null,
     ]);
 
-    if (!business || !employees) {
+    if (!employees && !customers) {
       await session.abortTransaction();
-      const message = !business
-        ? "Business not found!"
-        : "Employees not found!";
-      return new NextResponse(JSON.stringify({ message: message }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Employees or customers not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!business) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: "Business not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // save new notification
-    const newNotification: INotification[] | null = await Notification.create(
-      [notificationObj],
-      { session }
-    );
+    const newNotification = await Notification.create([notificationObj], {
+      session,
+    });
 
     if (!newNotification) {
       await session.abortTransaction();
@@ -154,26 +190,30 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // add the notification to the employeeRecipientsId employees
-    const sendNotifications = await Employee.updateMany(
-      { _id: { $in: employeeRecipientsId } },
+    // Determine the model to update based on the recipients
+    const ModelToUpdate = employees ? Employee : Customer;
+
+    // add the notification to the recipientsId
+    const sendNotifications = await ModelToUpdate.updateMany(
+      { _id: { $in: recipientsId } },
       {
         $push: {
           notifications: {
             notificationId: newNotification[0]._id,
-            readFlag: false,
           },
         },
       },
       { session }
     );
 
-    // check if the notification was added to the employees
+    // check if the notification was added to the recipients
     if (sendNotifications.modifiedCount === 0) {
       await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
-          message: "Failed to update employees with notification!",
+          message: `Failed to update ${
+            employees ? "employees" : "customers"
+          } with notification!`,
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
