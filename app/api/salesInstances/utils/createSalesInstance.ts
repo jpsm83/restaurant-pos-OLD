@@ -58,9 +58,9 @@ export const createSalesInstance = async (
     if (!newSalesInstance) {
       return "Create sales instance failed!";
     }
-    // transferOrderBetweenTables needs the table object to transfer orders
+
     return newSalesInstance;
   } catch (error) {
-    return "Create table failed!";
+    return "Create sales instance failed!";
   }
 };

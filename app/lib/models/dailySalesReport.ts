@@ -11,8 +11,8 @@ export const goodsReducedSchema = new Schema({
     type: Number,
     required: true,
   }, // quanity of the good sold or void
-  totalPrice: { type: Number, required: true }, // total price of the good sold or void
-  totalCostPrice: { type: Number, required: true }, // total cost price of the good sold or void
+  totalPrice: { type: Number }, // total price of the good sold or void
+  totalCostPrice: { type: Number }, // total cost price of the good sold or void
 });
 
 const employeeDailySalesReportSchema = new Schema({
@@ -58,11 +58,11 @@ const selfOrderingSalesReportSchema = new Schema({
     ref: "Customer",
     required: true,
   }, // customer that made the order
-  customerPaymentMethods: { type: paymentMethod }, // single payment methods used by the customer
+  customerPaymentMethod: { type: paymentMethod }, // single payment methods used by the customer
   totalSalesBeforeAdjustments: { type: Number }, // sum of all orders regardless of promotions or discounts
   totalNetPaidAmount: { type: Number }, // sum of all orders after adjustments have been made to the final price as discounts and promotions
   totalCostOfGoodsSold: { type: Number }, // sum of the cost price of all goods sold
-  soldGoods: { type: goodsReducedSchema }, // array of goods purchased
+  soldGoods: { type: [goodsReducedSchema] }, // array of goods purchased
 });
 
 const dailySalesReportSchema = new Schema(

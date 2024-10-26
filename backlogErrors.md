@@ -6,17 +6,13 @@ customer - DONE
 
 
 dailySalesReports - DONE
-- supose to count the self orders too
 - model and interfaces been modifed
 - selfOrderingSalesReport been added
 - modify the routes now
 
 
 
-salesInstance - self ordering ready for test
-
-
-
+salesInstance - DONE
 printers - DONE
 schedules - DONE
 suppliers - DONE

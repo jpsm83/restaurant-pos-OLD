@@ -36,13 +36,12 @@ export const closeOrders = async (
 
   // Connect to DB
   await connectDb();
-  
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-
     // Fetch orders to be closed
     const orders: IOrder[] | null = await Order.find({
       _id: { $in: ordersIdArr },
@@ -136,6 +135,7 @@ export const closeOrders = async (
         select: "billingStatus",
         model: Order,
       })
+      .session(session) // Use the same session
       .lean();
 
     if (!salesInstance) {
@@ -162,6 +162,7 @@ export const closeOrders = async (
 
     // Commit transaction
     await session.commitTransaction();
+
     return true;
   } catch (error) {
     await session.abortTransaction();

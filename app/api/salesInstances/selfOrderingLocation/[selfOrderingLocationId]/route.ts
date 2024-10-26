@@ -1,32 +1,29 @@
 import { NextResponse } from "next/server";
-import {
-  IDailySalesReport,
-  IGoodsReduced,
-} from "@/app/lib/interface/IDailySalesReport";
+import mongoose, { Types } from "mongoose";
 
 // import utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { createDailySalesReport } from "@/app/api/dailySalesReports/utils/createDailySalesReport";
+import { createSalesInstance } from "../../utils/createSalesInstance";
+import { ordersArrValidation } from "@/app/api/orders/utils/validateOrdersArr";
+import { createOrders } from "@/app/api/orders/utils/createOrders";
+import { closeOrders } from "@/app/api/orders/utils/closeOrders";
 
 // import interfaces
+import {
+  IDailySalesReport,
+  IGoodsReduced,
+} from "@/app/lib/interface/IDailySalesReport";
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
+import { IOrder } from "@/app/lib/interface/IOrder";
+import { ICustomer } from "@/app/lib/interface/ICustomer";
+import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import SalesInstance from "@/app/lib/models/salesInstance";
-import SalesPoint from "@/app/lib/models/salesPoint";
-import { createDailySalesReport } from "@/app/api/dailySalesReports/utils/createDailySalesReport";
-import { createSalesInstance } from "../../utils/createSalesInstance";
-import mongoose, { Types } from "mongoose";
-import { IOrder } from "@/app/lib/interface/IOrder";
-import { ordersArrValidation } from "@/app/api/orders/utils/validateOrdersArr";
 import Customer from "@/app/lib/models/customer";
-import { ICustomer } from "@/app/lib/interface/ICustomer";
-import { createOrders } from "@/app/api/orders/utils/createOrders";
-import { emit } from "process";
-import { closeOrders } from "@/app/api/orders/utils/closeOrders";
-import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 
 // first create a empty salesInstance, then update it with the salesGroup.ordersIds
 // @desc    Create new salesInstances
@@ -71,7 +68,7 @@ export const POST = async (
   const { businessId, ordersArr, openedByCustomerId, paymentMethod } =
     (await req.json()) as Partial<ISalesInstance> & {
       ordersArr: IOrder[];
-      paymentMethod: IPaymentMethod[];
+      paymentMethod: IPaymentMethod;
     };
 
   // check required fields
@@ -169,7 +166,7 @@ export const POST = async (
       dailyReferenceNumber,
       salesPointId: selfOrderingLocationId,
       guests: 1,
-      status: "Open",
+      status: "Occupied",
       openedByCustomerId,
       businessId,
       clientName: customer?.customerName,
@@ -177,7 +174,7 @@ export const POST = async (
 
     // create a salesInstance
     // we use a outside function to create the salesInstance because this function is used in other places
-    const salesInstance = await createSalesInstance(newSalesInstanceObj);
+    const salesInstance: any = await createSalesInstance(newSalesInstanceObj);
 
     if (typeof salesInstance === "string") {
       await session.abortTransaction();
@@ -212,10 +209,9 @@ export const POST = async (
 
     // pay the order
     // function closeOrders will automaticaly close the salesInstance once all OPEN orders are closed
-    const closeOrdersResult = await closeOrders(
-      createdOrdersIds,
-      paymentMethod
-    );
+    const closeOrdersResult = await closeOrders(createdOrdersIds, [
+      { ...paymentMethod },
+    ]);
 
     if (closeOrdersResult !== true) {
       await session.abortTransaction();
@@ -225,30 +221,25 @@ export const POST = async (
       });
     }
 
-    const soldGoods = ordersArr.reduce((acc: IGoodsReduced[], order) => {
-      order.businessGoodsIds.forEach((goodId) => {
-        const existingGood = acc.find((good) =>
-          good.businessGoodId.equals(goodId)
-        );
+    let soldGoods: IGoodsReduced[] = [];
 
-        const priceShare = order.orderNetPrice / order.businessGoodsIds.length;
-        const costShare = order.orderCostPrice / order.businessGoodsIds.length;
+    // Assuming ordersArr is an array of orders
+    ordersArr.forEach((order) => {
+      order.businessGoodsIds.forEach((goodId) => {
+        let existingGood = soldGoods.find(
+          (good) => good.businessGoodId === goodId
+        );
 
         if (existingGood) {
           existingGood.quantity += 1;
-          existingGood.totalPrice += priceShare;
-          existingGood.totalCostPrice += costShare;
         } else {
-          acc.push({
+          soldGoods.push({
             businessGoodId: goodId,
             quantity: 1,
-            totalPrice: priceShare,
-            totalCostPrice: costShare,
           });
         }
       });
-      return acc;
-    }, []);
+    });
 
     const totalSalesBeforeAdjustments = createdOrders.reduce(
       (acc: number, order: { orderGrossPrice?: number }) =>
@@ -270,12 +261,12 @@ export const POST = async (
 
     // update dailySalesReport adding the customerId and the purchase details
     const dailySalesReportUpdate = await DailySalesReport.updateOne(
-      { dailyReferenceNumber },
+      { dailyReferenceNumber: dailyReferenceNumber },
       {
         $push: {
           selfOrderingSalesReport: {
             customerId: openedByCustomerId,
-            customerPaymentMethods: paymentMethod,
+            customerPaymentMethod: paymentMethod,
             totalSalesBeforeAdjustments,
             totalNetPaidAmount,
             totalCostOfGoodsSold,
