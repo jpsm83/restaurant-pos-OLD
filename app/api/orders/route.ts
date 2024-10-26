@@ -29,6 +29,8 @@ import { changeOrdersBillingStatus } from "./utils/changeOrdersBillingStatus";
 import { changeOrdersStatus } from "./utils/changeOrdersStatus";
 import { transferOrdersBetweenSalesInstances } from "./utils/transferOrdersBetweenSalesInstances";
 import Customer from "@/app/lib/models/customer";
+import { create } from "domain";
+import { createOrders } from "./utils/createOrders";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -115,6 +117,11 @@ export const GET = async () => {
 // @route   POST /orders
 // @access  Private
 export const POST = async (req: Request) => {
+  // *********** IMPORTANT ***********
+  // this route is used only by the employee to create orders
+  // the customer will create the order through the salesInstance route
+  // *********************************
+
   // - FLOW - in case if customer pays at the time of the order
   // - CREATE the order with billing status "Open"
   // - GET the order by its ID
@@ -133,47 +140,44 @@ export const POST = async (req: Request) => {
   //       allergens,
   //       promotionApplyed, - automatically set by the front_end upon creation
   //       comments
+  //       discountPercentage
   //    }
   //]
 
   // paymentMethod cannot be created here, only updated - MAKE IT SIMPLE
-  const { ordersArr, employeeId, customerId, salesInstanceId, businessId } =
-    (await req.json()) as {
-      ordersArr: Partial<IOrder>[];
-      employeeId: Types.ObjectId;
-      customerId: Types.ObjectId;
-      salesInstanceId: Types.ObjectId;
-      businessId: Types.ObjectId;
-    };
+  const {
+    ordersArr,
+    employeeId,
+    salesInstanceId,
+    businessId,
+    dailyReferenceNumber,
+  } = (await req.json()) as {
+    ordersArr: Partial<IOrder>[];
+    employeeId: Types.ObjectId;
+    salesInstanceId: Types.ObjectId;
+    businessId: Types.ObjectId;
+    dailyReferenceNumber: string;
+  };
 
   // check required fields
-  if (!ordersArr || !salesInstanceId || !businessId) {
+  if (
+    !ordersArr ||
+    !salesInstanceId ||
+    !businessId ||
+    !employeeId ||
+    !dailyReferenceNumber
+  ) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "OrdersArr, salesInstanceId and businessId are required fields!",
+          "OrdersArr, dailyReferenceNumber, employeeId, salesInstanceId and businessId are required fields!",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
-  // employeeId or customerId is required
-  if ((!employeeId && !customerId) || (employeeId && customerId)) {
-    return new NextResponse(
-      JSON.stringify({
-        message: "EmployeeId or customerId is required!",
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  let objectIds = [businessId, salesInstanceId];
-
-  if (employeeId) {
-    objectIds.push(employeeId);
-  } else {
-    objectIds.push(customerId);
-  }
+  let objectIds: any[] = ordersArr.flatMap((order) => order.businessGoodsIds);
+  objectIds.push(businessId, salesInstanceId, employeeId);
 
   // validate ids
   if (isObjectIdValid(objectIds) !== true) {
@@ -198,143 +202,24 @@ export const POST = async (req: Request) => {
     );
   }
 
-  // connect before first call to DB
-  await connectDb();
-
-  // Start a session to handle transactions
-  // with session if any error occurs, the transaction will be aborted
-  // session is created outside of the try block to be able to abort it in the catch/finally block
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    // Check if salesInstanceId exists and is open
-    const salesInstance: ISalesInstance | null = await SalesInstance.findById(
-      salesInstanceId
-    )
-      .select("status")
-      .lean();
-
-    if (!salesInstance || salesInstance.status === "Closed") {
-      await session.abortTransaction();
-      return new NextResponse(
-        JSON.stringify({ message: "SalesInstance not found or closed!" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // get the dailySalesReport reference number
-    const dailySalesReport: IDailySalesReport | null =
-      await DailySalesReport.findOne({
-        isDailyReportOpen: true,
-        businessId,
-      })
-        .select("dailyReferenceNumber")
-        .lean();
-
-    if (!dailySalesReport) {
-      await session.abortTransaction();
-      return new NextResponse(
-        JSON.stringify({ message: "DailySalesReport not found!" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // ***********************************************
-    // ORDERS CAN BE DUPLICATED WITH DIFFERENT IDs ***
-    // ***********************************************
-
-    // orderStatus will always be "Sent" at the time of creation unless employee set it to something else manually at the front end
-    // all orders sent will have their own screen where employees can change the status of the order (kitchen, bar, merchandise, etc.)
-
-    // Prepare orders for bulk insertion
-    const ordersToInsert = ordersArr.map((order) => ({
-      dailyReferenceNumber: dailySalesReport.dailyReferenceNumber,
-      billingStatus: "Open",
-      orderStatus: "Sent",
-      employeeId: employeeId || undefined,
-      customerId: customerId || undefined,
+    const createdOrders = await createOrders(
+      dailyReferenceNumber,
+      ordersArr,
+      employeeId,
+      undefined,
       salesInstanceId,
-      businessId,
-      orderGrossPrice: order.orderGrossPrice,
-      orderNetPrice: order.orderNetPrice,
-      orderCostPrice: order.orderCostPrice,
-      businessGoodsIds: order.businessGoodsIds,
-      allergens: order.allergens || undefined,
-      promotionApplyed: order.promotionApplyed || undefined,
-      discountPercentage: order.discountPercentage || undefined,
-    }));
+      businessId
+    );
 
-    // Bulk insert the orders
-    const ordersCreated = await Order.insertMany(ordersToInsert, { session });
-
-    if (!ordersCreated || ordersCreated.length === 0) {
-      await session.abortTransaction();
-      return new NextResponse(
-        JSON.stringify({ message: "Orders not created!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+    if (typeof createdOrders === "string") {
+      return new NextResponse(JSON.stringify({ message: createdOrders }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-
-    const ordersIdsCreated = ordersCreated.map((order) => order._id);
-    const businessGoodsIds = ordersCreated.flatMap(
-      (order) => order.businessGoodsIds
-    );
-
-    // update the dynamic count of the supplier goods ingredients
-    // dynamicSystemCount have to decrease because the ingredients are being used
-    let updateDynamicCountSupplierGoodResult: any =
-      await updateDynamicCountSupplierGood(businessGoodsIds, "remove");
-
-    if (updateDynamicCountSupplierGoodResult !== true) {
-      await session.abortTransaction();
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "updateDynamicCountSupplierGood failed! Error: " +
-            updateDynamicCountSupplierGoodResult,
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // set the order code for employee tracking purposes
-    // it will be add on the salesInstance.salesGroup array related with this group of orders
-    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const day = String(new Date().getDate()).padStart(2, "0");
-    const month = String(new Date().getMonth() + 1).padStart(2, "0");
-    const dayOfWeek = weekDays[new Date().getDay()];
-    const randomNum = String(Math.floor(Math.random() * 9000) + 1000);
-
-    const orderCode = `${day}${month}${dayOfWeek}${randomNum}`;
-
-    // After order is created, add order ID to salesInstanceId
-    await SalesInstance.updateOne(
-      { _id: salesInstanceId },
-      {
-        $push: {
-          salesGroup: {
-            orderCode: orderCode,
-            ordersIds: ordersIdsCreated,
-            createdAt: new Date(),
-          },
-        },
-      },
-      { session }
-    );
-
-    // Commit the transaction if both operations succeed
-    await session.commitTransaction();
-
-    return new NextResponse(
-      JSON.stringify({ message: "Orders created successfully!" }),
-      { status: 201, headers: { "Content-Type": "application/json" } }
-    );
   } catch (error) {
-    await session.abortTransaction();
     return handleApiError("Create order failed!", error);
-  } finally {
-    session.endSession();
   }
 };
 

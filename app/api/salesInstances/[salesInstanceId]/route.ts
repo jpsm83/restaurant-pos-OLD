@@ -172,21 +172,32 @@ export const PATCH = async (
     if (guests) updatedSalesInstanceObj.guests = guests;
     if (status) updatedSalesInstanceObj.status = status;
     if (clientName) updatedSalesInstanceObj.clientName = clientName;
-    if (responsibleById) {
+    if (responsibleById)
       updatedSalesInstanceObj.responsibleById = responsibleById;
-      // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
-      if (responsibleById !== salesInstance?.openedByEmployeeId) {
-        // check if employee exists in the dailySalesReport
-        if (
-          !(await DailySalesReport.exists({
-            isDailyReportOpen: true,
-            business: salesInstance?.businessId,
-            "employeesDailySalesReport.employeeId": responsibleById,
-          }))
-        ) {
+    // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
+    if (responsibleById && responsibleById !== salesInstance?.openedByEmployeeId) {
+      // check if employee exists in the dailySalesReport
+      if (
+        !(await DailySalesReport.exists({
+          isDailyReportOpen: true,
+          business: salesInstance?.businessId,
+          "employeesDailySalesReport.employeeId": responsibleById,
+        }))
+      ) {
+        const addEmployeeToDailySalesReportResult =
           await addEmployeeToDailySalesReport(
             responsibleById,
             salesInstance.businessId
+          );
+
+        if (addEmployeeToDailySalesReportResult !== true) {
+          await session.abortTransaction();
+          return new NextResponse(
+            JSON.stringify({ message: addEmployeeToDailySalesReportResult }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
           );
         }
       }

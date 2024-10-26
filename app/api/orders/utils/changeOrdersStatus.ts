@@ -7,10 +7,11 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 // imported models
 import Order from "@/app/lib/models/order";
 
-// order can be chante to "Done", "Sent" or "Delivered"
+// order can be change to "Done", "Sent" or "Delivered"
 // kitchen staff set order to "Done"
 // Floor staff set order to "Sent" after holding it
 // Floor staff set order to "Delivered" after order is delivered (if delivery is enabled)
+// ******** NOT USED ANYWHERE YET ********
 export const changeOrdersStatus = async (
   orderIdsArr: Types.ObjectId[],
   newStatus: string

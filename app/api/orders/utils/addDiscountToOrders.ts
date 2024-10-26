@@ -8,6 +8,8 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import Order from "@/app/lib/models/order";
 
 // add discount to multiple orders at the same time if promotion is not applied
+// only used for emplloyees orders not sef ordering
+// ******** NOT USED ANYWHERE YET ********
 export const addDiscountToOrders = async (
   orderIdsArr: Types.ObjectId[],
   discountPercentage: number,

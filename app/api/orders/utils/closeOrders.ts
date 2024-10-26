@@ -33,13 +33,15 @@ export const closeOrders = async (
   if (typeof validPaymentMethods === "string") {
     return validPaymentMethods;
   }
+
+  // Connect to DB
+  await connectDb();
+  
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Connect to DB
-    await connectDb();
 
     // Fetch orders to be closed
     const orders: IOrder[] | null = await Order.find({
@@ -160,7 +162,7 @@ export const closeOrders = async (
 
     // Commit transaction
     await session.commitTransaction();
-    return "Orders closed and updated successfully!";
+    return true;
   } catch (error) {
     await session.abortTransaction();
     return "Close orders failed! Error: " + error;

@@ -30,8 +30,7 @@ export const addEmployeeToDailySalesReport = async (
       return "Daily report not found!";
     }
 
-    // no need to return the updated document - just for testing purposes
-    return "Employee added to daily report successfully!";
+    return true;
   } catch (error) {
     return "Failed to add employee to daily report! " + error;
   }

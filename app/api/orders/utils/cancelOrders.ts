@@ -10,6 +10,8 @@ import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 
 // order with status "Done" or "Dont Make" cannot be canceled
+// only manager can cancel orders that havent been done yet
+// user on GET /orders/:orderId
 export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
   // validate orderIdsArr
   if (isObjectIdValid(orderIdsArr) !== true) {

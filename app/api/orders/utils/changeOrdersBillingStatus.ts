@@ -10,6 +10,7 @@ import Order from "@/app/lib/models/order";
 // Void, Cancel and Invitation can be manually changed by managers
 // Paid is automatically changed by the system
 // Open is the default status
+// ******** NOT USED ANYWHERE YET ********
 export const changeOrdersBillingStatus = async (
   orderIdsArr: Types.ObjectId[],
   newBillingStatus: string

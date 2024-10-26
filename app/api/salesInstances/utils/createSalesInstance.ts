@@ -28,12 +28,8 @@ export const createSalesInstance = async (
       }
     }
 
-    const {
-      dailyReferenceNumber,
-      openedByEmployeeId,
-      openedByCustomerId,
-      businessId,
-    } = newSalesInstanceObj;
+    const { dailyReferenceNumber, openedByEmployeeId, businessId } =
+      newSalesInstanceObj;
 
     // connect before first call to DB
     await connectDb();
@@ -47,27 +43,21 @@ export const createSalesInstance = async (
           "employeesDailySalesReport.employeeId": openedByEmployeeId,
         }))
       ) {
-        await addEmployeeToDailySalesReport(openedByEmployeeId, businessId);
-      }
-    }
+        const addEmployeeToDailySalesReportResult =
+          await addEmployeeToDailySalesReport(openedByEmployeeId, businessId);
 
-    if (openedByCustomerId) {
-      // Create a logic to add the customer to the dailySalesReport
-      if (
-        !(await DailySalesReport.exists({
-          dailyReferenceNumber: dailyReferenceNumber,
-          businessId: businessId,
-          "employeesDailySalesReport.employeeId": openedByEmployeeId,
-        }))
-      ) {
-        // create a new service for the dailySalesReport customer
-        await addEmployeeToDailySalesReport(openedByCustomerId, businessId);
+        if (addEmployeeToDailySalesReportResult !== true) {
+          return addEmployeeToDailySalesReportResult;
+        }
       }
     }
 
     // Create the sales instance and return it
     const newSalesInstance = await SalesInstance.create(newSalesInstanceObj);
 
+    if (!newSalesInstance) {
+      return "Create sales instance failed!";
+    }
     // transferOrderBetweenTables needs the table object to transfer orders
     return newSalesInstance;
   } catch (error) {

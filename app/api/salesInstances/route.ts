@@ -82,11 +82,17 @@ export const GET = async (req: Request) => {
 // @route   POST /salesInstances
 // @access  Private
 export const POST = async (req: Request) => {
-    // ************ IMPORTANT ************
+  // ************ IMPORTANT ************
   // only employees can open a table to be populated with orders in this route
   // self ordering will have its own route
-  const { salesPointId, guests, openedByEmployeeId, businessId, clientName } =
-    (await req.json()) as ISalesInstance;
+  const {
+    salesPointId,
+    guests,
+    status,
+    openedByEmployeeId,
+    businessId,
+    clientName,
+  } = (await req.json()) as ISalesInstance;
 
   // check required fields
   if (!salesPointId || !guests || !openedByEmployeeId || !businessId) {
@@ -146,6 +152,13 @@ export const POST = async (req: Request) => {
     const dailyReferenceNumber = dailySalesReport
       ? dailySalesReport.dailyReferenceNumber
       : await createDailySalesReport(businessId);
+
+    if (typeof dailyReferenceNumber === "string") {
+      return new NextResponse(
+        JSON.stringify({ message: dailyReferenceNumber }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     if (
       await SalesInstance.exists({
