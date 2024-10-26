@@ -61,7 +61,7 @@ export const PATCH = async (
     }
 
     // customer can mark notification as deleted but never delete it for data integrity
-    const notificationUpdate = await Customer.updateOne(
+    const updatedCustomer = await Customer.updateOne(
       { _id: customerId, "notifications.notificationId": notificationId },
       {
         $set: {
@@ -73,7 +73,7 @@ export const PATCH = async (
     );
 
     // Check if the updates were successful
-    if (notificationUpdate.modifiedCount === 0) {
+    if (updatedCustomer.modifiedCount === 0) {
       await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "Customer not found!" }),

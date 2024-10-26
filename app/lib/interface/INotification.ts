@@ -9,7 +9,3 @@ export interface INotification {
   businessId: Types.ObjectId;
   senderId?: Types.ObjectId;
 }
-
-
-// recipientsId
-

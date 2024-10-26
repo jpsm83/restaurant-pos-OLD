@@ -8,6 +8,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Employee from "@/app/lib/models/employee";
+import Notification from "@/app/lib/models/notification";
 
 // @desc    Create new employees
 // @route   PATCH /employees/:employeeId/updateReadFlag/:notificationId
@@ -37,6 +38,21 @@ export const PATCH = async (
 
     // connect before first call to DB
     await connectDb();
+
+    // check notification exists
+    const notificationExists = await Notification.exists({
+      _id: notificationId,
+    });
+
+    if (!notificationExists) {
+      return new NextResponse(
+        JSON.stringify({ message: "Notification not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Update the readFlag for the specific notification
     const updatedEmployee = await Employee.findOneAndUpdate(

@@ -1,12 +1,11 @@
 business - DONE
 salesPoint - DONE
-003 - employees - DONE
-
-
-002 - customer - notification need tests
-
-
+employees - DONE
+customer - DONE
 dailySalesReports - DONE
+
+
+
 salesInstance - DONE
 - create logic for self ordering
 - user has to have an account
@@ -24,17 +23,7 @@ promotions - DONE
 orders - DONE
 purchases - DONE
 inventories - DONE
-
-
-
-
-001 - notifications
-- the main route is refactored and working, follow as example
-- have to be refact because now employees and customers can get notifications
-- consequently customer and employee routes to handle notification have to be reviewed
-
-
-
+notifications - DONE
 
 monthlyBusinessReport
 reservations

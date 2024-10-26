@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported interfaces
 import { INotification } from "@/app/lib/interface/INotification";
@@ -10,10 +12,8 @@ import { INotification } from "@/app/lib/interface/INotification";
 // imported models
 import Notification from "@/app/lib/models/notification";
 import Employee from "@/app/lib/models/employee";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import Business from "@/app/lib/models/business";
 import Customer from "@/app/lib/models/customer";
-import mongoose from "mongoose";
 
 // @desc    Get all notifications
 // @route   GET /notifications
@@ -97,7 +97,7 @@ export const POST = async (req: Request) => {
   if (!Array.isArray(recipientsId) || recipientsId.length === 0) {
     return new NextResponse(
       JSON.stringify({
-        message: "Recipients must be an array of employee IDs!",
+        message: "Recipients must be an array of IDs!",
       }),
       {
         status: 400,

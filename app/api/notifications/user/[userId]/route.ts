@@ -9,6 +9,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 // imported models
 import Notification from "@/app/lib/models/notification";
 import Employee from "@/app/lib/models/employee";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get all notifications by employee ID
 // @route   GET /notifications/employee/:employeeId
@@ -39,9 +40,14 @@ export const GET = async (
       recipientsId: employeeId,
     })
       .populate({
-        path: "recipientsId",
+        path: "employeesRecipientsIds",
         select: "employeeName",
         model: Employee,
+      })
+      .populate({
+        path: "customersRecipientsIds",
+        select: "customerName",
+        model: Customer,
       })
       .lean();
 

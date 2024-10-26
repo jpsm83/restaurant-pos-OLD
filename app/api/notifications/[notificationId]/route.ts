@@ -12,6 +12,7 @@ import { INotification } from "@/app/lib/interface/INotification";
 // imported models
 import Notification from "@/app/lib/models/notification";
 import Employee from "@/app/lib/models/employee";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get notification by ID
 // @route   GET /notifications/:notificationId
@@ -36,9 +37,14 @@ export const GET = async (
 
     const notification = await Notification.findById(notificationId)
       .populate({
-        path: "recipientsId",
+        path: "employeesRecipientsIds",
         select: "employeeName",
         model: Employee,
+      })
+      .populate({
+        path: "customersRecipientsIds",
+        select: "customerName",
+        model: Customer,
       })
       .lean();
 
@@ -67,17 +73,35 @@ export const PATCH = async (
 ) => {
   const notificationId = context.params.notificationId;
 
-  const { notificationType, message, recipientsId, senderId } =
-    (await req.json()) as INotification;
+  const {
+    notificationType,
+    message,
+    employeesRecipientsIds,
+    customersRecipientsIds,
+    senderId,
+  } = (await req.json()) as INotification;
 
-  // validate recipientsId
+  // check if employeesRecipientsIds or customersRecipientsIds exist
   if (
-    !Array.isArray(recipientsId) ||
-    recipientsId.length === 0
+    (!employeesRecipientsIds && !customersRecipientsIds) ||
+    (employeesRecipientsIds && customersRecipientsIds)
   ) {
     return new NextResponse(
       JSON.stringify({
-        message: "Recipients must be an array of employee IDs!",
+        message:
+          "EmployeesRecipientsIds or customersRecipientsIds is required!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const recipientsId = employeesRecipientsIds || customersRecipientsIds;
+
+  // validate recipientsId
+  if (!Array.isArray(recipientsId) || recipientsId.length === 0) {
+    return new NextResponse(
+      JSON.stringify({
+        message: "Recipients must be an array of IDs!",
       }),
       {
         status: 400,
@@ -87,12 +111,13 @@ export const PATCH = async (
   }
 
   // validation ids
-  const employeesIds = [...recipientsId];
+  const objectIds = [...recipientsId];
+
   if (senderId) {
-    employeesIds.push(senderId);
+    objectIds.push(senderId);
   }
 
-  if (!isObjectIdValid([...employeesIds, notificationId])) {
+  if (!isObjectIdValid([...objectIds, notificationId])) {
     return new NextResponse(
       JSON.stringify({
         message: "Invalid array of IDs!",
@@ -111,23 +136,26 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
+    const RecipientsModel = employeesRecipientsIds ? Employee : Customer;
+    const notificationField = employeesRecipientsIds
+      ? "employeesRecipientsIds"
+      : "customersRecipientsIds";
+
     // check all employees exist and get notification object
-    const [employees, notification] = await Promise.all([
-      // "exists" will return true if at least one document exists, so we need to use "find" instead
-      Employee.find({ _id: { $in: employeesIds } }, null, { lean: true }), // Fetch employees in a single query
+    const [notification, validRecipients] = await Promise.all([
       Notification.findById(notificationId)
-        .select("recipientsId message")
+        .select(`${notificationField} message`)
         .lean()
         .session(session) as Promise<INotification | null>,
+      RecipientsModel.find({ _id: { $in: objectIds } }, null, { lean: true }),
     ]);
 
-    if (employees.length !== employeesIds.length || !notification) {
+    if (!notification || validRecipients.length !== objectIds.length) {
       await session.abortTransaction();
-      const message =
-        employees.length !== employeesIds.length
-          ? "One or more employees do not exist!"
-          : "Notification not found";
-      return new NextResponse(JSON.stringify({ message: message }), {
+      const message = !notification
+        ? "Notification not found!"
+        : "One or more recipients do not exist!";
+      return new NextResponse(JSON.stringify({ message }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -135,23 +163,18 @@ export const PATCH = async (
 
     // Find the recipientsId that were added
     const addedRecipients = recipientsId.filter(
-      (employeeId) =>
-        !notification.recipientsId
-          .toString()
-          .includes(employeeId.toString())
+      (id) =>
+        !notification[notificationField].toString().includes(id.toString())
     );
 
     // Find the recipientsId that were removed
-    const removedRecipients = notification.recipientsId.filter(
-      (employeeId: Types.ObjectId) =>
-        !recipientsId.toString().includes(employeeId.toString())
+    const removedRecipients = notification[notificationField].filter(
+      (id: Types.ObjectId) => !recipientsId.toString().includes(id.toString())
     );
 
     // Find the recipientsId that were not changed
-    const unchangedRecipients = recipientsId.filter((employeeId) =>
-      notification.recipientsId
-        .toString()
-        .includes(employeeId.toString())
+    const unchangedRecipients = recipientsId.filter((id) =>
+      notification[notificationField].toString().includes(id.toString())
     );
 
     // prepare the update object
@@ -160,10 +183,11 @@ export const PATCH = async (
     if (notificationType)
       updateNotification.notificationType = notificationType;
     if (message) updateNotification.message = message;
-    if (recipientsId)
-      updateNotification.recipientsId = recipientsId;
-    if (senderId)
-      updateNotification.senderId = senderId;
+    if (employeesRecipientsIds)
+      updateNotification.employeesRecipientsIds = employeesRecipientsIds;
+    if (customersRecipientsIds)
+      updateNotification.customersRecipientsIds = customersRecipientsIds;
+    if (senderId) updateNotification.senderId = senderId;
 
     // handle all the employee updates at once
     const [
@@ -181,29 +205,29 @@ export const PATCH = async (
         }
       ),
 
-      // Add notification to new employees' notifications array
+      // Add notification to new RecipientsModel notifications array
       addedRecipients.length > 0
-        ? Employee.updateMany(
+        ? RecipientsModel.updateMany(
             { _id: { $in: addedRecipients } },
-            { $push: { notifications: { notificationId, readFlag: false } } }, // Set readFlag to false for new employees
+            { $push: { notifications: { notificationId } } },
             { session }
           )
-        : Promise.resolve(true), // Resolve with a success flag if no recipients added
+        : Promise.resolve(true), // Resolve with a success flag if no RecipientsModel added
 
-      // Remove notification from old employees' notifications array
+      // Remove notification from old RecipientsModel notifications array
       removedRecipients.length > 0
-        ? Employee.updateMany(
+        ? RecipientsModel.updateMany(
             { _id: { $in: removedRecipients } },
             { $pull: { notifications: { notificationId } } },
             { session }
           )
-        : Promise.resolve(true), // Resolve with a success flag if no recipients added
+        : Promise.resolve(true), // Resolve with a success flag if no RecipientsModel added
 
       // update the readFlag for each unchangedRecipients
       unchangedRecipients.length > 0 && notification.message !== message
-        ? Employee.updateMany(
+        ? RecipientsModel.updateMany(
             {
-              _id: { $in: recipientsId },
+              _id: { $in: unchangedRecipients },
               "notifications.notificationId": notificationId,
             },
             {
@@ -224,24 +248,17 @@ export const PATCH = async (
       !employeeFlagUpdated
     ) {
       await session.abortTransaction();
-      const message = !updatedNotification
-        ? "Failed to update notification!"
-        : !employeeNotficationAdded
-        ? "Failed to add notification to employee!"
-        : !employeeNotificationRemoved
-        ? "Failed to remove notification from employees!"
-        : "Failed to update readFlag for employees!";
-      return new NextResponse(JSON.stringify({ message: message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Failed to update recipients!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     await session.commitTransaction();
 
     return new NextResponse(
       JSON.stringify({
-        message: "Notification and employees updated",
+        message: "Notification and recipients updated successfully",
       }),
       {
         status: 200,
@@ -285,7 +302,7 @@ export const DELETE = async (
       notificationId,
       {
         session,
-        select: "recipientsId",
+        select: "employeesRecipientsIds customersRecipientsIds",
         lean: true,
       }
     )) as INotification | null;
@@ -298,24 +315,32 @@ export const DELETE = async (
       );
     }
 
-    // Remove the notification from all employees' notifications arrays
-    const employeesUpdated = await Employee.updateMany(
-      { _id: { $in: notificationDeleted.recipientsId } },
-      { $pull: { notifications: { notificationId } } },
-      { session }
-    );
+    const isEmployeeNotification = !!notificationDeleted.employeesRecipientsIds;
+    const RecipientsModel = isEmployeeNotification ? Employee : Customer;
+    const recipientIds =
+      notificationDeleted[
+        isEmployeeNotification
+          ? "employeesRecipientsIds"
+          : "customersRecipientsIds"
+      ];
 
-    // Ensure both operations were successful
-    if (employeesUpdated.modifiedCount === 0 || !notificationDeleted) {
+    // Remove notification from recipients' notifications arrays
+    const recipientsUpdated =
+      recipientIds.length > 0
+        ? await RecipientsModel.updateMany(
+            { _id: { $in: recipientIds } },
+            { $pull: { notifications: { notificationId } } },
+            { session }
+          )
+        : { modifiedCount: 0 };
+
+    // Check if recipients update was successful
+    if (recipientsUpdated.modifiedCount === 0 && recipientIds.length > 0) {
       await session.abortTransaction();
-      const message =
-        employeesUpdated.modifiedCount === 0
-          ? "Failed to update employees!"
-          : "Failed to delete notification!";
-      return new NextResponse(JSON.stringify({ message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new NextResponse(
+        JSON.stringify({ message: "Failed to update recipients!" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // Commit transaction if all steps were successful

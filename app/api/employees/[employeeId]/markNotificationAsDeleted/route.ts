@@ -61,7 +61,7 @@ export const PATCH = async (
     }
 
     // employee can mark notification as deleted but never delete it for data integrity
-    const notificationUpdate = await Employee.updateOne(
+    const updateEmployee = await Employee.updateOne(
       { _id: employeeId, "notifications.notificationId": notificationId },
       {
         $set: {
@@ -73,7 +73,7 @@ export const PATCH = async (
     );
 
     // Check if the updates were successful
-    if (notificationUpdate.modifiedCount === 0) {
+    if (updateEmployee.modifiedCount === 0) {
       await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "Employee not found!" }),
