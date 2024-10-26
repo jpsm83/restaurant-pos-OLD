@@ -52,6 +52,19 @@ const employeeDailySalesReportSchema = new Schema({
   totalInvitedValue: { type: Number }, // sum of the price of the invited items
 }); // individual sales report of the employee
 
+const selfOrderingSalesReportSchema = new Schema({
+  customerId: {
+    type: Schema.Types.ObjectId,
+    ref: "Customer",
+    required: true,
+  }, // customer that made the order
+  customerPaymentMethods: { type: paymentMethod }, // single payment methods used by the customer
+  totalSalesBeforeAdjustments: { type: Number }, // sum of all orders regardless of promotions or discounts
+  totalNetPaidAmount: { type: Number }, // sum of all orders after adjustments have been made to the final price as discounts and promotions
+  totalCostOfGoodsSold: { type: Number }, // sum of the cost price of all goods sold
+  soldGoods: { type: goodsReducedSchema }, // array of goods purchased
+});
+
 const dailySalesReportSchema = new Schema(
   {
     // required fields
@@ -62,12 +75,15 @@ const dailySalesReportSchema = new Schema(
       type: [employeeDailySalesReportSchema],
       required: true,
     }, // array of objects with each individual sales report of the employee
+    selfOrderingSalesReport: {
+      type: [selfOrderingSalesReportSchema],
+      required: true,
+    }, // array of objects with all individual self ordering sales reports
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
       required: true,
     },
-
     // optional fields for creation, required for update
     businessPaymentMethods: [paymentMethod], // array of all payment methods and its total sales
     dailyTotalSalesBeforeAdjustments: { type: Number }, // sum of all employees sales

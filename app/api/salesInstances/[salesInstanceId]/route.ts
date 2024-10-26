@@ -17,6 +17,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import SalesPoint from "@/app/lib/models/salesPoint";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get salesInstances by ID
 // @route   GET /salesInstances/:salesInstanceId
@@ -49,7 +50,12 @@ export const GET = async (
         model: SalesPoint,
       })
       .populate({
-        path: "openedById responsibleById closedById",
+        path: "openedByCustomerId",
+        select: "customerName",
+        model: Customer,
+      })
+      .populate({
+        path: "openedByEmployeeId responsibleById closedById",
         select: "employeeName currentShiftRole",
         model: Employee,
       })
@@ -92,6 +98,27 @@ export const PATCH = async (
   req: Request,
   context: { params: { salesInstanceId: Types.ObjectId } }
 ) => {
+  const salesInstanceId = context.params.salesInstanceId;
+
+  // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so employee can see the total price, net price, net paid and tips in real time
+  const { guests, status, responsibleById, clientName } =
+    (await req.json()) as ISalesInstance;
+
+  // Validate ObjectIds in one step for better performance
+  const idsToValidate = [salesInstanceId];
+  if (responsibleById) idsToValidate.push(responsibleById);
+
+  // validate ids
+  if (isObjectIdValid(idsToValidate) !== true) {
+    return new NextResponse(JSON.stringify({ message: "Invalid IDs!" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
   // session is created outside of the try block to be able to abort it in the catch/finally block
@@ -99,35 +126,15 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
-    const salesInstanceId = context.params.salesInstanceId;
-
-    // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so employee can see the total price, net price, net paid and tips in real time
-    const { guests, status, responsibleById, clientName } =
-      (await req.json()) as ISalesInstance;
-
-    // Validate ObjectIds in one step for better performance
-    const idsToValidate = [salesInstanceId];
-    if (responsibleById) idsToValidate.push(responsibleById);
-
-    // validate ids
-    if (isObjectIdValid(idsToValidate) !== true) {
-      return new NextResponse(JSON.stringify({ message: "Invalid IDs!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
     // get the salesInstance
     const salesInstance: ISalesInstance | null = await SalesInstance.findById(
       salesInstanceId
     )
-      .select("openedById businessId status salesGroup")
+      .select("openedByEmployeeId businessId status salesGroup")
       .lean();
 
     if (!salesInstance) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "SalesInstance not found!" }),
         {
@@ -168,7 +175,7 @@ export const PATCH = async (
     if (responsibleById) {
       updatedSalesInstanceObj.responsibleById = responsibleById;
       // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
-      if (responsibleById !== salesInstance?.openedById) {
+      if (responsibleById !== salesInstance?.openedByEmployeeId) {
         // check if employee exists in the dailySalesReport
         if (
           !(await DailySalesReport.exists({

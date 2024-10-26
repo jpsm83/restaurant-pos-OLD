@@ -25,12 +25,22 @@ export interface IEmployeeDailySalesReport {
   totalInvitedValue?: number;
 }
 
+export interface ISelfOrderingSalesReport {
+  customerId: Types.ObjectId;
+  customerPaymentMethods?: IPaymentMethod[];
+  totalSalesBeforeAdjustments?: number;
+  totalNetPaidAmount?: number;
+  totalCostOfGoodsSold?: number;
+  soldGoods?: IGoodsReduced[];
+}
+
 export interface IDailySalesReport {
   _id?: Types.ObjectId;
   dailyReferenceNumber: number;
   isDailyReportOpen: boolean;
   timeCountdownToClose: number;
   employeesDailySalesReport: IEmployeeDailySalesReport[];
+  selfOrderingSalesReport: IEmployeeDailySalesReport[];
   businessId: Types.ObjectId;
   businessPaymentMethods?: IPaymentMethod[];
   dailyTotalSalesBeforeAdjustments?: number;

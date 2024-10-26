@@ -97,7 +97,7 @@ export const transferOrdersBetweenSalesInstances = async (
       // Fetch existing salesInstance to transfer to
       salesInstanceToTransfer = await SalesInstance.findById(toSalesInstanceId)
         .select(
-          "_id status salesGroup salesPointId guests openedById clientName"
+          "_id status salesGroup salesPointId guests openedByEmployeeId clientName"
         )
         .lean();
     }
@@ -109,7 +109,7 @@ export const transferOrdersBetweenSalesInstances = async (
       salesInstanceToTransferId = salesInstanceToTransfer._id;
       salesInstanceObj.salesPointId = salesInstanceToTransfer.salesPointId;
       salesInstanceObj.guests = salesInstanceToTransfer.guests;
-      salesInstanceObj.openedById = salesInstanceToTransfer.openedById;
+      salesInstanceObj.openedByEmployeeId = salesInstanceToTransfer.openedByEmployeeId;
       salesInstanceObj.clientName = clientName
         ? clientName
         : salesInstanceToTransfer.clientName;
@@ -127,7 +127,7 @@ export const transferOrdersBetweenSalesInstances = async (
 
       salesInstanceObj.salesPointId = newSalesPointId;
       salesInstanceObj.guests = guests ? guests : undefined;
-      salesInstanceObj.openedById = responsibleById;
+      salesInstanceObj.openedByEmployeeId = responsibleById;
       salesInstanceObj.clientName = clientName ? clientName : undefined;
 
       const newSalesInstance = await createSalesInstance(

@@ -6,8 +6,9 @@ export interface ISalesInstance {
   salesPointId: Types.ObjectId;
   guests: number;
   status: string;
-  openedById: Types.ObjectId;
-  responsibleById: Types.ObjectId;
+  openedByCustomerId?: Types.ObjectId;
+  openedByEmployeeId?: Types.ObjectId;
+  responsibleById?: Types.ObjectId;
   businessId: Types.ObjectId;
   clientName?: string;
   salesGroup?: {

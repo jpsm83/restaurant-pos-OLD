@@ -2,15 +2,20 @@ business - DONE
 salesPoint - DONE
 employees - DONE
 customer - DONE
+
+
+
 dailySalesReports - DONE
+- supose to count the self orders too
+- model and interfaces been modifed
+- selfOrderingSalesReport been added
+- modify the routes now
 
 
 
 salesInstance - DONE
 - create logic for self ordering
-- user has to have an account
 - logic to pay
-- create user for clients differente of user for employee
 
 
 

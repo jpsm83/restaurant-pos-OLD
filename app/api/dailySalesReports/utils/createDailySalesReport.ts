@@ -33,6 +33,7 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
       isDailyReportOpen: true,
       timeCountdownToClose: countdownToClose,
       employeesDailySalesReport: [],
+      selfOrderingSalesReport: [],
       businessId: businessId,
     };
 

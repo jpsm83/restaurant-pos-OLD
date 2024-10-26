@@ -12,16 +12,19 @@ const salesInstanceSchema = new Schema(
     }, // reference with the business sales instance
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
     status: { type: String, enum: salesInstanceStatus, default: "Occupied" }, // status of the table
-    openedById: {
+    openedByCustomerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Customer",
+    }, // if self ordering, the customer that opened the table
+    openedByEmployeeId: {
       type: Schema.Types.ObjectId,
       ref: "Employee",
-      required: true,
     }, // employee that opened the table
     responsibleById: {
       type: Schema.Types.ObjectId,
       ref: "Employee",
-      required: true,
-    }, // employee that is responsible for the table - one employee can open, finish the shift then pass the responsability to another employee
+    }, // employee that is responsible for the table - one employee can open, finish the shift then pass the responsability to another employee - does not apply for self ordering
+    closedById: { type: Schema.Types.ObjectId, ref: "Employee" }, // employee that closed the table, same as responsibleBy - does not apply for self ordering
     businessId: {
       type: Schema.Types.ObjectId,
       ref: "Business",
@@ -45,7 +48,6 @@ const salesInstanceSchema = new Schema(
       default: undefined,
     }, // orders separate by groups of time ordered made in the salesInstance
     closedAt: { type: Date }, // date and time when the table was closed
-    closedById: { type: Schema.Types.ObjectId, ref: "Employee" }, // employee that closed the table, same as responsibleBy
   },
   { timestamps: true }
 );

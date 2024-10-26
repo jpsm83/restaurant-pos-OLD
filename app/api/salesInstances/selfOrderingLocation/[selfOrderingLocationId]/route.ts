@@ -21,6 +21,16 @@ import { Types } from "mongoose";
 // @desc    Create new salesInstances
 // @route   POST /salesInstances/selfOrderingLocation/:selfOrderingLocationId
 // @access  Private
+
+
+// self ordering will do all the flow at once
+// create the table
+// create the order
+// create the payment
+// update the dailySalesReport
+
+
+
 export const POST = async (
   req: Request,
   context: { params: { selfOrderingLocationId: Types.ObjectId } }
@@ -35,14 +45,14 @@ export const POST = async (
   // 8. the order will be done and delivered to the employee in the salesPoint location
   try {
     const selfOrderingLocationId = context.params.selfOrderingLocationId;
-    const { openedById, businessId } = (await req.json()) as ISalesInstance;
+    const { openedByEmployeeId, businessId } = (await req.json()) as ISalesInstance;
 
     // check required fields
-    if (!selfOrderingLocationId || !openedById || !businessId) {
+    if (!selfOrderingLocationId || !openedByEmployeeId || !businessId) {
       return new NextResponse(
         JSON.stringify({
           message:
-            "SalesInstanceReference, guest, openedById and businessId are required!",
+            "SalesInstanceReference, guest, openedByEmployeeId and businessId are required!",
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
@@ -50,7 +60,7 @@ export const POST = async (
 
     // validate ids
     if (
-      isObjectIdValid([selfOrderingLocationId, openedById, businessId]) !== true
+      isObjectIdValid([selfOrderingLocationId, openedByEmployeeId, businessId]) !== true
     ) {
       return new NextResponse(
         JSON.stringify({
@@ -112,8 +122,8 @@ export const POST = async (
       dailyReferenceNumber,
       salesPointId: selfOrderingLocationId,
       guests: 1,
-      openedById,
-      responsibleById: openedById,
+      openedByEmployeeId,
+      responsibleById: openedByEmployeeId,
       status: "Occupied",
       businessId,
       clientName: "get the client name on the employee query",

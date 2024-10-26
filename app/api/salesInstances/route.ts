@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
+import { Types } from "mongoose";
 
 // import utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -9,6 +9,7 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { createSalesInstance } from "./utils/createSalesInstance";
 
 // import interfaces
+import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
@@ -18,6 +19,7 @@ import BusinessGood from "@/app/lib/models/businessGood";
 import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import SalesPoint from "@/app/lib/models/salesPoint";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get all salesInstances
 // @route   GET /salesInstances
@@ -34,7 +36,12 @@ export const GET = async (req: Request) => {
         model: SalesPoint,
       })
       .populate({
-        path: "openedById responsibleById closedById",
+        path: "openedByCustomerId",
+        select: "customerName",
+        model: Customer,
+      })
+      .populate({
+        path: "openedByEmployeeId responsibleById closedById",
         select: "employeeName currentShiftRole",
         model: Employee,
       })
@@ -75,43 +82,60 @@ export const GET = async (req: Request) => {
 // @route   POST /salesInstances
 // @access  Private
 export const POST = async (req: Request) => {
+    // ************ IMPORTANT ************
+  // only employees can open a table to be populated with orders in this route
+  // self ordering will have its own route
+  const { salesPointId, guests, openedByEmployeeId, businessId, clientName } =
+    (await req.json()) as ISalesInstance;
+
+  // check required fields
+  if (!salesPointId || !guests || !openedByEmployeeId || !businessId) {
+    return new NextResponse(
+      JSON.stringify({
+        message:
+          "SalesInstanceReference, guest, openedByEmployeeId and businessId are required!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // validate ids
+  if (
+    isObjectIdValid([salesPointId, openedByEmployeeId, businessId]) !== true
+  ) {
+    return new NextResponse(
+      JSON.stringify({
+        message: "OpenedByEmployeeId or businessId not valid!",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const { salesPointId, guests, openedById, businessId, clientName } =
-      (await req.json()) as ISalesInstance;
-
-    // check required fields
-    if (!salesPointId || !guests || !openedById || !businessId) {
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "SalesInstanceReference, guest, openedById and businessId are required!",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // validate ids
-    if (isObjectIdValid([salesPointId, openedById, businessId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({
-          message: "OpenedBy or businessId not valid!",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
     // connect before first call to DB
     await connectDb();
 
+    const [employee, salesPoint, dailySalesReport] = await Promise.all([
+      // check if openedByEmployeeId is an employee or a customer
+      Employee.exists(openedByEmployeeId),
+      // check if salesPointId exists
+      SalesPoint.exists(salesPointId),
+      DailySalesReport.findOne({
+        isDailyReportOpen: true,
+        businessId,
+      })
+        .select("dailyReferenceNumber")
+        .lean() as Promise<IDailySalesReport>,
+    ]);
+
     // check salesPointId exists
-    if (
-      !(await SalesPoint.exists({
-        _id: salesPointId,
-      }))
-    ) {
+    if (!salesPoint || !employee) {
+      const message = !salesPoint
+        ? "Sales point does not exist!"
+        : "Employee does not exist!";
       return new NextResponse(
         JSON.stringify({
-          message: "Sales point does not exist in this business!",
+          message: message,
         }),
         { status: 404, headers: { "Content-Type": "application/json" } }
       );
@@ -119,14 +143,6 @@ export const POST = async (req: Request) => {
 
     // **** IMPORTANT ****
     // dailySalesReport is created when the first salesInstance of the day is created
-    const dailySalesReport: IDailySalesReport | null =
-      await DailySalesReport.findOne({
-        isDailyReportOpen: true,
-        businessId,
-      })
-        .select("dailyReferenceNumber")
-        .lean();
-
     const dailyReferenceNumber = dailySalesReport
       ? dailySalesReport.dailyReferenceNumber
       : await createDailySalesReport(businessId);
@@ -148,13 +164,12 @@ export const POST = async (req: Request) => {
     }
 
     // create new salesInstance
-    const newSalesInstanceObj = {
+    const newSalesInstanceObj: ISalesInstance = {
       dailyReferenceNumber,
       salesPointId,
       guests,
       status,
-      openedById,
-      responsibleById: openedById,
+      openedByEmployeeId,
       businessId,
       clientName,
     };
