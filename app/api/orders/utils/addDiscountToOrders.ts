@@ -30,14 +30,14 @@ export const addDiscountToOrders = async (
     return "Discount value has to be a number between 0 and 100!";
   }
 
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // connect before first call to DB
-    await connectDb();
-
     // Fetch all relevant orders at once using $in
     const orders = await Order.find({
       _id: { $in: orderIdsArr },
@@ -78,12 +78,18 @@ export const addDiscountToOrders = async (
     });
 
     // Execute bulk update
-    await Order.bulkWrite(bulkUpdateOperations, {
+    const bulkResult = await Order.bulkWrite(bulkUpdateOperations, {
       session,
     });
 
+    if (bulkResult.ok !== 1) {
+      await session.abortTransaction();
+      return "Bulk update failed!";
+    }
+
     // Commit transaction if all updates succeed
     await session.commitTransaction();
+
     return "Discount added to orders successfully!";
   } catch (error) {
     await session.abortTransaction();

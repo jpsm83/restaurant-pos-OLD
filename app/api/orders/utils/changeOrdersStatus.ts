@@ -26,14 +26,14 @@ export const changeOrdersStatus = async (
     return "New status is required!";
   }
 
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // connect before first call to DB
-    await connectDb();
-
     // Fetch all relevant orders at once using $in
     const orders = await Order.find({
       _id: { $in: orderIdsArr },
@@ -75,11 +75,16 @@ export const changeOrdersStatus = async (
     }
 
     // Update order status in bulk, excluding "Dont Make"
-    await Order.updateMany(
+    const updatedOrder = await Order.updateMany(
       { _id: { $in: orderIdsArr }, orderStatus: { $ne: "Dont Make" } },
       { $set: { orderStatus: newStatus } },
       { session }
     );
+
+    if (updatedOrder.modifiedCount === 0) {
+      await session.abortTransaction();
+      return "No orders were updated!";
+    }
 
     // Commit transaction
     await session.commitTransaction();

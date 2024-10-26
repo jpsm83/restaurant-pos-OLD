@@ -266,13 +266,13 @@ export const PATCH = async (
 
     dailySalesReportObj.dailyTotalVoidValue =
       dailySalesReportObj.dailyVoidedGoods.reduce(
-        (acc, curr) => acc + curr.totalPrice,
+        (acc, curr) => acc + (curr.totalPrice ?? 0),
         0
       );
 
     dailySalesReportObj.dailyTotalInvitedValue =
       dailySalesReportObj.dailyInvitedGoods.reduce(
-        (acc, curr) => acc + curr.totalPrice,
+        (acc, curr) => acc + (curr.totalPrice ?? 0),
         0
       );
 

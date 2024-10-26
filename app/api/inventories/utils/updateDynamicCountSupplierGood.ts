@@ -26,6 +26,7 @@ export const updateDynamicCountSupplierGood = async (
 
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     // Fetch all business goods including setMenu and their ingredients
     const businessGoodsIngredients = await BusinessGood.find({
@@ -43,6 +44,7 @@ export const updateDynamicCountSupplierGood = async (
       .lean();
 
     if (!businessGoodsIngredients || businessGoodsIngredients.length === 0) {
+      await session.abortTransaction();
       return "Business goods not found!";
     }
 
@@ -104,9 +106,12 @@ export const updateDynamicCountSupplierGood = async (
 
     // Execute bulk update
     if (bulkOperations.length > 0) {
-      await Inventory.bulkWrite(bulkOperations, { session });
-    } else {
-      return "No bulk operations executed!";
+      const bulkResult = await Inventory.bulkWrite(bulkOperations, { session });
+
+      if (bulkResult.ok !== 1) {
+        await session.abortTransaction();
+        return "Bulk operations failed!";
+      }
     }
 
     // Commit the transaction
@@ -119,6 +124,6 @@ export const updateDynamicCountSupplierGood = async (
     return "Could not update dynamic count supplier good! " + error;
   } finally {
     // End the session
-    await session.endSession();
+    session.endSession();
   }
 };

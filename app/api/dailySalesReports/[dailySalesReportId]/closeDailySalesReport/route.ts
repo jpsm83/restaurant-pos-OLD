@@ -10,6 +10,8 @@ import Employee from "@/app/lib/models/employee";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { NextResponse } from "next/server";
 import Order from "@/app/lib/models/order";
+import { IEmployee } from "@/app/lib/interface/IEmployee";
+import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // this is called by mananger or admin after the calculateBusinessDailySalesReport been executed
 // the purpose of this function is to close the daily sales report
@@ -42,16 +44,15 @@ export const PATCH = async (
     const [employee, dailySalesReport] = await Promise.all([
       Employee.findById(employeeId)
         .select("currentShiftRole onDuty businessId")
-        .lean(),
+        .lean() as Promise<IEmployee>,
       DailySalesReport.findById(dailySalesReportId)
         .select("dailyReferenceNumber")
-        .lean(),
+        .lean() as Promise<IDailySalesReport>,
     ]);
 
     // Validate the employee's role and whether they are on duty
     if (
       !employee ||
-      Array.isArray(employee) ||
       ![
         "General Manager",
         "Manager",
@@ -81,9 +82,7 @@ export const PATCH = async (
     const openOrdersExist = await Order.exists({
       businessId: employee.businessId,
       billingStatus: "Open",
-      dailyReferenceNumber: Array.isArray(dailySalesReport)
-        ? undefined
-        : dailySalesReport.dailyReferenceNumber,
+      dailyReferenceNumber: dailySalesReport?.dailyReferenceNumber,
     });
 
     if (openOrdersExist) {
@@ -97,13 +96,11 @@ export const PATCH = async (
     }
 
     // Close the daily sales report in a single operation
-    const updatedReport = await DailySalesReport.findByIdAndUpdate(
-      dailySalesReportId,
-      { $set: { isDailyReportOpen: false } },
-      { new: true, lean: true }
-    );
+    const updatedReport = await DailySalesReport.updateOne(dailySalesReportId, {
+      $set: { isDailyReportOpen: false },
+    });
 
-    if (!updatedReport) {
+    if (updatedReport.modifiedCount === 0) {
       return new NextResponse(
         JSON.stringify({ message: "Failed to close the daily sales report!" }),
         { status: 500, headers: { "Content-Type": "application/json" } }

@@ -32,14 +32,14 @@ export const changeOrdersBillingStatus = async (
     return `Billing status cannot be manually changed to ${newBillingStatus}!`;
   }
 
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // connect before first call to DB
-    await connectDb();
-
     // Fetch all relevant orders at once using $in
     const orders = await Order.find({
       _id: { $in: orderIdsArr },
@@ -66,7 +66,12 @@ export const changeOrdersBillingStatus = async (
       },
     }));
 
-    await Order.bulkWrite(bulkWriteOperations, { session });
+    const bulkResult = await Order.bulkWrite(bulkWriteOperations, { session });
+
+    if (bulkResult.ok !== 1) {
+      await session.abortTransaction();
+      return "Bulk write failed!";
+    }
 
     // Commit transaction
     await session.commitTransaction();

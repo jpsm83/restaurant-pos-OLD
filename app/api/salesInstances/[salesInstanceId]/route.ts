@@ -150,20 +150,21 @@ export const PATCH = async (
       (!salesInstance.salesGroup || salesInstance.salesGroup.length === 0) &&
       status !== "Reserved"
     ) {
-      await SalesInstance.deleteOne(
+      const deleteResult = await SalesInstance.deleteOne(
         { _id: salesInstanceId },
-        { new: true, session }
+        { session }
       );
-      return new NextResponse(
-        JSON.stringify({
-          message:
-            "Occupied salesInstance with no salesGroup has been deleted!",
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+
+      if (deleteResult.deletedCount === 0) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: "SalesInstance not found!" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     // prepare the tableObj to update
@@ -175,7 +176,10 @@ export const PATCH = async (
     if (responsibleById)
       updatedSalesInstanceObj.responsibleById = responsibleById;
     // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
-    if (responsibleById && responsibleById !== salesInstance?.openedByEmployeeId) {
+    if (
+      responsibleById &&
+      responsibleById !== salesInstance?.openedByEmployeeId
+    ) {
       // check if employee exists in the dailySalesReport
       if (
         !(await DailySalesReport.exists({
@@ -208,11 +212,22 @@ export const PATCH = async (
     // function closeOrders will automaticaly close the salesInstance once all OPEN orders are closed
 
     // save the updated salesInstance
-    await SalesInstance.updateOne(
+    const updatedSalesInstance = await SalesInstance.updateOne(
       { _id: salesInstanceId },
       { $set: updatedSalesInstanceObj },
       { session }
     );
+
+    if (updatedSalesInstance.modifiedCount === 0) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: "SalesInstance not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();

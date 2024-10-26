@@ -207,6 +207,7 @@ export const DELETE = async (
       .lean();
 
     if (!purchase) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "Purchase not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -246,7 +247,17 @@ export const DELETE = async (
 
     // update the inventory
     if (bulkWriteOperations && bulkWriteOperations.length > 0) {
-      await Inventory.bulkWrite(bulkWriteOperations, { session });
+      const updatedInventory = await Inventory.bulkWrite(bulkWriteOperations, {
+        session,
+      });
+
+      if (updatedInventory.ok !== 1) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: "Inventory update failed!" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Commit transaction

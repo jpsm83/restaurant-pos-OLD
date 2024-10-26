@@ -60,7 +60,7 @@ export const PATCH = async (
     if (salesInstance) {
       const deletedSalesInstance = await SalesInstance.deleteOne(
         { _id: salesInstanceId },
-        { new: true, session }
+        { session }
       );
 
       if (deletedSalesInstance.deletedCount === 0) {

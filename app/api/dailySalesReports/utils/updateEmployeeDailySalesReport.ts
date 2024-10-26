@@ -94,26 +94,21 @@ export const updateEmployeesDailySalesReport = async (
           averageCustomerExpenditure: 0,
         };
 
-        // ******************************************
-        // MUST REFACTOR THSI CODE BLOCK
-        // salesInstance.ordersIds does not exist anymore
-        // now it is salesInstance.salesGroup.ordersIds
-        // ****************************************
-
-        // Process each table for the employee
+        // Process each sales instance for the employee
         if (salesInstance && salesInstance.length > 0) {
-          salesInstance.forEach((eachTableDocument) => {
+          salesInstance.forEach((saleGroup) => {
+            saleGroup.forEach((sale: any) => {
             employeeDailySalesReportObj.hasOpenSalesInstances =
-              eachTableDocument.status !== "Closed"
+              sale.status !== "Closed"
                 ? true
                 : employeeDailySalesReportObj.hasOpenSalesInstances;
 
-            // Process orders in the table
+            // Process orders in the sales instance
             if (
-              eachTableDocument.ordersIds &&
-              eachTableDocument.ordersIds.length > 0
+              sale.ordersIds &&
+              sale.ordersIds.length > 0
             ) {
-              eachTableDocument.ordersIds.forEach((order: any) => {
+              sale.ordersIds.forEach((order: any) => {
                 order.paymentMethod.forEach((payment: IPaymentMethod) => {
                   const existingPayment =
                     employeeDailySalesReportObj?.employeePaymentMethods?.find(
@@ -189,7 +184,8 @@ export const updateEmployeesDailySalesReport = async (
 
             // Update total customers served
             employeeDailySalesReportObj.totalCustomersServed +=
-              eachTableDocument.guests ?? 0;
+              sale.guests ?? 0;
+          });
           });
         }
 
@@ -208,12 +204,12 @@ export const updateEmployeesDailySalesReport = async (
 
         employeeDailySalesReportObj.totalVoidValue =
           employeeGoodsReport.goodsVoid.reduce(
-            (acc, curr) => acc + curr.totalPrice,
+            (acc, curr) => acc + (curr.totalPrice ?? 0),
             0
           );
         employeeDailySalesReportObj.totalInvitedValue =
           employeeGoodsReport.goodsInvited.reduce(
-            (acc, curr) => acc + curr.totalPrice,
+            (acc, curr) => acc + (curr.totalPrice ?? 0),
             0
           );
 

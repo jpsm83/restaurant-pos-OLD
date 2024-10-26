@@ -18,14 +18,14 @@ export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
     return "OrderIdsArr not valid!";
   }
 
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // connect before first call to DB
-    await connectDb();
-
     // Fetch all relevant orders at once using $in
     const orders = await Order.find({
       _id: { $in: orderIdsArr },
@@ -66,29 +66,31 @@ export const cancelOrders = async (orderIdsArr: Types.ObjectId[]) => {
       );
     }
 
-    // Update sales instances in bulk
-    await SalesInstance.updateMany(
-      {
-        _id: orders[0].salesInstanceId,
-        "salesGroup.ordersIds": { $in: orderIdsArr },
-      },
-      { $pull: { "salesGroup.$.ordersIds": { $in: orderIdsArr } } },
-      { session }
-    );
+    const [salesInstance1, salesInstance2, order] = await Promise.all([
+      // Update sales instances in bulk
+      SalesInstance.updateMany(
+        {
+          _id: orders[0].salesInstanceId,
+          "salesGroup.ordersIds": { $in: orderIdsArr },
+        },
+        { $pull: { "salesGroup.$.ordersIds": { $in: orderIdsArr } } },
+        { session }
+      ),
 
-    // Remove empty salesGroup objects
-    await SalesInstance.updateMany(
-      { _id: orders[0].salesInstanceId },
-      { $pull: { salesGroup: { ordersIds: { $size: 0 } } } },
-      { session }
-    );
+      // Remove empty salesGroup objects
+      SalesInstance.updateMany(
+        { _id: orders[0].salesInstanceId },
+        { $pull: { salesGroup: { ordersIds: { $size: 0 } } } },
+        { session }
+      ),
 
-    // Delete orders in bulk
-    const deleteResult = await Order.deleteMany({
-      _id: { $in: orderIdsArr },
-    }).session(session);
+      // Delete orders in bulk
+      Order.deleteMany({
+        _id: { $in: orderIdsArr },
+      }).session(session),
+    ]);
 
-    if (deleteResult.deletedCount !== orderIdsArr.length) {
+    if (order.deletedCount !== orderIdsArr.length) {
       await session.abortTransaction();
       return "Cancel order failed, some orders were not deleted!";
     }

@@ -239,6 +239,7 @@ export const POST = async (req: Request) => {
       supplierId: newSupplierId,
     });
     if (existingReceiptId) {
+      await session.abortTransaction;
       return new NextResponse(
         JSON.stringify({ message: "Receipt Id already exists!" }),
         {
@@ -303,7 +304,7 @@ export const POST = async (req: Request) => {
     // Perform bulk write operation to update inventory
     const bulkResult = await Inventory.bulkWrite(bulkOperations, { session });
 
-    if (bulkResult.modifiedCount === 0) {
+    if (bulkResult.ok !== 1) {
       await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({

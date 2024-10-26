@@ -304,6 +304,21 @@ export const DELETE = async (
   req: Request,
   context: { params: { businessGoodId: Types.ObjectId } }
 ) => {
+  const businessGoodId = context.params.businessGoodId;
+
+  // check if businessGoodId is valid
+  if (isObjectIdValid([businessGoodId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: "Invalid businessGoodId!" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
   // session is created outside of the try block to be able to abort it in the catch/finally block
@@ -311,22 +326,6 @@ export const DELETE = async (
   session.startTransaction();
 
   try {
-    const businessGoodId = context.params.businessGoodId;
-
-    // check if businessGoodId is valid
-    if (isObjectIdValid([businessGoodId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid businessGoodId!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
     const [businessGoodInOrders, businessGoodInSetMenu] = await Promise.all([
       // check if the business good is used in any order.billingStatus: "Open"
       Order.exists({
@@ -340,6 +339,7 @@ export const DELETE = async (
     ]);
 
     if (businessGoodInOrders) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message:
@@ -350,6 +350,7 @@ export const DELETE = async (
     }
 
     if (businessGoodInSetMenu) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message:
@@ -360,9 +361,12 @@ export const DELETE = async (
     }
 
     // delete and check if the business good exists
-    const result = await BusinessGood.deleteOne({
-      _id: businessGoodId,
-    }).session(session);
+    const result = await BusinessGood.deleteOne(
+      {
+        _id: businessGoodId,
+      },
+      { session }
+    );
 
     if (result.deletedCount === 0) {
       await session.abortTransaction();
@@ -373,10 +377,21 @@ export const DELETE = async (
     }
 
     // delete the business good id reference from promotions
-    await Promotion.updateMany(
+    const updatedPromotion = await Promotion.updateMany(
       { businessGoodsToApplyIds: businessGoodId },
-      { $pull: { businessGoodsToApplyIds: businessGoodId } }
-    ).session(session);
+      { $pull: { businessGoodsToApplyIds: businessGoodId } },
+      { session }
+    );
+
+    if (updatedPromotion.modifiedCount > 0) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({
+          message: `Business good ${businessGoodId} is used in promotions!`,
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     await session.commitTransaction();
 

@@ -123,9 +123,9 @@ export const POST = async (req: Request) => {
 
     const [employee, salesPoint, dailySalesReport] = await Promise.all([
       // check if openedByEmployeeId is an employee or a customer
-      Employee.exists(openedByEmployeeId),
+      Employee.exists({ _id: openedByEmployeeId }),
       // check if salesPointId exists
-      SalesPoint.exists(salesPointId),
+      SalesPoint.exists({ _id: salesPointId }),
       DailySalesReport.findOne({
         isDailyReportOpen: true,
         businessId,

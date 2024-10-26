@@ -232,6 +232,19 @@ export const DELETE = async (
   req: Request,
   context: { params: { printerId: Types.ObjectId } }
 ) => {
+  const printerId = context.params.printerId;
+
+  // check if printerId is valid
+  if (isObjectIdValid([printerId]) !== true) {
+    return new NextResponse(JSON.stringify({ message: "Invalid printerId!" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
   // session is created outside of the try block to be able to abort it in the catch/finally block
@@ -239,22 +252,6 @@ export const DELETE = async (
   session.startTransaction();
 
   try {
-    const printerId = context.params.printerId;
-
-    // check if printerId is valid
-    if (isObjectIdValid([printerId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid printerId!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
     // delete printer and check if it existed
     const result = await Printer.deleteOne(
       { _id: printerId },
@@ -262,6 +259,7 @@ export const DELETE = async (
     );
 
     if (result.deletedCount === 0) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "Printer not found!" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -274,7 +272,7 @@ export const DELETE = async (
     });
 
     if (isBackupPrinter) {
-      await Printer.updateMany(
+      const updatedPrinter = await Printer.updateMany(
         {
           backupPrinterId: printerId,
         },
@@ -283,6 +281,16 @@ export const DELETE = async (
         },
         { new: true, session }
       );
+
+      if (!updatedPrinter) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({
+            message: "Failed to update the backup printer!",
+          }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Commit the transaction if both operations succeed

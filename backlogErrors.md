@@ -5,10 +5,9 @@ customer - DONE
 
 
 
-dailySalesReports - DONE
-- model and interfaces been modifed
-- selfOrderingSalesReport been added
-- modify the routes now
+dailySalesReports 
+- review the whole code
+- probaly a better approach is to add user sales report when tables are closed
 
 
 
@@ -39,7 +38,7 @@ monthlyBusinessReport
 reservations
 cloudinaryActions
 
-- review all session
+- sessionAbort before all return after session start
 - daily saler report have to be tested once we got all the models tested and with data
 - transform cloudinaryActions route to be a function to be used in all the creations that could have images
 - when a salesInstance is created by client using qrCode, update the qrLastScanned of the salesPoint

@@ -4,10 +4,12 @@ import { Types } from "mongoose";
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import Employee from "@/app/lib/models/employee";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get daily reports by business ID, startDate and endDate
 // @route   GET /dailySalesReports/business/:businessId?startDate=<date>&endDate=<date>
@@ -75,7 +77,16 @@ export const GET = async (
 
     // fetch daily reports with the given business ID and date
     const dailySalesReports = await DailySalesReport.find(query)
-      .populate("employeesDailySalesReport.employeeId", "employeeName")
+      .populate({
+        path: "employeesDailySalesReport.employeeId",
+        select: "employeeName",
+        model: Employee,
+      })
+      .populate({
+        path: "selfOrderingSalesReport.customerId",
+        select: "customerName",
+        model: Customer,
+      })
       .lean();
 
     return !dailySalesReports.length

@@ -225,6 +225,22 @@ export const DELETE = async (
     secure: true,
   });
 
+  const businessId = context.params.businessId;
+
+  // validate businessId
+  if (isObjectIdValid([businessId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: "Invalid businessId!" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
   // session is created outside of the try block to be able to abort it in the catch/finally block
@@ -232,26 +248,8 @@ export const DELETE = async (
   session.startTransaction();
 
   try {
-    const businessId = context.params.businessId;
-
-    // validate businessId
-    if (isObjectIdValid([businessId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid businessId!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
     // delete business and check if it exists
-    const result = await Business.deleteOne({ _id: businessId }).session(
-      session
-    );
+    const result = await Business.deleteOne({ _id: businessId }, { session });
 
     if (result.deletedCount === 0) {
       await session.abortTransaction();
@@ -268,26 +266,22 @@ export const DELETE = async (
 
     // Delete related data in parallel and the Cloudinary folder
     await Promise.all([
-      BusinessGood.deleteMany({ business: businessId }).session(session),
-      DailySalesReport.deleteMany({ business: businessId }).session(session),
-      Inventory.deleteMany({ business: businessId }).session(session),
-      MonthlyBusinessReport.deleteMany({ business: businessId }).session(
-        session
-      ),
-      Notification.deleteMany({ business: businessId }).session(session),
-      Order.deleteMany({ business: businessId }).session(session),
-      Printer.deleteMany({ business: businessId }).session(session),
-      Promotion.deleteMany({ business: businessId }).session(session),
-      Purchase.deleteMany({ business: businessId }).session(session),
-      SalesInstance.deleteMany({ business: businessId }).session(session),
-      SalesPoint.deleteMany({ business: businessId }).session(session),
-      Schedule.deleteMany({ business: businessId }).session(session),
-      SupplierGood.deleteMany({ business: businessId }).session(session),
-      Supplier.deleteMany({ business: businessId }).session(session),
-      Employee.deleteMany({ business: businessId }).session(session),
+      BusinessGood.deleteMany({ businessId: businessId }, { session }),
+      DailySalesReport.deleteMany({ businessId: businessId }, { session }),
+      Inventory.deleteMany({ businessId: businessId }, { session }),
+      MonthlyBusinessReport.deleteMany({ businessId: businessId }, { session }),
+      Notification.deleteMany({ businessId: businessId }, { session }),
+      Order.deleteMany({ businessId: businessId }, { session }),
+      Printer.deleteMany({ businessId: businessId }, { session }),
+      Promotion.deleteMany({ businessId: businessId }, { session }),
+      Purchase.deleteMany({ businessId: businessId }, { session }),
+      SalesInstance.deleteMany({ businessId: businessId }, { session }),
+      SalesPoint.deleteMany({ businessId: businessId }, { session }),
+      Schedule.deleteMany({ businessId: businessId }, { session }),
+      SupplierGood.deleteMany({ businessId: businessId }, { session }),
+      Supplier.deleteMany({ businessId: businessId }, { session }),
+      Employee.deleteMany({ businessId: businessId }, { session }),
     ]);
-
-    await session.commitTransaction();
 
     const cloudinaryFolder = await cloudinary.api.sub_folders(
       "restaurant-pos/"
@@ -300,8 +294,19 @@ export const DELETE = async (
     );
 
     if (subfoldersArr.includes(businessId.toString())) {
-      await cloudinary.api.delete_folder(`restaurant-pos/${businessId}/`);
+      try {
+        await cloudinary.api.delete_folder(`restaurant-pos/${businessId}/`);
+      } catch (error) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: "Cloudinary folder deletion failed!" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
     }
+
+    // commit the transaction
+    await session.commitTransaction();
 
     return new NextResponse(
       JSON.stringify({ message: "Business deleted successfully" }),

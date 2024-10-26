@@ -38,14 +38,14 @@ export const transferOrdersBetweenSalesInstances = async (
     return "Invalid toSalesInstanceId or newSalesPointId!";
   }
 
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // connect before first call to DB
-    await connectDb();
-
     // Fetch the original salesInstance
     const fromSalesInstance = await SalesInstance.findOne(
       {
@@ -109,7 +109,8 @@ export const transferOrdersBetweenSalesInstances = async (
       salesInstanceToTransferId = salesInstanceToTransfer._id;
       salesInstanceObj.salesPointId = salesInstanceToTransfer.salesPointId;
       salesInstanceObj.guests = salesInstanceToTransfer.guests;
-      salesInstanceObj.openedByEmployeeId = salesInstanceToTransfer.openedByEmployeeId;
+      salesInstanceObj.openedByEmployeeId =
+        salesInstanceToTransfer.openedByEmployeeId;
       salesInstanceObj.clientName = clientName
         ? clientName
         : salesInstanceToTransfer.clientName;

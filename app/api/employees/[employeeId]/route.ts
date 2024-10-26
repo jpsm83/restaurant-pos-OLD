@@ -69,6 +69,81 @@ export const PATCH = async (
   req: Request,
   context: { params: { employeeId: Types.ObjectId } }
 ) => {
+  const employeeId = context.params.employeeId;
+  const {
+    employeeName,
+    email,
+    password,
+    idType,
+    idNumber,
+    allEmployeeRoles,
+    personalDetails,
+    taxNumber,
+    joinDate,
+    active,
+    onDuty,
+    vacationDaysPerYear,
+    currentShiftRole,
+    address,
+    contractHoursWeek, // in milliseconds
+    salary,
+    terminatedDate,
+    comments,
+  } = (await req.json()) as IEmployee;
+
+  // validate employeeId
+  if (isObjectIdValid([employeeId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: "Employee ID is not valid!" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // prepare update object
+  const updateEmployeeObj: Partial<IEmployee> = {};
+
+  // add address fields
+  if (address) {
+    const validAddress = addressValidation(address);
+    if (validAddress !== true) {
+      return new NextResponse(JSON.stringify({ message: validAddress }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    updateEmployeeObj.address = address;
+  }
+
+  // check personalDetails validation
+  if (personalDetails) {
+    const checkPersonalDetailsValidation =
+      personalDetailsValidation(personalDetails);
+    if (checkPersonalDetailsValidation !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: checkPersonalDetailsValidation }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    updateEmployeeObj.personalDetails = personalDetails;
+  }
+
+  if (salary) {
+    const salaryValidationResult = salaryValidation(salary);
+    if (salaryValidationResult !== true) {
+      return new NextResponse(
+        JSON.stringify({ message: salaryValidationResult }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    updateEmployeeObj.salary = salary;
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
   // session is created outside of the try block to be able to abort it in the catch/finally block
@@ -76,84 +151,11 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
-    const employeeId = context.params.employeeId;
-    const {
-      employeeName,
-      email,
-      password,
-      idType,
-      idNumber,
-      allEmployeeRoles,
-      personalDetails,
-      taxNumber,
-      joinDate,
-      active,
-      onDuty,
-      vacationDaysPerYear,
-      currentShiftRole,
-      address,
-      contractHoursWeek, // in milliseconds
-      salary,
-      terminatedDate,
-      comments,
-    } = (await req.json()) as IEmployee;
-
-    // validate employeeId
-    if (isObjectIdValid([employeeId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: "Employee ID is not valid!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // prepare update object
-    const updateEmployeeObj: Partial<IEmployee> = {};
-
-    // add address fields
-    if (address) {
-      const validAddress = addressValidation(address);
-      if (validAddress !== true) {
-        return new NextResponse(JSON.stringify({ message: validAddress }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-      updateEmployeeObj.address = address;
-    }
-
-    // check personalDetails validation
-    if (personalDetails) {
-      const checkPersonalDetailsValidation =
-        personalDetailsValidation(personalDetails);
-      if (checkPersonalDetailsValidation !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: checkPersonalDetailsValidation }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-      updateEmployeeObj.personalDetails = personalDetails;
-    }
-
-    if (salary) {
-      const salaryValidationResult = salaryValidation(salary);
-      if (salaryValidationResult !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: salaryValidationResult }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-      updateEmployeeObj.salary = salary;
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
     // check if employee exists
     const employee = await Employee.findById(employeeId);
+
     if (!employee) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: "Employee not found!" }),
         {
@@ -171,6 +173,7 @@ export const PATCH = async (
     }).lean();
 
     if (duplicateEmployee) {
+      await session.abortTransaction();
       const message = duplicateEmployee.active
         ? "EmployeeName, email, taxNumber, or idNumber already exists and employee is active!"
         : "EmployeeName, email, taxNumber, or idNumber already exists in an inactive employee!";

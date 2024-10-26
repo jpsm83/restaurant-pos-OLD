@@ -4,11 +4,12 @@ import { Types } from "mongoose";
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
+import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import Employee from "@/app/lib/models/employee";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get daily report by ID
 // @route   GET /dailySalesReports/:dailySalesReportId
@@ -32,12 +33,17 @@ export const GET = async (
     await connectDb();
 
     const dailySalesReport = await DailySalesReport.findById(dailySalesReportId)
-      .populate({
-        path: "employeesDailySalesReport.employeeId",
-        select: "employeeName",
-        model: Employee,
-      })
-      .lean();
+    .populate({
+      path: "employeesDailySalesReport.employeeId",
+      select: "employeeName",
+      model: Employee,
+    })
+    .populate({
+      path: "selfOrderingSalesReport.customerId",
+      select: "customerName",
+      model: Customer,
+    })
+    .lean();
 
     return !dailySalesReport
       ? new NextResponse(

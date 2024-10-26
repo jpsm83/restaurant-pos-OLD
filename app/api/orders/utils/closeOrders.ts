@@ -120,6 +120,7 @@ export const closeOrders = async (
     const bulkUpdateResult = await Order.bulkWrite(bulkUpdateOrders, {
       session,
     });
+
     if (bulkUpdateResult.modifiedCount !== orders.length) {
       await session.abortTransaction();
       return "Failed to update all orders!";
@@ -149,7 +150,7 @@ export const closeOrders = async (
     );
 
     if (allOrdersPaid) {
-      await SalesInstance.updateOne(
+      const updatedSalesInstance = await SalesInstance.updateOne(
         { _id: salesInstance._id },
         {
           status: "Closed",
@@ -158,6 +159,11 @@ export const closeOrders = async (
         },
         { session }
       );
+
+      if (updatedSalesInstance.modifiedCount !== 1) {
+        await session.abortTransaction();
+        return "Failed to close sales instance!";
+      }
     }
 
     // Commit transaction

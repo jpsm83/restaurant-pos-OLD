@@ -5,11 +5,12 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import { addEmployeeToDailySalesReport } from "./utils/addEmployeeToDailySalesReport";
 import { createDailySalesReport } from "./utils/createDailySalesReport";
+import { updateEmployeesDailySalesReport } from "./utils/updateEmployeeDailySalesReport";
 
 // import models
 import Employee from "@/app/lib/models/employee";
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
-import { updateEmployeesDailySalesReport } from "./utils/updateEmployeeDailySalesReport";
+import Customer from "@/app/lib/models/customer";
 
 // @desc    Get all daily reports
 // @route   GET /dailySalesReports
@@ -24,6 +25,11 @@ export const GET = async (req: Request) => {
         path: "employeesDailySalesReport.employeeId",
         select: "employeeName",
         model: Employee,
+      })
+      .populate({
+        path: "selfOrderingSalesReport.customerId",
+        select: "customerName",
+        model: Customer,
       })
       .lean();
 

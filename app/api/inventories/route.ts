@@ -96,6 +96,7 @@ export const POST = async (req: Request) => {
       .lean();
 
     if (currentMonthInventory) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message: "Inventory for the current month already exists!",
@@ -173,7 +174,17 @@ export const POST = async (req: Request) => {
 
     // Insert the new inventory
     // could also use [newInventory] instead of newInventory for highligting it is performing a bulk insert
-    await Inventory.create([newInventory], { session });
+    const createdInventory = await Inventory.create([newInventory], {
+      session,
+    });
+
+    if (!createdInventory) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: "Failed to create inventory" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     await session.commitTransaction();
 

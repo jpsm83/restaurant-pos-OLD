@@ -25,57 +25,47 @@ export const PATCH = async (
   req: Request,
   context: { params: { scheduleId: Types.ObjectId } }
 ) => {
+  const { employeeSchedule, employeeScheduleId } = (await req.json()) as {
+    employeeSchedule: IEmployeeSchedule;
+    employeeScheduleId: Types.ObjectId;
+  };
+
+  const scheduleId = context.params.scheduleId;
+
+  const { employeeId, role, timeRange, vacation } = employeeSchedule;
+  const startTime = new Date(timeRange.startTime);
+  const endTime = new Date(timeRange.endTime);
+
+  // check if the schedule ID is valid
+  if (isObjectIdValid([scheduleId]) !== true) {
+    return new NextResponse(
+      JSON.stringify({ message: "Invalid schedule Id!" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  // validate employee object
+  const validEmployees = employeesValidation(employeeSchedule);
+  if (validEmployees !== true) {
+    return new NextResponse(JSON.stringify({ message: validEmployees }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
   // Start a session to handle transactions
   // with session if any error occurs, the transaction will be aborted
   // session is created outside of the try block to be able to abort it in the catch/finally block
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  if (!session) {
-    return new NextResponse(
-      JSON.stringify({ message: "Failed to start session for transaction" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
   try {
-    const { employeeSchedule, employeeScheduleId } = (await req.json()) as {
-      employeeSchedule: IEmployeeSchedule;
-      employeeScheduleId: Types.ObjectId;
-    };
-
-    const scheduleId = context.params.scheduleId;
-
-    const { employeeId, role, timeRange, vacation } = employeeSchedule;
-    const startTime = new Date(timeRange.startTime);
-    const endTime = new Date(timeRange.endTime);
-
-    // check if the schedule ID is valid
-    if (isObjectIdValid([scheduleId]) !== true) {
-      return new NextResponse(
-        JSON.stringify({ message: "Invalid schedule Id!" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // validate employee object
-    const validEmployees = employeesValidation(employeeSchedule);
-    if (validEmployees !== true) {
-      return new NextResponse(JSON.stringify({ message: validEmployees }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // connect before first call to DB
-    await connectDb();
-
     // Fetch schedule and employee data concurrently
     const [schedule, employee] = await Promise.all([
       Schedule.findById(scheduleId)
@@ -89,6 +79,7 @@ export const PATCH = async (
     ]);
 
     if (!schedule) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message: "Schedule not found!",
@@ -98,6 +89,7 @@ export const PATCH = async (
     }
 
     if (!employee) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message: "Employee not found!",
@@ -112,6 +104,7 @@ export const PATCH = async (
     );
 
     if (!employeeScheduleToUpdate) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message: "Employee schedule not found!",
@@ -129,6 +122,7 @@ export const PATCH = async (
 
     // if there are more than one schedule for the employee, it means he cant be on vacation
     if (employeeAlreadyScheduled.length > 0 && vacation) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message: "Employee has multiple schedules, can't be on vacation!",
@@ -146,6 +140,7 @@ export const PATCH = async (
     // the new schedule should not start or end inside an already scheduled shift
     if (timeRangeArr.length > 0) {
       if (isScheduleOverlapping(startTime, endTime, timeRangeArr)) {
+        await session.abortTransaction();
         return new NextResponse(
           JSON.stringify({
             message: "Employee scheduled overlaps existing one!",
@@ -228,6 +223,7 @@ export const PATCH = async (
       );
 
       if (!updatedEmployee) {
+        await session.abortTransaction();
         return new NextResponse(
           JSON.stringify({
             message:
