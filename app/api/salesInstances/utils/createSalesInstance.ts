@@ -17,7 +17,7 @@ export const createSalesInstance = async (
       "dailyReferenceNumber",
       "salesPointId",
       "guests",
-      "status",
+      "salesInstancestatus",
       "businessId",
     ];
 

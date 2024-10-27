@@ -176,7 +176,7 @@ export const POST = async (
       dailyReferenceNumber,
       salesPointId: selfOrderingLocationId,
       guests: 1,
-      status: "Occupied",
+      salesInstancestatus: "Occupied",
       openedByCustomerId,
       businessId,
       clientName: customer?.customerName,

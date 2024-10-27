@@ -69,7 +69,7 @@ export const createOrders = async (
         .select("status")
         .lean();
 
-      if (!salesInstance || salesInstance.status === "Closed") {
+      if (!salesInstance || salesInstance.salesInstancestatus === "Closed") {
         await session.abortTransaction();
         return "SalesInstance not found or closed!";
       }
@@ -117,7 +117,7 @@ export const createOrders = async (
     // update the dynamic count of the supplier goods ingredients
     // dynamicSystemCount have to decrease because the ingredients are being used
     let updateDynamicCountSupplierGoodResult: any =
-      await updateDynamicCountSupplierGood(businessGoodsIds, "remove");
+      await updateDynamicCountSupplierGood(businessGoodsIds, "remove", session);
 
     if (updateDynamicCountSupplierGoodResult !== true) {
       await session.abortTransaction();

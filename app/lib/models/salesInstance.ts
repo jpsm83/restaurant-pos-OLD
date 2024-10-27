@@ -11,7 +11,7 @@ const salesInstanceSchema = new Schema(
       required: true,
     }, // reference with the business sales instance
     guests: { type: Number, required: true }, // number of guests in the table - REQUIRED FOR ANALYTICS
-    status: { type: String, enum: salesInstanceStatus, default: "Occupied" }, // status of the table
+    salesInstancestatus: { type: String, enum: salesInstanceStatus, default: "Occupied" }, // status of the table
     openedByCustomerId: {
       type: Schema.Types.ObjectId,
       ref: "Customer",

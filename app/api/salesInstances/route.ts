@@ -88,7 +88,7 @@ export const POST = async (req: Request) => {
   const {
     salesPointId,
     guests,
-    status,
+    salesInstancestatus,
     openedByEmployeeId,
     businessId,
     clientName,
@@ -181,7 +181,7 @@ export const POST = async (req: Request) => {
       dailyReferenceNumber,
       salesPointId,
       guests,
-      status,
+      salesInstancestatus,
       openedByEmployeeId,
       businessId,
       clientName,

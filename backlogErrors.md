@@ -19,12 +19,7 @@ supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
 
-
-
-orders - DONE
-- transferOrdersBetweenSalesInstances NOT USED ANYWHERE YET???
-
-
+orders - last test / full PATCH route
 
 purchases - DONE
 inventories - DONE
@@ -34,6 +29,7 @@ monthlyBusinessReport
 reservations
 cloudinaryActions
 
+- review all functions that need session as parameter
 - daily saler report have to be tested once we got all the models tested and with data
 - transform cloudinaryActions route to be a function to be used in all the creations that could have images
 - when a salesInstance is created by client using qrCode, update the qrLastScanned of the salesPoint

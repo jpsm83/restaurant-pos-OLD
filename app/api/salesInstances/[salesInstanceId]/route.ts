@@ -8,8 +8,14 @@ import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { addEmployeeToDailySalesReport } from "../../dailySalesReports/utils/addEmployeeToDailySalesReport";
 import { cancelOrders } from "../../orders/utils/cancelOrders";
 import { addDiscountToOrders } from "../../orders/utils/addDiscountToOrders";
+import { changeOrdersBillingStatus } from "../../orders/utils/changeOrdersBillingStatus";
+import { changeOrdersStatus } from "../../orders/utils/changeOrdersStatus";
+import { validatePaymentMethodArray } from "../../orders/utils/validatePaymentMethodArray";
+import { closeOrders } from "../../orders/utils/closeOrders";
+import { transferOrdersBetweenSalesInstances } from "../../orders/utils/transferOrdersBetweenSalesInstances";
 
 // import interfaces
+import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // import models
@@ -20,11 +26,6 @@ import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import SalesPoint from "@/app/lib/models/salesPoint";
 import Customer from "@/app/lib/models/customer";
-import { changeOrdersBillingStatus } from "../../orders/utils/changeOrdersBillingStatus";
-import { changeOrdersStatus } from "../../orders/utils/changeOrdersStatus";
-import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
-import { validatePaymentMethodArray } from "../../orders/utils/validatePaymentMethodArray";
-import { closeOrders } from "../../orders/utils/closeOrders";
 
 // @desc    Get salesInstances by ID
 // @route   GET /salesInstances/:salesInstanceId
@@ -119,8 +120,9 @@ export const PATCH = async (
     ordersNewBillingStatus,
     ordersNewStatus,
     paymentMethodArr,
+    toSalesInstanceId,
     guests,
-    status,
+    salesInstancestatus,
     responsibleById,
     clientName,
   } = (await req.json()) as {
@@ -131,12 +133,14 @@ export const PATCH = async (
     ordersNewBillingStatus: string;
     ordersNewStatus: string;
     paymentMethodArr: IPaymentMethod[];
+    toSalesInstanceId: Types.ObjectId;
   } & Partial<ISalesInstance>;
 
   // Validate ObjectIds in one step for better performance
   const idsToValidate = [salesInstanceId];
   if (responsibleById) idsToValidate.push(responsibleById);
   if (ordersIdsArr) idsToValidate.push(...ordersIdsArr);
+  if (toSalesInstanceId) idsToValidate.push(toSalesInstanceId);
 
   // validate ids
   if (isObjectIdValid(idsToValidate) !== true) {
@@ -156,6 +160,48 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
+    // get the salesInstance
+    const salesInstance: ISalesInstance | null = await SalesInstance.findById(
+      salesInstanceId
+    )
+      .select("openedByEmployeeId businessId salesInstancestatus salesGroup")
+      .session(session)
+      .lean();
+
+    if (!salesInstance) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: "SalesInstance not found!" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Handle deletion for occupied salesInstance without salesGroup
+    if (
+      salesInstance.salesInstancestatus === "Occupied" &&
+      (!salesInstance.salesGroup || salesInstance.salesGroup.length === 0) &&
+      salesInstancestatus !== "Reserved"
+    ) {
+      const deleteResult = await SalesInstance.deleteOne(
+        { _id: salesInstanceId },
+        { session }
+      );
+
+      if (deleteResult.deletedCount === 0) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: "SalesInstance not found!" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
     // if discountPercentage is provided, add discount to orders
     if (discountPercentage) {
       const addDiscountToOrdersResult = await addDiscountToOrders(
@@ -265,42 +311,24 @@ export const PATCH = async (
       }
     }
 
-    // get the salesInstance
-    const salesInstance: ISalesInstance | null = await SalesInstance.findById(
-      salesInstanceId
-    )
-      .select("openedByEmployeeId businessId status salesGroup")
-      .session(session)
-      .lean();
+    // if toSalesInstanceId is provided, transfer orders to another salesInstance
+    // employee can transfer orders between only the salesInstances that are not closed and resposibleById belongs to hin
+    if (toSalesInstanceId) {
+      const transferOrdersBetweenSalesInstancesResult =
+        await transferOrdersBetweenSalesInstances(
+          ordersIdsArr,
+          toSalesInstanceId,
+          session
+        );
 
-    if (!salesInstance) {
-      await session.abortTransaction();
-      return new NextResponse(
-        JSON.stringify({ message: "SalesInstance not found!" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Handle deletion for occupied salesInstance without salesGroup
-    if (
-      salesInstance.status === "Occupied" &&
-      (!salesInstance.salesGroup || salesInstance.salesGroup.length === 0) &&
-      status !== "Reserved"
-    ) {
-      const deleteResult = await SalesInstance.deleteOne(
-        { _id: salesInstanceId },
-        { session }
-      );
-
-      if (deleteResult.deletedCount === 0) {
+      if (transferOrdersBetweenSalesInstancesResult !== true) {
         await session.abortTransaction();
         return new NextResponse(
-          JSON.stringify({ message: "SalesInstance not found!" }),
+          JSON.stringify({
+            message: transferOrdersBetweenSalesInstancesResult,
+          }),
           {
-            status: 404,
+            status: 400,
             headers: { "Content-Type": "application/json" },
           }
         );
@@ -311,7 +339,8 @@ export const PATCH = async (
     let updatedSalesInstanceObj: Partial<ISalesInstance> = {};
 
     if (guests) updatedSalesInstanceObj.guests = guests;
-    if (status) updatedSalesInstanceObj.status = status;
+    if (salesInstancestatus)
+      updatedSalesInstanceObj.salesInstancestatus = salesInstancestatus;
     if (clientName) updatedSalesInstanceObj.clientName = clientName;
     if (responsibleById)
       updatedSalesInstanceObj.responsibleById = responsibleById;
@@ -331,7 +360,8 @@ export const PATCH = async (
         const addEmployeeToDailySalesReportResult =
           await addEmployeeToDailySalesReport(
             responsibleById,
-            salesInstance.businessId
+            salesInstance.businessId,
+            session
           );
 
         if (addEmployeeToDailySalesReportResult !== true) {

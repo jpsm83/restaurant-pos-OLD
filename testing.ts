@@ -1,212 +1,237 @@
 import mongoose, { Types } from "mongoose";
-import { NextResponse } from "next/server";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import { handleApiError } from "@/app/lib/utils/handleApiError";
+import { createSalesInstance } from "../../salesInstances/utils/createSalesInstance";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported interfaces
-import { IInventory, IInventoryCount } from "@/app/lib/interface/IInventory";
-import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
 
 // imported models
-import Inventory from "@/app/lib/models/inventory";
-import SupplierGood from "@/app/lib/models/supplierGood";
+import Order from "@/app/lib/models/order";
+import SalesInstance from "@/app/lib/models/salesInstance";
 
-// This PATCH route will update an existing count for an individualy supplier good from the inventory
-// @desc    Update inventory count for a specific supplier good
-// @route   PATCH /inventories/:inventoryId/supplierGood/:supplierGoodIs/updateCountFromSupplierGood
-// @access  Private
-export const PATCH = async (
-  req: Request,
-  context: {
-    params: { inventoryId: Types.ObjectId; supplierGoodId: Types.ObjectId };
-  }
+export const transferOrdersBetweenSalesInstances = async (
+  orderIdsArr: Types.ObjectId[],
+  fromSalesInstanceId: Types.ObjectId,
+  toSalesInstanceId: Types.ObjectId,
+  newSalesPointId: Types.ObjectId,
+  guests: number,
+  clientName: string
 ) => {
-  const { inventoryId, supplierGoodId } = context.params;
-
-  const { currentCountQuantity, countedByUserId, comments, countId, reason } =
-    (await req.json()) as IInventoryCount & {
-      supplierGoodId: Types.ObjectId;
-      countId: Types.ObjectId;
-      reason: string;
-    };
-
-  // Check required fields
-  if (!inventoryId || !supplierGoodId || !countId || !reason) {
-    return new NextResponse(
-      JSON.stringify({
-        message:
-          "InventoryId, supplierGoodId, countId and reason are required!",
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+  // validate ids
+  if (isObjectIdValid([...orderIdsArr, fromSalesInstanceId]) !== true) {
+    return "OrderIdsArr or fromSalesInstanceId not valid!";
   }
 
-  // Check if the IDs are valid
-  if (!isObjectIdValid([inventoryId, supplierGoodId, countId])) {
-    return new NextResponse(
-      JSON.stringify({ message: "One or more IDs are not valid!" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+  // toSalesInstanceId and newSalesPointId cannot exist at the same time
+  if (toSalesInstanceId && newSalesPointId) {
+    return "toSalesInstanceId and newSalesPointId cannot exist at the same time!";
   }
+
+  // Validate toSalesInstanceId or newSalesPointId
+  if (
+    (toSalesInstanceId && isObjectIdValid([toSalesInstanceId]) !== true) ||
+    (newSalesPointId && isObjectIdValid([newSalesPointId]) !== true)
+  ) {
+    return "Invalid toSalesInstanceId or newSalesPointId!";
+  }
+
+  // connect before first call to DB
+  await connectDb();
+
+  // Start a session to handle transactions
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
   try {
-    // Connect to the database
-    await connectDb();
-
-    // Fetch inventory and supplier good in a single query
-    const [inventory, supplierGood] = await Promise.all([
-      Inventory.findOne({
-        _id: inventoryId,
-        "inventoryGoods.supplierGoodId": supplierGoodId, // Match specific supplierGoodId
-      })
-        .select("setFinalCount inventoryGoods") // Use $ to project only the matching element from the array
-        .lean() as Promise<IInventory | null>,
-      SupplierGood.findById(supplierGoodId)
-        .select("parLevel")
-        .lean() as Promise<ISupplierGood | null>,
-    ]);
-
-    if (!supplierGood) {
-      return new NextResponse(
-        JSON.stringify({ message: "Supplier good not found!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!inventory) {
-      return new NextResponse(
-        JSON.stringify({ message: "Inventory not found!" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if the inventory is finalized
-    if (inventory.setFinalCount) {
-      return new NextResponse(
-        JSON.stringify({
-          message: "Inventory already set as final count! Cannot update!",
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // get the supplier good object
-    const supplierGoodObject = inventory.inventoryGoods.find(
-      (good) => good.supplierGoodId.toString() === supplierGoodId.toString()
+    // Fetch the original salesInstance
+    const fromSalesInstance = await SalesInstance.findOne(
+      {
+        _id: fromSalesInstanceId,
+        "salesGroup.ordersIds": { $in: orderIdsArr },
+      },
+      {
+        "salesGroup.$": 1,
+        status: 1,
+        businessId: 1,
+        responsibleById: 1,
+        dailyReferenceNumber: 1,
+      }
     );
 
-    // // get the current count object
-    // const currentCountObject = supplierGoodObject.monthlyCounts.find(
-    //   (count) => count._id.toString() === countId.toString()
-    // );
+    if (
+      !fromSalesInstance ||
+      !fromSalesInstance.salesGroup ||
+      fromSalesInstance.salesGroup.length === 0
+    ) {
+      await session.abortTransaction();
+      return "Original salesGroup not found!";
+    }
 
-    let previewDynamicSystemCount = null;
+    if (fromSalesInstance.salesInstancestatus === "Closed") {
+      await session.abortTransaction();
+      return "Cannot transfer orders from a closed salesInstance!";
+    }
 
-    // calculate the preview dynamic system count
-    previewDynamicSystemCount =
-    inventory.inventoryGoods[0].monthlyCounts[0].currentCountQuantity /
-    (1 -
-      (inventory.inventoryGoods[0].monthlyCounts[0].deviationPercent ?? 0) /
-      100);
-      
-      // Prepare the new inventory count object
-      const updateInventoryCount: IInventoryCount = {
-        currentCountQuantity,
-        quantityNeeded: (supplierGood.parLevel || 0) - currentCountQuantity,
-        countedByUserId,
-        deviationPercent:
-        ((previewDynamicSystemCount ?? 0 - currentCountQuantity) /
-        (previewDynamicSystemCount || 1)) *
-        100,
-        comments,
+    const { salesGroup, businessId, responsibleById, dailyReferenceNumber } =
+      fromSalesInstance;
+    const originalCreatedAt = salesGroup[0].createdAt;
+    let newOrderCode = salesGroup[0].orderCode;
+
+    // save the salesInstance id where the orders will be transferred
+    let salesInstanceToTransferId = null;
+
+    // create new salesInstance
+    const salesInstanceObj: Partial<ISalesInstance> = {
+      dailyReferenceNumber: dailyReferenceNumber,
+      salesInstancestatus: "Occupied",
+      responsibleById: responsibleById,
+      businessId: businessId,
+    };
+
+    let salesInstanceToTransfer: ISalesInstance | null = null;
+
+    if (toSalesInstanceId) {
+      // Fetch existing salesInstance to transfer to
+      salesInstanceToTransfer = await SalesInstance.findById(toSalesInstanceId)
+        .select(
+          "_id status salesGroup salesPointId guests openedByEmployeeId clientName"
+        )
+        .lean();
+    }
+
+    if (
+      salesInstanceToTransfer &&
+      salesInstanceToTransfer.salesInstancestatus !== "Closed"
+    ) {
+      salesInstanceToTransferId = salesInstanceToTransfer._id;
+      salesInstanceObj.salesPointId = salesInstanceToTransfer.salesPointId;
+      salesInstanceObj.guests = salesInstanceToTransfer.guests;
+      salesInstanceObj.openedByEmployeeId =
+        salesInstanceToTransfer.openedByEmployeeId;
+      salesInstanceObj.clientName = clientName
+        ? clientName
+        : salesInstanceToTransfer.clientName;
+    } else {
+      const salesPointAvailable = await SalesInstance.exists({
+        dailyReferenceNumber: dailyReferenceNumber,
+        salesPointId: newSalesPointId,
+        status: { $ne: "Closed" },
+      });
+
+      if (salesPointAvailable) {
+        await session.abortTransaction();
+        return "SalesPoint is already occupied!";
+      }
+
+      salesInstanceObj.salesPointId = newSalesPointId;
+      salesInstanceObj.guests = guests ? guests : undefined;
+      salesInstanceObj.openedByEmployeeId = responsibleById;
+      salesInstanceObj.clientName = clientName ? clientName : undefined;
+
+      const newSalesInstance = await createSalesInstance(
+        salesInstanceObj as ISalesInstance
+      );
+      if (typeof newSalesInstance === "string") {
+        await session.abortTransaction();
+        return newSalesInstance;
+      } else {
+        salesInstanceToTransferId = newSalesInstance._id;
+      }
+    }
+
+    // create bulk update operations for all orders
+    const bulkUpdateOperations = orderIdsArr.map((orderId) => {
+      return {
+        updateOne: {
+          filter: { _id: orderId },
+          update: {
+            $set: { salesInstanceId: salesInstanceToTransferId },
+          },
+        },
       };
-      
-      
-      // ======================
-      // ======================
-          return new NextResponse(
-            JSON.stringify(supplierGoodObject),
-            { status: 400, headers: { "Content-Type": "application/json" } }
+    });
+
+    // Execute bulk update of orders and update sales instances
+    await Promise.all([
+      // execute bulk update
+      await Order.bulkWrite(bulkUpdateOperations, { session }),
+
+      // move orders between salesInstances
+      (async () => {
+        if (salesInstanceToTransfer) {
+          const existingSalesGroup = salesInstanceToTransfer?.salesGroup?.find(
+            (group) => group.orderCode === newOrderCode
           );
-      // ======================
-      // ======================
-      
-      
-      
 
-    // // Prepare the reedited object
-    // updateInventoryCount.reedited = {
-    //   reeditedByUserId: countedByUserId,
-    //   date: new Date(),
-    //   reason, // You might want to pass this in the request as well
-    //   originalValues: {
-    //     currentCountQuantity:
-    //       inventory.inventoryGoods[0].monthlyCounts[0].currentCountQuantity,
-    //     deviationPercent:
-    //       inventory.inventoryGoods[0].monthlyCounts[0].deviationPercent ?? null,
-    //     dynamicSystemCount: previewDynamicSystemCount,
-    //   },
-    // };
+          if (existingSalesGroup) {
+            // Update the existing salesGroup entry
+            await SalesInstance.updateOne(
+              {
+                _id: salesInstanceToTransferId,
+                "salesGroup.orderCode": newOrderCode,
+              },
+              {
+                $addToSet: { "salesGroup.$.ordersIds": { $each: orderIdsArr } },
+                $set: { status: "Occupied" },
+              },
+              { session }
+            );
+          } else {
+            // Create a new salesGroup entry
+            await SalesInstance.updateOne(
+              { _id: salesInstanceToTransferId },
+              {
+                $push: {
+                  salesGroup: {
+                    orderCode: newOrderCode,
+                    ordersIds: orderIdsArr,
+                    createdAt: originalCreatedAt,
+                  },
+                },
+                $set: { status: "Occupied" },
+              },
+              { session }
+            );
+          }
+        }
+      })(),
 
-    // // calculate the average deviation percent
-    // let averageDeviationPercentCalculation = null;
+      // First, remove specific order IDs from the `ordersIds` array
+      await SalesInstance.updateOne(
+        { _id: fromSalesInstanceId },
+        {
+          $pull: {
+            "salesGroup.$[].ordersIds": { $in: orderIdsArr },
+          },
+        },
+        { session }
+      ),
 
-    // if (
-    //   currentCountQuantity !==
-    //   (inventory.inventoryGoods[0].monthlyCounts[0].currentCountQuantity ?? 0)
-    // ) {
-    //   let sunDeviationPercent =
-    //     inventory.inventoryGoods[0].monthlyCounts.reduce(
-    //       (acc, count) => acc + (count.deviationPercent || 0),
-    //       0
-    //     ) -
-    //     (inventory.inventoryGoods[0].monthlyCounts[0].deviationPercent ?? 0) +
-    //     (updateInventoryCount.deviationPercent ?? 0);
-    //   let monthlyCountsWithDeviationPercentNotZero =
-    //     inventory.inventoryGoods[0].monthlyCounts.filter(
-    //       (count) =>
-    //         count.deviationPercent !== 0 || count.deviationPercent !== null
-    //     ).length;
-    //   averageDeviationPercentCalculation =
-    //     sunDeviationPercent / monthlyCountsWithDeviationPercentNotZero;
-    // }
+      // Then, remove the entire `salesGroup` object if its `ordersIds` array is empty
+      await SalesInstance.updateOne(
+        { _id: fromSalesInstanceId },
+        {
+          $pull: {
+            salesGroup: {
+              ordersIds: { $size: 0 },
+            },
+          },
+        },
+        { session }
+      ),
+    ]);
 
-    // // Update the inventory count with optimized query
-    // await Inventory.findOneAndUpdate(
-    //   {
-    //     _id: inventoryId,
-    //     "inventoryGoods.supplierGoodId": supplierGoodId,
-    //     "inventoryGoods.monthlyCounts._id": countId, // Ensure this matches the correct count
-    //   },
-    //   {
-    //     $set: {
-    //       "inventoryGoods.$[elem1].dynamicSystemCount": currentCountQuantity,
-    //       "inventoryGoods.$[elem1].averageDeviationPercent":
-    //         averageDeviationPercentCalculation,
-    //       "inventoryGoods.$[elem1].monthlyCounts.$[elem2]":
-    //         updateInventoryCount, // Correctly reference monthlyCounts
-    //     },
-    //   },
-    //   {
-    //     arrayFilters: [
-    //       { "elem1.supplierGoodId": supplierGoodId }, // Matches supplierGood in inventoryGoods
-    //       { "elem2._id": countId }, // Matches count in monthlyCounts by _id
-    //     ],
-    //     new: true, // Return the updated document
-    //   }
-    // );
+    // Commit transaction
+    await session.commitTransaction();
 
-    // return new NextResponse(
-    //   JSON.stringify({ message: "Count updated successfully!" }),
-    //   {
-    //     status: 200,
-    //     headers: { "Content-Type": "application/json" },
-    //   }
-    // );
+    return "Orders transferred successfully!";
   } catch (error) {
-    return handleApiError("Updating count failed!", error);
+    await session.abortTransaction();
+    return "Transfer orders between salesInstances failed! Error: " + error;
+  } finally {
+    session.endSession();
   }
 };
