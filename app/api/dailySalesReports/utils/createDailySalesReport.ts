@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 
 // imported utils
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
@@ -13,7 +13,10 @@ import connectDb from "@/app/lib/utils/connectDb";
 // this function will create daily report if not exists
 // it will be imported to be used on the salesInstance route
 // if a sales instance is created and the daily report is not opened or doesnt exist it will create one
-export const createDailySalesReport = async (businessId: Types.ObjectId) => {
+export const createDailySalesReport = async (
+  businessId: Types.ObjectId,
+  session: ClientSession
+) => {
   try {
     // check required fields
     if (isObjectIdValid([businessId]) !== true) {
@@ -40,10 +43,17 @@ export const createDailySalesReport = async (businessId: Types.ObjectId) => {
     // connect before first call to DB
     await connectDb();
 
-    const dailySalesReport = await DailySalesReport.create(dailySalesReportObj);
+    const dailySalesReport = await DailySalesReport.create(
+      [dailySalesReportObj],
+      { session }
+    );
+
+    if (!dailySalesReport) {
+      return "Fail to create a deily sales report!";
+    }
 
     // return daily reference number
-    return dailySalesReport.dailyReferenceNumber;
+    return dailySalesReport[0].dailyReferenceNumber;
   } catch (error) {
     return "Fail to create a deily sales report! " + error;
   }

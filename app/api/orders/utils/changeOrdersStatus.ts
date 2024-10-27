@@ -21,12 +21,6 @@ export const changeOrdersStatus = async (
   ordersNewStatus: string,
   session: ClientSession
 ) => {
-  // validate required fields
-  if (!ordersNewStatus) {
-    await session.abortTransaction();
-    return "New status is required!";
-  }
-
   try {
     // connect before first call to DB
     await connectDb();
@@ -39,14 +33,12 @@ export const changeOrdersStatus = async (
       .lean()
       .session(session);
 
-    if (!orders || orders.length === 0) {
-      await session.abortTransaction();
+    if (!orders || orders.length !== ordersIdsArr.length) {
       return "Some orders were not found!";
     }
 
     // check if orders can be changed to new status
     if (orders.some((order) => order.orderStatus === "Dont Make")) {
-      await session.abortTransaction();
       return "Dont make orders cannot be changed!";
     }
 
@@ -58,18 +50,11 @@ export const changeOrdersStatus = async (
     );
 
     if (updatedOrder.modifiedCount === 0) {
-      await session.abortTransaction();
       return "No orders were updated!";
     }
 
-    // Commit transaction
-    await session.commitTransaction();
-
     return true;
   } catch (error) {
-    await session.abortTransaction();
     return "Change orders status failed! " + error;
-  } finally {
-    session.endSession();
   }
 };

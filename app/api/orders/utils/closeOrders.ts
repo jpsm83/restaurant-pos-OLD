@@ -31,8 +31,7 @@ export const closeOrders = async (
       .session(session)
       .lean();
 
-    if (!orders || orders.length === 0) {
-      await session.abortTransaction();
+    if (!orders || orders.length !== ordersIdsArr.length) {
       return "No open orders found!";
     }
 
@@ -47,7 +46,6 @@ export const closeOrders = async (
 
     // Check if total paid is lower than the total orders
     if (totalPaid < totalOrderNetPrice) {
-      await session.abortTransaction();
       return "Total amount paid is lower than the total price of the orders!";
     }
 
@@ -56,7 +54,7 @@ export const closeOrders = async (
     let remainingTips = totalTips;
 
     // Process each order in a single loop
-      const bulkUpdateOrders = orders.map((order, index) => {
+    const bulkUpdateOrders = orders.map((order, index) => {
       let remainingOrderNetPrice = order.orderNetPrice;
       const orderPaymentMethods = [];
 
@@ -107,7 +105,6 @@ export const closeOrders = async (
     });
 
     if (bulkUpdateResult.modifiedCount !== orders.length) {
-      await session.abortTransaction();
       return "Failed to update all orders!";
     }
 
@@ -125,7 +122,6 @@ export const closeOrders = async (
       .lean();
 
     if (!salesInstance) {
-      await session.abortTransaction();
       return "SalesInstance not found!";
     }
 
@@ -139,27 +135,20 @@ export const closeOrders = async (
       const updatedSalesInstance = await SalesInstance.updateOne(
         { _id: salesInstance._id },
         {
-          status: "Closed",
+          salesInstanceStatus: "Closed",
           closedAt: new Date(),
-          closedBy: salesInstance.responsibleById,
+          closedById: salesInstance.responsibleById,
         },
         { session }
       );
 
       if (updatedSalesInstance.modifiedCount !== 1) {
-        await session.abortTransaction();
         return "Failed to close sales instance!";
       }
     }
 
-    // Commit transaction
-    await session.commitTransaction();
-
     return true;
   } catch (error) {
-    await session.abortTransaction();
     return "Close orders failed! Error: " + error;
-  } finally {
-    session.endSession();
   }
 };

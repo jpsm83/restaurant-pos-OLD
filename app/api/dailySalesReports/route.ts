@@ -55,10 +55,10 @@ export const GET = async (req: Request) => {
 //     const businessId = "66e169a709901431386c97cb";
 
 //     // // @ts-ignore
-//     // const result = await addEmployeeToDailySalesReport(employeeId, businessId);
+//     // const result = await addEmployeeToDailySalesReport(employeeId, businessId, session);
 
 //     // @ts-ignore
-//     const result = await createDailySalesReport(businessId);
+//     const result = await createDailySalesReport(businessId, session);
 
 //     // // @ts-ignore
 //     // const result = await updateEmployeesDailySalesReport([employeeId], dailyReferenceNumber);

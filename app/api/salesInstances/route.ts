@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // import utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -88,7 +88,7 @@ export const POST = async (req: Request) => {
   const {
     salesPointId,
     guests,
-    salesInstancestatus,
+    salesInstanceStatus,
     openedByEmployeeId,
     businessId,
     clientName,
@@ -117,9 +117,13 @@ export const POST = async (req: Request) => {
     );
   }
 
+  // connect before first call to DB
+  await connectDb();
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    // connect before first call to DB
-    await connectDb();
 
     const [employee, salesPoint, dailySalesReport] = await Promise.all([
       // check if openedByEmployeeId is an employee or a customer
@@ -136,6 +140,7 @@ export const POST = async (req: Request) => {
 
     // check salesPointId exists
     if (!salesPoint || !employee) {
+      await session.abortTransaction();
       const message = !salesPoint
         ? "Sales point does not exist!"
         : "Employee does not exist!";
@@ -151,9 +156,10 @@ export const POST = async (req: Request) => {
     // dailySalesReport is created when the first salesInstance of the day is created
     const dailyReferenceNumber = dailySalesReport
       ? dailySalesReport.dailyReferenceNumber
-      : await createDailySalesReport(businessId);
+      : await createDailySalesReport(businessId, session);
 
     if (typeof dailyReferenceNumber === "string") {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({ message: dailyReferenceNumber }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -168,6 +174,7 @@ export const POST = async (req: Request) => {
         status: { $ne: "Closed" },
       })
     ) {
+      await session.abortTransaction();
       return new NextResponse(
         JSON.stringify({
           message: "SalesInstance already exists and it is not closed!",
@@ -181,7 +188,7 @@ export const POST = async (req: Request) => {
       dailyReferenceNumber,
       salesPointId,
       guests,
-      salesInstancestatus,
+      salesInstanceStatus,
       openedByEmployeeId,
       businessId,
       clientName,
@@ -189,7 +196,7 @@ export const POST = async (req: Request) => {
 
     // we use a outside function to create the salesInstance because this function is used in other places
     // create new salesInstance
-    await createSalesInstance(newSalesInstanceObj);
+    await createSalesInstance(newSalesInstanceObj, session);
 
     return new NextResponse(
       JSON.stringify({

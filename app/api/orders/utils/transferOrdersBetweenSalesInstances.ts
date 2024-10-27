@@ -24,14 +24,13 @@ export const transferOrdersBetweenSalesInstances = async (
     const targetSalesInstance: ISalesInstance | null =
       await SalesInstance.findOne({
         _id: toSalesInstanceId,
-        salesInstancestatus: { $ne: "Closed" },
+        salesInstanceStatus: { $ne: "Closed" },
       })
         .select("_id salesGroup")
         .session(session)
         .lean();
 
     if (!targetSalesInstance) {
-      await session.abortTransaction();
       return "Target SalesInstance not found or is closed!";
     }
 
@@ -45,8 +44,7 @@ export const transferOrdersBetweenSalesInstances = async (
       .lean();
 
     // check if all orders are open
-    if (orders.length !== ordersIdsArr.length) {
-      await session.abortTransaction();
+    if (!orders || orders.length !== ordersIdsArr.length) {
       return "Some orders are not open!";
     }
 
@@ -59,7 +57,6 @@ export const transferOrdersBetweenSalesInstances = async (
       .session(session);
 
     if (!originalSalesInstance) {
-      await session.abortTransaction();
       return "Original SalesInstance or sales group not found!";
     }
 
@@ -102,36 +99,27 @@ export const transferOrdersBetweenSalesInstances = async (
 
     // check if bulk update was successful
     if (orderBulk.modifiedCount !== ordersIdsArr.length) {
-      await session.abortTransaction();
       return "OrderBulk failed!";
     }
 
     // check if salesInstanceUpdate1 was successful
     if (salesInstanceUpdate1.modifiedCount !== 1) {
-      await session.abortTransaction();
       return "SalesInstanceUpdate1 failed!";
     }
 
     // check if salesInstanceUpdate2 was successful
     if (salesInstanceUpdate2.modifiedCount !== 1) {
-      await session.abortTransaction();
       return "SalesInstanceUpdate2 failed!";
     }
 
     // check if moveOrders was successful
     if (moveOrders !== true) {
-      await session.abortTransaction();
       return moveOrders;
     }
 
-    // Commit the transaction after successful updates
-    await session.commitTransaction();
     return true;
   } catch (error) {
-    await session.abortTransaction();
     return "Transfer orders between salesInstances failed! Error: " + error;
-  } finally {
-    session.endSession();
   }
 };
 

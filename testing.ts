@@ -1,237 +1,194 @@
-import mongoose, { Types } from "mongoose";
-
-// imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import { createSalesInstance } from "../../salesInstances/utils/createSalesInstance";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
+import { IBusinessGood } from "@/app/lib/interface/IBusinessGood";
+import { ISupplierGood } from "@/app/lib/interface/ISupplierGood";
+import BusinessGood from "@/app/lib/models/businessGood";
+import Inventory from "@/app/lib/models/inventory";
+import SupplierGood from "@/app/lib/models/supplierGood";
+import convert, { Unit } from "convert-units";
+import mongoose, { Types } from "mongoose";
+import { IInventory } from "@/app/lib/interface/IInventory";
+import path from "path";
 
-// imported interfaces
-import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
-
-// imported models
-import Order from "@/app/lib/models/order";
-import SalesInstance from "@/app/lib/models/salesInstance";
-
-export const transferOrdersBetweenSalesInstances = async (
-  orderIdsArr: Types.ObjectId[],
-  fromSalesInstanceId: Types.ObjectId,
-  toSalesInstanceId: Types.ObjectId,
-  newSalesPointId: Types.ObjectId,
-  guests: number,
-  clientName: string
+// every time an order is created or cancel, we MUST update the supplier goods
+// check all the ingredients of the business goods array of the order
+// each ingredient is a supplier good
+// add or remove the quantity used from the inventoy.inventoryGoods.[the supplier good that applied].dynamicCountFromLastInventory
+// if insted of ingredients we have setMenu
+// get all business goods from the setMenu and repeat the cicle
+export const updateDynamicCountSupplierGood = async (
+  businessGoodsIds: Types.ObjectId[],
+  addOrRemove: "add" | "remove"
 ) => {
-  // validate ids
-  if (isObjectIdValid([...orderIdsArr, fromSalesInstanceId]) !== true) {
-    return "OrderIdsArr or fromSalesInstanceId not valid!";
-  }
-
-  // toSalesInstanceId and newSalesPointId cannot exist at the same time
-  if (toSalesInstanceId && newSalesPointId) {
-    return "toSalesInstanceId and newSalesPointId cannot exist at the same time!";
-  }
-
-  // Validate toSalesInstanceId or newSalesPointId
-  if (
-    (toSalesInstanceId && isObjectIdValid([toSalesInstanceId]) !== true) ||
-    (newSalesPointId && isObjectIdValid([newSalesPointId]) !== true)
-  ) {
-    return "Invalid toSalesInstanceId or newSalesPointId!";
-  }
-
-  // connect before first call to DB
-  await connectDb();
-
-  // Start a session to handle transactions
   const session = await mongoose.startSession();
   session.startTransaction();
-
   try {
-    // Fetch the original salesInstance
-    const fromSalesInstance = await SalesInstance.findOne(
-      {
-        _id: fromSalesInstanceId,
-        "salesGroup.ordersIds": { $in: orderIdsArr },
-      },
-      {
-        "salesGroup.$": 1,
-        status: 1,
-        businessId: 1,
-        responsibleById: 1,
-        dailyReferenceNumber: 1,
+    // Connect to the database
+    await connectDb();
+
+    // Fetch all business goods including setMenu and their ingredients
+    const businessGoodsIngredients = await BusinessGood.find({
+      _id: { $in: businessGoodsIds },
+    })
+      .select(
+        "ingredients.supplierGoodId ingredients.measurementUnit ingredients.requiredQuantity setMenuIds"
+      )
+      .populate({
+        path: "setMenuIds",
+        select:
+          "ingredients.supplierGoodId ingredients.measurementUnit ingredients.requiredQuantity",
+        model: BusinessGood,
+      })
+      .lean();
+
+    if (!businessGoodsIngredients || businessGoodsIngredients.length === 0) {
+      return "Business goods not found!";
+    }
+
+    // Collect all required ingredients from business goods and setMenus
+    let allIngredientsRequired: {
+      ingredientId: Types.ObjectId;
+      requiredQuantity: number;
+      measurementUnit: string;
+    }[] = [];
+
+    businessGoodsIngredients.forEach((businessGood) => {
+      if (businessGood.ingredients) {
+        businessGood.ingredients.forEach((ing: any) => {
+          allIngredientsRequired.push({
+            ingredientId: ing.supplierGoodId,
+            requiredQuantity: ing.requiredQuantity,
+            measurementUnit: ing.measurementUnit,
+          });
+        });
       }
-    );
-
-    if (
-      !fromSalesInstance ||
-      !fromSalesInstance.salesGroup ||
-      fromSalesInstance.salesGroup.length === 0
-    ) {
-      await session.abortTransaction();
-      return "Original salesGroup not found!";
-    }
-
-    if (fromSalesInstance.salesInstancestatus === "Closed") {
-      await session.abortTransaction();
-      return "Cannot transfer orders from a closed salesInstance!";
-    }
-
-    const { salesGroup, businessId, responsibleById, dailyReferenceNumber } =
-      fromSalesInstance;
-    const originalCreatedAt = salesGroup[0].createdAt;
-    let newOrderCode = salesGroup[0].orderCode;
-
-    // save the salesInstance id where the orders will be transferred
-    let salesInstanceToTransferId = null;
-
-    // create new salesInstance
-    const salesInstanceObj: Partial<ISalesInstance> = {
-      dailyReferenceNumber: dailyReferenceNumber,
-      salesInstancestatus: "Occupied",
-      responsibleById: responsibleById,
-      businessId: businessId,
-    };
-
-    let salesInstanceToTransfer: ISalesInstance | null = null;
-
-    if (toSalesInstanceId) {
-      // Fetch existing salesInstance to transfer to
-      salesInstanceToTransfer = await SalesInstance.findById(toSalesInstanceId)
-        .select(
-          "_id status salesGroup salesPointId guests openedByEmployeeId clientName"
-        )
-        .lean();
-    }
-
-    if (
-      salesInstanceToTransfer &&
-      salesInstanceToTransfer.salesInstancestatus !== "Closed"
-    ) {
-      salesInstanceToTransferId = salesInstanceToTransfer._id;
-      salesInstanceObj.salesPointId = salesInstanceToTransfer.salesPointId;
-      salesInstanceObj.guests = salesInstanceToTransfer.guests;
-      salesInstanceObj.openedByEmployeeId =
-        salesInstanceToTransfer.openedByEmployeeId;
-      salesInstanceObj.clientName = clientName
-        ? clientName
-        : salesInstanceToTransfer.clientName;
-    } else {
-      const salesPointAvailable = await SalesInstance.exists({
-        dailyReferenceNumber: dailyReferenceNumber,
-        salesPointId: newSalesPointId,
-        status: { $ne: "Closed" },
-      });
-
-      if (salesPointAvailable) {
-        await session.abortTransaction();
-        return "SalesPoint is already occupied!";
+      if (businessGood.setMenuIds) {
+        businessGood.setMenuIds.forEach((setMenuItem: any) => {
+          setMenuItem.ingredients.forEach((ing: any) => {
+            allIngredientsRequired.push({
+              ingredientId: ing.supplierGoodId,
+              requiredQuantity: ing.requiredQuantity,
+              measurementUnit: ing.measurementUnit,
+            });
+          });
+        });
       }
-
-      salesInstanceObj.salesPointId = newSalesPointId;
-      salesInstanceObj.guests = guests ? guests : undefined;
-      salesInstanceObj.openedByEmployeeId = responsibleById;
-      salesInstanceObj.clientName = clientName ? clientName : undefined;
-
-      const newSalesInstance = await createSalesInstance(
-        salesInstanceObj as ISalesInstance
-      );
-      if (typeof newSalesInstance === "string") {
-        await session.abortTransaction();
-        return newSalesInstance;
-      } else {
-        salesInstanceToTransferId = newSalesInstance._id;
-      }
-    }
-
-    // create bulk update operations for all orders
-    const bulkUpdateOperations = orderIdsArr.map((orderId) => {
-      return {
-        updateOne: {
-          filter: { _id: orderId },
-          update: {
-            $set: { salesInstanceId: salesInstanceToTransferId },
-          },
-        },
-      };
     });
 
-    // Execute bulk update of orders and update sales instances
-    await Promise.all([
-      // execute bulk update
-      await Order.bulkWrite(bulkUpdateOperations, { session }),
+    if (allIngredientsRequired.length === 0) return "No ingredients found!";
 
-      // move orders between salesInstances
-      (async () => {
-        if (salesInstanceToTransfer) {
-          const existingSalesGroup = salesInstanceToTransfer?.salesGroup?.find(
-            (group) => group.orderCode === newOrderCode
-          );
-
-          if (existingSalesGroup) {
-            // Update the existing salesGroup entry
-            await SalesInstance.updateOne(
-              {
-                _id: salesInstanceToTransferId,
-                "salesGroup.orderCode": newOrderCode,
-              },
-              {
-                $addToSet: { "salesGroup.$.ordersIds": { $each: orderIdsArr } },
-                $set: { status: "Occupied" },
-              },
-              { session }
-            );
-          } else {
-            // Create a new salesGroup entry
-            await SalesInstance.updateOne(
-              { _id: salesInstanceToTransferId },
-              {
-                $push: {
-                  salesGroup: {
-                    orderCode: newOrderCode,
-                    ordersIds: orderIdsArr,
-                    createdAt: originalCreatedAt,
-                  },
-                },
-                $set: { status: "Occupied" },
-              },
-              { session }
-            );
-          }
-        }
-      })(),
-
-      // First, remove specific order IDs from the `ordersIds` array
-      await SalesInstance.updateOne(
-        { _id: fromSalesInstanceId },
-        {
-          $pull: {
-            "salesGroup.$[].ordersIds": { $in: orderIdsArr },
+    // Aggregation to fetch both inventory items and supplier goods in one query
+    const inventoryItems = await Inventory.aggregate([
+      {
+        $match: {
+          setFinalCount: false,
+          "inventoryGoods.supplierGoodId": {
+            $in: allIngredientsRequired.map((ing) => ing.ingredientId),
           },
         },
-        { session }
-      ),
-
-      // Then, remove the entire `salesGroup` object if its `ordersIds` array is empty
-      await SalesInstance.updateOne(
-        { _id: fromSalesInstanceId },
-        {
-          $pull: {
-            salesGroup: {
-              ordersIds: { $size: 0 },
+      },
+      {
+        $project: {
+          inventoryGoods: {
+            $filter: {
+              input: "$inventoryGoods",
+              as: "item",
+              cond: {
+                $in: [
+                  "$$item.supplierGoodId",
+                  allIngredientsRequired.map((ing) => ing.ingredientId),
+                ],
+              },
             },
           },
         },
-        { session }
-      ),
-    ]);
+      },
+      {
+        $lookup: {
+          from: "suppliergoods",
+          localField: "inventoryGoods.supplierGoodId",
+          foreignField: "_id",
+          as: "supplierGoods",
+        },
+      },
+      {
+        $project: {
+          "inventoryGoods.supplierGoodId": 1,
+          "inventoryGoods.dynamicSystemCount": 1,
+          "supplierGoods._id": 1,
+          "supplierGoods.measurementUnit": 1,
+        },
+      },
+    ]).session(session);
 
-    // Commit transaction
+    if (!inventoryItems || inventoryItems.length === 0)
+      return "Inventory not found!";
+
+    // Map supplierGoodId to measurementUnit and dynamicSystemCount
+    const supplierGoodUnitsMap = inventoryItems[0].supplierGoods.reduce(
+      (map: any, good: any) => {
+        map[good._id.toString()] = good.measurementUnit;
+        return map;
+      },
+      {}
+    );
+
+    const inventoryMap = inventoryItems[0].inventoryGoods.reduce(
+      (map: any, invItem: any) => {
+        map[invItem.supplierGoodId.toString()] = invItem;
+        return map;
+      },
+      {}
+    );
+
+    // Perform bulk update to modify dynamic counts
+    const bulkOperations: any = allIngredientsRequired
+      .map((ingredientObj) => {
+        const inventoryItem =
+          inventoryMap[ingredientObj.ingredientId.toString()];
+        const supplierGoodUnit =
+          supplierGoodUnitsMap[ingredientObj.ingredientId.toString()];
+
+        if (!inventoryItem || !supplierGoodUnit)
+          return "InventoryItem or supplierGoodUnit not found!";
+
+        let quantityChange = ingredientObj.requiredQuantity;
+        if (ingredientObj.measurementUnit !== supplierGoodUnit) {
+          // Convert units if necessary
+          quantityChange = convert(quantityChange)
+            .from(ingredientObj.measurementUnit as Unit)
+            .to(supplierGoodUnit as Unit);
+        }
+
+        return {
+          updateOne: {
+            filter: {
+              "inventoryGoods.supplierGoodId": ingredientObj.ingredientId,
+            },
+            update: {
+              $inc: {
+                "inventoryGoods.$.dynamicSystemCount":
+                  addOrRemove === "add" ? quantityChange : -quantityChange,
+              },
+            },
+          },
+        };
+      })
+      .filter(Boolean); // Remove null values
+
+    // Execute bulk update
+    if (bulkOperations.length > 0) {
+      await Inventory.bulkWrite(bulkOperations, { session });
+    } else {
+      return "No bulk operations failed!";
+    }
+
     await session.commitTransaction();
 
-    return "Orders transferred successfully!";
+    return true;
   } catch (error) {
     await session.abortTransaction();
-    return "Transfer orders between salesInstances failed! Error: " + error;
+    return "Could not update dynamic count supplier good! " + error;
   } finally {
-    session.endSession();
+    await session.endSession();
   }
 };

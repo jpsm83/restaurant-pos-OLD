@@ -19,7 +19,7 @@ supplierGoods - DONE
 businessGoods - DONE
 promotions - DONE
 
-orders - last test / full PATCH route
+orders - last test / from transferOrdersBetweenSalesInstances PATCH route
 
 purchases - DONE
 inventories - DONE

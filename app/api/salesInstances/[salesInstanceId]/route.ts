@@ -122,7 +122,7 @@ export const PATCH = async (
     paymentMethodArr,
     toSalesInstanceId,
     guests,
-    salesInstancestatus,
+    salesInstanceStatus,
     responsibleById,
     clientName,
   } = (await req.json()) as {
@@ -153,9 +153,6 @@ export const PATCH = async (
   // connect before first call to DB
   await connectDb();
 
-  // Start a session to handle transactions
-  // with session if any error occurs, the transaction will be aborted
-  // session is created outside of the try block to be able to abort it in the catch/finally block
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -164,7 +161,7 @@ export const PATCH = async (
     const salesInstance: ISalesInstance | null = await SalesInstance.findById(
       salesInstanceId
     )
-      .select("openedByEmployeeId businessId salesInstancestatus salesGroup")
+      .select("openedByEmployeeId businessId salesInstanceStatus salesGroup")
       .session(session)
       .lean();
 
@@ -181,9 +178,9 @@ export const PATCH = async (
 
     // Handle deletion for occupied salesInstance without salesGroup
     if (
-      salesInstance.salesInstancestatus === "Occupied" &&
+      salesInstance.salesInstanceStatus === "Occupied" &&
       (!salesInstance.salesGroup || salesInstance.salesGroup.length === 0) &&
-      salesInstancestatus !== "Reserved"
+      salesInstanceStatus !== "Reserved"
     ) {
       const deleteResult = await SalesInstance.deleteOne(
         { _id: salesInstanceId },
@@ -193,7 +190,7 @@ export const PATCH = async (
       if (deleteResult.deletedCount === 0) {
         await session.abortTransaction();
         return new NextResponse(
-          JSON.stringify({ message: "SalesInstance not found!" }),
+          JSON.stringify({ message: "Empty salesInstance not deleted!" }),
           {
             status: 404,
             headers: { "Content-Type": "application/json" },
@@ -202,114 +199,130 @@ export const PATCH = async (
       }
     }
 
-    // if discountPercentage is provided, add discount to orders
-    if (discountPercentage) {
-      const addDiscountToOrdersResult = await addDiscountToOrders(
-        ordersIdsArr,
-        discountPercentage,
-        comments,
-        session
-      );
+    // check if responsibleById is an employee
+    if (responsibleById) {
+      const employee = await Employee.findById(responsibleById);
 
-      if (addDiscountToOrdersResult !== true) {
+      if (!employee) {
         await session.abortTransaction();
         return new NextResponse(
-          JSON.stringify({ message: addDiscountToOrdersResult }),
+          JSON.stringify({ message: "Employee not found!" }),
           {
-            status: 400,
+            status: 404,
             headers: { "Content-Type": "application/json" },
           }
         );
       }
     }
 
-    // if cancel is true, cancel orders
-    if (cancel) {
-      const cancelOrdersResult = await cancelOrders(ordersIdsArr, session);
+    // // if discountPercentage is provided, add discount to orders
+    // if (discountPercentage) {
+    //   const addDiscountToOrdersResult = await addDiscountToOrders(
+    //     ordersIdsArr,
+    //     discountPercentage,
+    //     comments,
+    //     session
+    //   );
 
-      if (cancelOrdersResult !== true) {
-        await session.abortTransaction();
-        return new NextResponse(
-          JSON.stringify({ message: cancelOrdersResult }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
+    //   if (addDiscountToOrdersResult !== true) {
+    //     await session.abortTransaction();
+    //     return new NextResponse(
+    //       JSON.stringify({ message: addDiscountToOrdersResult }),
+    //       {
+    //         status: 400,
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
+    //   }
+    // }
 
-    // if ordersNewBillingStatus is provided, change orders billing status
-    if (ordersNewBillingStatus) {
-      const changeOrdersBillingStatusResult = await changeOrdersBillingStatus(
-        ordersIdsArr,
-        ordersNewBillingStatus,
-        session
-      );
+    // // if cancel is true, cancel orders
+    // if (cancel) {
+    //   const cancelOrdersResult = await cancelOrders(ordersIdsArr, session);
 
-      if (changeOrdersBillingStatusResult !== true) {
-        await session.abortTransaction();
-        return new NextResponse(
-          JSON.stringify({ message: changeOrdersBillingStatusResult }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
+    //   if (cancelOrdersResult !== true) {
+    //     await session.abortTransaction();
+    //     return new NextResponse(
+    //       JSON.stringify({ message: cancelOrdersResult }),
+    //       {
+    //         status: 400,
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
+    //   }
+    // }
 
-    // if ordersNewStatus is provided, change orders status
-    if (ordersNewStatus) {
-      const changeOrdersStatusResult = await changeOrdersStatus(
-        ordersIdsArr,
-        ordersNewStatus,
-        session
-      );
+    // // if ordersNewBillingStatus is provided, change orders billing status
+    // if (ordersNewBillingStatus) {
+    //   const changeOrdersBillingStatusResult = await changeOrdersBillingStatus(
+    //     ordersIdsArr,
+    //     ordersNewBillingStatus,
+    //     session
+    //   );
 
-      if (changeOrdersStatusResult !== true) {
-        await session.abortTransaction();
-        return new NextResponse(
-          JSON.stringify({ message: changeOrdersStatusResult }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
+    //   if (changeOrdersBillingStatusResult !== true) {
+    //     await session.abortTransaction();
+    //     return new NextResponse(
+    //       JSON.stringify({ message: changeOrdersBillingStatusResult }),
+    //       {
+    //         status: 400,
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
+    //   }
+    // }
 
-    // if paymentMethodArr is provided, update orders payment method
-    if (paymentMethodArr) {
-      // Validate payment methods
-      const validPaymentMethods = validatePaymentMethodArray(paymentMethodArr);
-      if (validPaymentMethods !== true) {
-        return new NextResponse(
-          JSON.stringify({ message: validPaymentMethods }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
+    // // if ordersNewStatus is provided, change orders status
+    // if (ordersNewStatus) {
+    //   const changeOrdersStatusResult = await changeOrdersStatus(
+    //     ordersIdsArr,
+    //     ordersNewStatus,
+    //     session
+    //   );
 
-      const closeOrdersResult = await closeOrders(
-        ordersIdsArr,
-        paymentMethodArr,
-        session
-      );
+    //   if (changeOrdersStatusResult !== true) {
+    //     await session.abortTransaction();
+    //     return new NextResponse(
+    //       JSON.stringify({ message: changeOrdersStatusResult }),
+    //       {
+    //         status: 400,
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
+    //   }
+    // }
 
-      if (closeOrdersResult !== true) {
-        await session.abortTransaction();
-        return new NextResponse(
-          JSON.stringify({ message: closeOrdersResult }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
+    // // if paymentMethodArr is provided, update orders payment method
+    // if (paymentMethodArr) {
+    //   // Validate payment methods
+    //   const validPaymentMethods = validatePaymentMethodArray(paymentMethodArr);
+    //   if (validPaymentMethods !== true) {
+    //     return new NextResponse(
+    //       JSON.stringify({ message: validPaymentMethods }),
+    //       {
+    //         status: 400,
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
+    //   }
+
+    //   const closeOrdersResult = await closeOrders(
+    //     ordersIdsArr,
+    //     paymentMethodArr,
+    //     session
+    //   );
+
+    //   if (closeOrdersResult !== true) {
+    //     await session.abortTransaction();
+    //     return new NextResponse(
+    //       JSON.stringify({ message: closeOrdersResult }),
+    //       {
+    //         status: 400,
+    //         headers: { "Content-Type": "application/json" },
+    //       }
+    //     );
+    //   }
+    // }
 
     // if toSalesInstanceId is provided, transfer orders to another salesInstance
     // employee can transfer orders between only the salesInstances that are not closed and resposibleById belongs to hin
@@ -335,67 +348,67 @@ export const PATCH = async (
       }
     }
 
-    // prepare the tableObj to update
-    let updatedSalesInstanceObj: Partial<ISalesInstance> = {};
+    // // prepare the tableObj to update
+    // let updatedSalesInstanceObj: Partial<ISalesInstance> = {};
 
-    if (guests) updatedSalesInstanceObj.guests = guests;
-    if (salesInstancestatus)
-      updatedSalesInstanceObj.salesInstancestatus = salesInstancestatus;
-    if (clientName) updatedSalesInstanceObj.clientName = clientName;
-    if (responsibleById)
-      updatedSalesInstanceObj.responsibleById = responsibleById;
-    // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
-    if (
-      responsibleById &&
-      responsibleById !== salesInstance?.openedByEmployeeId
-    ) {
-      // check if employee exists in the dailySalesReport
-      if (
-        !(await DailySalesReport.exists({
-          isDailyReportOpen: true,
-          business: salesInstance?.businessId,
-          "employeesDailySalesReport.employeeId": responsibleById,
-        }))
-      ) {
-        const addEmployeeToDailySalesReportResult =
-          await addEmployeeToDailySalesReport(
-            responsibleById,
-            salesInstance.businessId,
-            session
-          );
+    // if (guests) updatedSalesInstanceObj.guests = guests;
+    // if (salesInstanceStatus)
+    //   updatedSalesInstanceObj.salesInstanceStatus = salesInstanceStatus;
+    // if (clientName) updatedSalesInstanceObj.clientName = clientName;
+    // if (responsibleById)
+    //   updatedSalesInstanceObj.responsibleById = responsibleById;
+    // // if salesInstance is transferred to another employee, and that is the first salesInstance from the new employee, update the dailySalesReport to create a new employeeDailySalesReport for the new employee
+    // if (
+    //   responsibleById &&
+    //   responsibleById !== salesInstance?.openedByEmployeeId
+    // ) {
+    //   // check if employee exists in the dailySalesReport
+    //   if (
+    //     !(await DailySalesReport.exists({
+    //       isDailyReportOpen: true,
+    //       business: salesInstance?.businessId,
+    //       "employeesDailySalesReport.employeeId": responsibleById,
+    //     }))
+    //   ) {
+    //     const addEmployeeToDailySalesReportResult =
+    //       await addEmployeeToDailySalesReport(
+    //         responsibleById,
+    //         salesInstance.businessId,
+    //         session
+    //       );
 
-        if (addEmployeeToDailySalesReportResult !== true) {
-          await session.abortTransaction();
-          return new NextResponse(
-            JSON.stringify({ message: addEmployeeToDailySalesReportResult }),
-            {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
-        }
-      }
-    }
+    //     if (addEmployeeToDailySalesReportResult !== true) {
+    //       await session.abortTransaction();
+    //       return new NextResponse(
+    //         JSON.stringify({ message: addEmployeeToDailySalesReportResult }),
+    //         {
+    //           status: 400,
+    //           headers: { "Content-Type": "application/json" },
+    //         }
+    //       );
+    //     }
+    //   }
+    // }
 
-    // The order controller would handle the creation of orders and updating the relevant salesInstance's order array. The salesInstance controller would then only be responsible for reading and managing salesInstance data, not order data. This separation of concerns makes the code easier to maintain and understand.
+    // // The order controller would handle the creation of orders and updating the relevant salesInstance's order array. The salesInstance controller would then only be responsible for reading and managing salesInstance data, not order data. This separation of concerns makes the code easier to maintain and understand.
 
-    // save the updated salesInstance
-    const updatedSalesInstance = await SalesInstance.updateOne(
-      { _id: salesInstanceId },
-      { $set: updatedSalesInstanceObj },
-      { session }
-    );
+    // // save the updated salesInstance
+    // const updatedSalesInstance = await SalesInstance.updateOne(
+    //   { _id: salesInstanceId },
+    //   { $set: updatedSalesInstanceObj },
+    //   { session }
+    // );
 
-    if (updatedSalesInstance.modifiedCount === 0) {
-      await session.abortTransaction();
-      return new NextResponse(
-        JSON.stringify({ message: "SalesInstance not found!" }),
-        {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
+    // if (updatedSalesInstance.modifiedCount === 0) {
+    //   await session.abortTransaction();
+    //   return new NextResponse(
+    //     JSON.stringify({ message: "SalesInstance not found!" }),
+    //     {
+    //       status: 404,
+    //       headers: { "Content-Type": "application/json" },
+    //     }
+    //   );
+    // }
 
     // Commit the transaction if both operations succeed
     await session.commitTransaction();

@@ -5,7 +5,7 @@ export interface ISalesInstance {
   dailyReferenceNumber?: number;
   salesPointId: Types.ObjectId;
   guests: number;
-  salesInstancestatus: string;
+  salesInstanceStatus: string;
   openedByCustomerId?: Types.ObjectId;
   openedByEmployeeId?: Types.ObjectId;
   responsibleById?: Types.ObjectId;

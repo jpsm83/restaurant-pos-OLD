@@ -18,7 +18,6 @@ export const cancelOrders = async (
   ordersIdsArr: Types.ObjectId[],
   session: ClientSession
 ) => {
-  
   try {
     // connect before first call to DB
     await connectDb();
@@ -31,14 +30,12 @@ export const cancelOrders = async (
       .lean()
       .session(session);
 
-    if (!orders || orders.length === 0) {
-      await session.abortTransaction();
+    if (!orders || orders.length !== ordersIdsArr.length) {
       return "Some orders were not found!";
     }
 
     // Check if any of the orders are not allowed to be canceled
     if (orders.some((order) => order.orderStatus === "Done")) {
-      await session.abortTransaction();
       return "Cannot cancel orders with status 'Done'!";
     }
 
@@ -46,11 +43,11 @@ export const cancelOrders = async (
     const businessGoodsIds = orders
       .map((order) => order.businessGoodsIds)
       .flat();
+    // once you are canceling the order, the quantity of the business goods should be added back to the inventory
     const updateDynamicCountSupplierGoodResult =
-      await updateDynamicCountSupplierGood(businessGoodsIds, "remove", session);
+      await updateDynamicCountSupplierGood(businessGoodsIds, "add", session);
 
     if (updateDynamicCountSupplierGoodResult !== true) {
-      await session.abortTransaction();
       return (
         "updateDynamicCountSupplierGood error: " +
         updateDynamicCountSupplierGoodResult
@@ -81,19 +78,16 @@ export const cancelOrders = async (
       }).session(session),
     ]);
 
+    if (salesInstance1.modifiedCount !== 1) {
+      return "Cancel order failed, salesInstance not updated!";
+    }
+
     if (order.deletedCount !== ordersIdsArr.length) {
-      await session.abortTransaction();
       return "Cancel order failed, some orders were not deleted!";
     }
 
-    // Commit transaction
-    await session.commitTransaction();
-
     return true;
   } catch (error) {
-    await session.abortTransaction();
     return "Cancel order and update dynamic count failed! " + error;
-  } finally {
-    session.endSession();
   }
 };

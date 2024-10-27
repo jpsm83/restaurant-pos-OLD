@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { ordersArrValidation } from "./utils/validateOrdersArr";
+import { createOrders } from "./utils/createOrders";
 
 // imported interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
@@ -16,10 +17,7 @@ import SalesInstance from "@/app/lib/models/salesInstance";
 import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
-
-// importes test utils
 import Customer from "@/app/lib/models/customer";
-import { createOrders } from "./utils/createOrders";
 
 // @desc    Get all orders
 // @route   GET /orders
@@ -191,6 +189,13 @@ export const POST = async (req: Request) => {
     );
   }
 
+  // connect before first call to DB
+  await connectDb();
+
+  // create a session to handle transactions of the createOrders function
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const createdOrders = await createOrders(
       dailyReferenceNumber,
@@ -198,16 +203,28 @@ export const POST = async (req: Request) => {
       employeeId,
       undefined,
       salesInstanceId,
-      businessId
+      businessId,
+      session
     );
 
     if (typeof createdOrders === "string") {
+      await session.abortTransaction();
       return new NextResponse(JSON.stringify({ message: createdOrders }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
+
+    await session.commitTransaction();
+
+    return new NextResponse(JSON.stringify({ message: "Order created" }), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
+    await session.abortTransaction();
     return handleApiError("Create order failed!", error);
+  } finally {
+    session.endSession();
   }
 };

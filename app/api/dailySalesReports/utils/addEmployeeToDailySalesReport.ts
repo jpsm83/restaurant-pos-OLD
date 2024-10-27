@@ -11,7 +11,6 @@ export const addEmployeeToDailySalesReport = async (
   try {
     // validate ids
     if (isObjectIdValid([employeeId, businessId]) !== true) {
-      await session.abortTransaction();
       return "Invalid employee or business ID!";
     }
 
@@ -29,7 +28,6 @@ export const addEmployeeToDailySalesReport = async (
 
     // If no daily sales report found
     if (!updatedDailySalesReport) {
-      await session.abortTransaction();
       return "Daily report not found!";
     }
 

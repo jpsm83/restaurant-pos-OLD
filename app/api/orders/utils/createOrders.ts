@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { ClientSession, Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -49,16 +49,11 @@ export const createOrders = async (
   employeeId: Types.ObjectId | undefined,
   customerId: Types.ObjectId | undefined,
   salesInstanceId: Types.ObjectId,
-  businessId: Types.ObjectId
+  businessId: Types.ObjectId,
+  session: ClientSession
 ) => {
   // connect before first call to DB
   await connectDb();
-
-  // Start a session to handle transactions
-  // with session if any error occurs, the transaction will be aborted
-  // session is created outside of the try block to be able to abort it in the catch/finally block
-  const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
     if (employeeId) {
@@ -69,8 +64,7 @@ export const createOrders = async (
         .select("status")
         .lean();
 
-      if (!salesInstance || salesInstance.salesInstancestatus === "Closed") {
-        await session.abortTransaction();
+      if (!salesInstance || salesInstance.salesInstanceStatus === "Closed") {
         return "SalesInstance not found or closed!";
       }
     }
@@ -105,7 +99,6 @@ export const createOrders = async (
     const ordersCreated = await Order.insertMany(ordersToInsert, { session });
 
     if (!ordersCreated || ordersCreated.length === 0) {
-      await session.abortTransaction();
       return "Orders not created!";
     }
 
@@ -120,7 +113,6 @@ export const createOrders = async (
       await updateDynamicCountSupplierGood(businessGoodsIds, "remove", session);
 
     if (updateDynamicCountSupplierGoodResult !== true) {
-      await session.abortTransaction();
       return (
         "updateDynamicCountSupplierGood failed! Error: " +
         updateDynamicCountSupplierGoodResult
@@ -153,18 +145,11 @@ export const createOrders = async (
     );
 
     if (updatedSalesInstance.modifiedCount === 0) {
-      await session.abortTransaction();
       return "SalesInstance not updated!";
     }
 
-    // Commit the transaction if both operations succeed
-    await session.commitTransaction();
-
     return ordersCreated;
   } catch (error) {
-    await session.abortTransaction();
     return handleApiError("Create order failed!", error);
-  } finally {
-    session.endSession();
   }
 };

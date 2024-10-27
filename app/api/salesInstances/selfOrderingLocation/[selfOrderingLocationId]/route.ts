@@ -161,7 +161,7 @@ export const POST = async (
     // dailySalesReport is created when the first salesInstance of the day is created
     const dailyReferenceNumber = dailySalesReport
       ? dailySalesReport.dailyReferenceNumber
-      : await createDailySalesReport(businessId);
+      : await createDailySalesReport(businessId, session);
 
     if (typeof dailyReferenceNumber === "string") {
       await session.abortTransaction();
@@ -176,7 +176,7 @@ export const POST = async (
       dailyReferenceNumber,
       salesPointId: selfOrderingLocationId,
       guests: 1,
-      salesInstancestatus: "Occupied",
+      salesInstanceStatus: "Occupied",
       openedByCustomerId,
       businessId,
       clientName: customer?.customerName,
@@ -184,7 +184,7 @@ export const POST = async (
 
     // create a salesInstance
     // we use a outside function to create the salesInstance because this function is used in other places
-    const salesInstance: any = await createSalesInstance(newSalesInstanceObj);
+    const salesInstance: any = await createSalesInstance(newSalesInstanceObj, session);
 
     if (typeof salesInstance === "string") {
       await session.abortTransaction();
@@ -202,7 +202,8 @@ export const POST = async (
       undefined,
       openedByCustomerId,
       salesInstance._id,
-      businessId
+      businessId,
+      session
     );
 
     if (typeof createdOrders === "string") {

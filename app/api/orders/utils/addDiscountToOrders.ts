@@ -19,17 +19,15 @@ export const addDiscountToOrders = async (
   session: ClientSession
 ) => {
   // validate required fields
-  if (!discountPercentage || !comments) {
-    await session.abortTransaction();
-    return "Discount percentage and comments are required!";
+  if (!comments) {
+    return "Comments are required for discounts!";
   }
 
   // validate discount percentage
   if (discountPercentage > 100 || discountPercentage < 0) {
-    await session.abortTransaction();
     return "Discount value has to be a number between 0 and 100!";
   }
-  
+
   try {
     // connect before first call to DB
     await connectDb();
@@ -38,19 +36,22 @@ export const addDiscountToOrders = async (
     const orders = await Order.find({
       _id: { $in: ordersIdsArr },
     })
-      .select("promotionApplyed orderGrossPrice")
+      .select("promotionApplyed orderGrossPrice billingStatus")
       .lean()
       .session(session);
 
-    if (!orders || orders.length === 0) {
-      await session.abortTransaction();
+    if (!orders || orders.length !== ordersIdsArr.length) {
       return "Some orders were not found!";
     }
 
     // do not add discount if promotion applyed
     if (orders.some((order) => order.promotionApplyed)) {
-      await session.abortTransaction();
       return "You cannot add discount to an order that has a promotion already!";
+    }
+
+    // do not add discount if order is not open
+    if (orders.some((order) => order.billingStatus !== "Open")) {
+      return "Some orders are not open to apply a discount!";
     }
 
     // Prepare bulk update operations for all orders
@@ -79,18 +80,11 @@ export const addDiscountToOrders = async (
     });
 
     if (bulkResult.ok !== 1) {
-      await session.abortTransaction();
       return "Bulk update failed!";
     }
 
-    // Commit transaction if all updates succeed
-    await session.commitTransaction();
-
     return true;
   } catch (error) {
-    await session.abortTransaction();
     return "Add discount to orders failed! " + error;
-  } finally {
-    session.endSession();
   }
 };

@@ -18,12 +18,6 @@ export const changeOrdersBillingStatus = async (
   ordersNewBillingStatus: string,
   session: ClientSession
 ) => {
-  // validate required fields
-  if (!ordersNewBillingStatus) {
-    await session.abortTransaction();
-    return "New billing status is required!";
-  }
-
   // here you not allowed to change the billing status to Paid or Cancel
   // those status are automatically changed by the system
 
@@ -32,7 +26,6 @@ export const changeOrdersBillingStatus = async (
 
   // validate not all
   if (notAllowedBillingStatus.includes(ordersNewBillingStatus)) {
-    await session.abortTransaction();
     return `Billing status cannot be manually changed to ${ordersNewBillingStatus}!`;
   }
 
@@ -48,18 +41,17 @@ export const changeOrdersBillingStatus = async (
       .lean()
       .session(session);
 
-    if (!orders || orders.length === 0) {
-      await session.abortTransaction();
+    if (!orders || orders.length !== ordersIdsArr.length) {
       return "Orders were not found!";
     }
 
     // check if orders has the billing status as open, invitation, void
     const allowedToChange = ["Open", "Invitation", "Void"];
+
     if (
       orders.some((order) => !allowedToChange.includes(order.billingStatus))
     ) {
-      await session.abortTransaction();
-      return "Only orders as open, invitation or void can have the billing status change manually!";
+      return "Only orders open, invitation or void can have the billing status change manually!";
     }
 
     const bulkWriteOperations = orders.map((order) => ({
@@ -76,18 +68,11 @@ export const changeOrdersBillingStatus = async (
     const bulkResult = await Order.bulkWrite(bulkWriteOperations, { session });
 
     if (bulkResult.ok !== 1) {
-      await session.abortTransaction();
       return "Bulk write failed!";
     }
 
-    // Commit transaction
-    await session.commitTransaction();
-
     return true;
   } catch (error) {
-    await session.abortTransaction();
     return "Change orders status failed! " + error;
-  } finally {
-    session.endSession();
   }
 };

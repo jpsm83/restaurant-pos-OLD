@@ -1,3 +1,5 @@
+import { ClientSession } from "mongoose";
+
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { addEmployeeToDailySalesReport } from "../../dailySalesReports/utils/addEmployeeToDailySalesReport";
@@ -10,14 +12,15 @@ import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import SalesInstance from "@/app/lib/models/salesInstance";
 
 export const createSalesInstance = async (
-  newSalesInstanceObj: ISalesInstance
+  newSalesInstanceObj: ISalesInstance,
+  session: ClientSession
 ) => {
   try {
     const requiredKeys = [
       "dailyReferenceNumber",
       "salesPointId",
       "guests",
-      "salesInstancestatus",
+      "salesInstanceStatus",
       "businessId",
     ];
 
@@ -44,7 +47,11 @@ export const createSalesInstance = async (
         }))
       ) {
         const addEmployeeToDailySalesReportResult =
-          await addEmployeeToDailySalesReport(openedByEmployeeId, businessId);
+          await addEmployeeToDailySalesReport(
+            openedByEmployeeId,
+            businessId,
+            session
+          );
 
         if (addEmployeeToDailySalesReportResult !== true) {
           return addEmployeeToDailySalesReportResult;
@@ -53,7 +60,9 @@ export const createSalesInstance = async (
     }
 
     // Create the sales instance and return it
-    const newSalesInstance = await SalesInstance.create(newSalesInstanceObj);
+    const newSalesInstance = await SalesInstance.create(newSalesInstanceObj, {
+      session,
+    });
 
     if (!newSalesInstance) {
       return "Create sales instance failed!";
