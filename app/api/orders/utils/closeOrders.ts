@@ -1,9 +1,7 @@
-import mongoose, { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import { validatePaymentMethodArray } from "../utils/validatePaymentMethodArray";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
@@ -16,38 +14,21 @@ import SalesInstance from "@/app/lib/models/salesInstance";
 
 // close multiple orders at the same time
 export const closeOrders = async (
-  ordersIdArr: Types.ObjectId[],
-  paymentMethod: IPaymentMethod[]
+  ordersIdsArr: Types.ObjectId[],
+  paymentMethodArr: IPaymentMethod[],
+  session: ClientSession
 ) => {
-  // validate orders ids
-  if (isObjectIdValid(ordersIdArr) !== true) {
-    return "OrdersIdsArr not valid!";
-  }
-
-  if (!Array.isArray(paymentMethod) || paymentMethod.length === 0) {
-    return "Invalid payment method array!";
-  }
-
-  // Validate payment methods
-  const validPaymentMethods = validatePaymentMethodArray(paymentMethod);
-  if (typeof validPaymentMethods === "string") {
-    return validPaymentMethods;
-  }
-
-  // Connect to DB
-  await connectDb();
-
-  // Start a session to handle transactions
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
+    // Connect to DB
+    await connectDb();
+
     // Fetch orders to be closed
     const orders: IOrder[] | null = await Order.find({
-      _id: { $in: ordersIdArr },
+      _id: { $in: ordersIdsArr },
       billingStatus: "Open",
     })
       .select("salesInstanceId billingStatus orderNetPrice")
+      .session(session)
       .lean();
 
     if (!orders || orders.length === 0) {
@@ -55,27 +36,31 @@ export const closeOrders = async (
       return "No open orders found!";
     }
 
+    // Calculate total order net price and total paid
     const totalOrderNetPrice = orders
       ? orders.reduce((acc, order) => acc + order.orderNetPrice, 0)
       : 0;
-    const totalPaid = paymentMethod.reduce(
+    const totalPaid = paymentMethodArr.reduce(
       (acc, payment) => acc + (payment.methodSalesTotal || 0),
       0
     );
 
+    // Check if total paid is lower than the total orders
     if (totalPaid < totalOrderNetPrice) {
+      await session.abortTransaction();
       return "Total amount paid is lower than the total price of the orders!";
     }
 
+    // Calculate total tips and remaining tips
     const totalTips = totalPaid - totalOrderNetPrice;
     let remainingTips = totalTips;
 
     // Process each order in a single loop
-    const bulkUpdateOrders = orders.map((order, index) => {
+      const bulkUpdateOrders = orders.map((order, index) => {
       let remainingOrderNetPrice = order.orderNetPrice;
       const orderPaymentMethods = [];
 
-      for (const payment of validPaymentMethods) {
+      for (const payment of paymentMethodArr) {
         if (payment.methodSalesTotal <= 0) continue;
 
         const amountToUse = Math.min(
@@ -149,6 +134,7 @@ export const closeOrders = async (
       group.ordersIds.every((order: any) => order.billingStatus === "Paid")
     );
 
+    // if they are all payed, close the sales instance
     if (allOrdersPaid) {
       const updatedSalesInstance = await SalesInstance.updateOne(
         { _id: salesInstance._id },

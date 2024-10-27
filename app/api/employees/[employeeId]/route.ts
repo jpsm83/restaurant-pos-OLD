@@ -260,12 +260,23 @@ export const PATCH = async (
     // Handle the results if needed
     if (updatedEmployee.modifiedCount === 0) {
       await session.abortTransaction();
-      throw new Error("Employee not found or not updated");
+      return new NextResponse(
+        JSON.stringify({
+          message: "Employee not found or not updated",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     if (updatePrinter && updatePrinter.modifiedCount === 0) {
       await session.abortTransaction();
-      console.log("No printer data was updated");
+      return new NextResponse(
+        JSON.stringify({
+          message: "No printer data was updated",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+
     }
 
     // Commit the transaction if both operations succeed

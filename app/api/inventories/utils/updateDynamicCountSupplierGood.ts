@@ -1,5 +1,5 @@
 import convert, { Unit } from "convert-units";
-import mongoose, { Types } from "mongoose";
+import mongoose, { ClientSession, Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
@@ -19,13 +19,11 @@ import { IIngredients } from "@/app/lib/interface/IBusinessGood";
 // get all business goods from the setMenu and repeat the cicle
 export const updateDynamicCountSupplierGood = async (
   businessGoodsIds: Types.ObjectId[],
-  addOrRemove: "add" | "remove"
+  addOrRemove: "add" | "remove",
+  session: ClientSession
 ) => {
   // Connect to the database
   await connectDb();
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
     // Fetch all business goods including setMenu and their ingredients

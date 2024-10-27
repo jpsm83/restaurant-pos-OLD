@@ -1,42 +1,39 @@
-import mongoose, { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Order from "@/app/lib/models/order";
 
-// order can be change to "Done", "Sent" or "Delivered"
+// ********** IMPORTANT **********
+// This function will be call on the PATCH salesInstance route where you get all the orders
+
+// order can be change in the following order: sent -> done -> delivered
+// orders with status "Dont Make" cannot be changed
+// only manager can change order status out of order
 // kitchen staff set order to "Done"
 // Floor staff set order to "Sent" after holding it
 // Floor staff set order to "Delivered" after order is delivered (if delivery is enabled)
 // ******** NOT USED ANYWHERE YET ********
 export const changeOrdersStatus = async (
-  orderIdsArr: Types.ObjectId[],
-  newStatus: string
+  ordersIdsArr: Types.ObjectId[],
+  ordersNewStatus: string,
+  session: ClientSession
 ) => {
-  // validate orderIdsArr
-  if (isObjectIdValid(orderIdsArr) !== true) {
-    return "OrderIdsArr not valid!";
-  }
-
   // validate required fields
-  if (!newStatus) {
+  if (!ordersNewStatus) {
+    await session.abortTransaction();
     return "New status is required!";
   }
 
-  // connect before first call to DB
-  await connectDb();
-
-  // Start a session to handle transactions
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
+    // connect before first call to DB
+    await connectDb();
+
     // Fetch all relevant orders at once using $in
     const orders = await Order.find({
-      _id: { $in: orderIdsArr },
+      _id: { $in: ordersIdsArr },
     })
       .select("orderStatus")
       .lean()
@@ -48,36 +45,15 @@ export const changeOrdersStatus = async (
     }
 
     // check if orders can be changed to new status
-    const notAllowedToChange = ["Delivered"];
-
-    // *** the status "Dont Make" should never be changed ***
-    switch (newStatus) {
-      case "Done":
-        notAllowedToChange.push("Done", "Hold");
-        break;
-      case "Sent":
-        notAllowedToChange.push("Done", "Sent");
-        break;
-      case "Delivered":
-        notAllowedToChange.push("Sent", "Hold");
-        break;
-      default:
-        break;
-    }
-
-    if (
-      orders.some((order) =>
-        notAllowedToChange.includes(order.orderStatus ?? "")
-      )
-    ) {
+    if (orders.some((order) => order.orderStatus === "Dont Make")) {
       await session.abortTransaction();
-      return "Some of orders status cannot be replaced by new status, check notAllowedToChange!";
+      return "Dont make orders cannot be changed!";
     }
 
     // Update order status in bulk, excluding "Dont Make"
     const updatedOrder = await Order.updateMany(
-      { _id: { $in: orderIdsArr }, orderStatus: { $ne: "Dont Make" } },
-      { $set: { orderStatus: newStatus } },
+      { _id: { $in: ordersIdsArr } },
+      { $set: { orderStatus: ordersNewStatus } },
       { session }
     );
 
@@ -89,7 +65,7 @@ export const changeOrdersStatus = async (
     // Commit transaction
     await session.commitTransaction();
 
-    return "Change orders status successful!";
+    return true;
   } catch (error) {
     await session.abortTransaction();
     return "Change orders status failed! " + error;

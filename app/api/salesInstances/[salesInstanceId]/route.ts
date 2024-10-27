@@ -6,6 +6,8 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { addEmployeeToDailySalesReport } from "../../dailySalesReports/utils/addEmployeeToDailySalesReport";
+import { cancelOrders } from "../../orders/utils/cancelOrders";
+import { addDiscountToOrders } from "../../orders/utils/addDiscountToOrders";
 
 // import interfaces
 import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
@@ -18,6 +20,11 @@ import Order from "@/app/lib/models/order";
 import SalesInstance from "@/app/lib/models/salesInstance";
 import SalesPoint from "@/app/lib/models/salesPoint";
 import Customer from "@/app/lib/models/customer";
+import { changeOrdersBillingStatus } from "../../orders/utils/changeOrdersBillingStatus";
+import { changeOrdersStatus } from "../../orders/utils/changeOrdersStatus";
+import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
+import { validatePaymentMethodArray } from "../../orders/utils/validatePaymentMethodArray";
+import { closeOrders } from "../../orders/utils/closeOrders";
 
 // @desc    Get salesInstances by ID
 // @route   GET /salesInstances/:salesInstanceId
@@ -89,6 +96,9 @@ export const GET = async (
   }
 };
 
+// ******** IMPORTANT ********
+// this route will execute the order utils functions
+
 // salesPointId and salesGroup doesnt get updated here, we got separate routes for that
 // also sales instance doesnt get closed here, they get closed when all orders are closed automatically
 // @desc    Update salesInstances
@@ -101,12 +111,32 @@ export const PATCH = async (
   const salesInstanceId = context.params.salesInstanceId;
 
   // calculation of the tableTotalPrice, tableTotalNetPrice, tableTotalNetPaid, tableTotalTips should be done on the front end so employee can see the total price, net price, net paid and tips in real time
-  const { guests, status, responsibleById, clientName } =
-    (await req.json()) as ISalesInstance;
+  const {
+    ordersIdsArr,
+    discountPercentage,
+    comments,
+    cancel,
+    ordersNewBillingStatus,
+    ordersNewStatus,
+    paymentMethodArr,
+    guests,
+    status,
+    responsibleById,
+    clientName,
+  } = (await req.json()) as {
+    ordersIdsArr: Types.ObjectId[];
+    discountPercentage: number;
+    comments: string;
+    cancel: boolean;
+    ordersNewBillingStatus: string;
+    ordersNewStatus: string;
+    paymentMethodArr: IPaymentMethod[];
+  } & Partial<ISalesInstance>;
 
   // Validate ObjectIds in one step for better performance
   const idsToValidate = [salesInstanceId];
   if (responsibleById) idsToValidate.push(responsibleById);
+  if (ordersIdsArr) idsToValidate.push(...ordersIdsArr);
 
   // validate ids
   if (isObjectIdValid(idsToValidate) !== true) {
@@ -126,11 +156,121 @@ export const PATCH = async (
   session.startTransaction();
 
   try {
+    // if discountPercentage is provided, add discount to orders
+    if (discountPercentage) {
+      const addDiscountToOrdersResult = await addDiscountToOrders(
+        ordersIdsArr,
+        discountPercentage,
+        comments,
+        session
+      );
+
+      if (addDiscountToOrdersResult !== true) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: addDiscountToOrdersResult }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // if cancel is true, cancel orders
+    if (cancel) {
+      const cancelOrdersResult = await cancelOrders(ordersIdsArr, session);
+
+      if (cancelOrdersResult !== true) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: cancelOrdersResult }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // if ordersNewBillingStatus is provided, change orders billing status
+    if (ordersNewBillingStatus) {
+      const changeOrdersBillingStatusResult = await changeOrdersBillingStatus(
+        ordersIdsArr,
+        ordersNewBillingStatus,
+        session
+      );
+
+      if (changeOrdersBillingStatusResult !== true) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: changeOrdersBillingStatusResult }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // if ordersNewStatus is provided, change orders status
+    if (ordersNewStatus) {
+      const changeOrdersStatusResult = await changeOrdersStatus(
+        ordersIdsArr,
+        ordersNewStatus,
+        session
+      );
+
+      if (changeOrdersStatusResult !== true) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: changeOrdersStatusResult }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // if paymentMethodArr is provided, update orders payment method
+    if (paymentMethodArr) {
+      // Validate payment methods
+      const validPaymentMethods = validatePaymentMethodArray(paymentMethodArr);
+      if (validPaymentMethods !== true) {
+        return new NextResponse(
+          JSON.stringify({ message: validPaymentMethods }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const closeOrdersResult = await closeOrders(
+        ordersIdsArr,
+        paymentMethodArr,
+        session
+      );
+
+      if (closeOrdersResult !== true) {
+        await session.abortTransaction();
+        return new NextResponse(
+          JSON.stringify({ message: closeOrdersResult }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
     // get the salesInstance
     const salesInstance: ISalesInstance | null = await SalesInstance.findById(
       salesInstanceId
     )
       .select("openedByEmployeeId businessId status salesGroup")
+      .session(session)
       .lean();
 
     if (!salesInstance) {
@@ -208,8 +348,6 @@ export const PATCH = async (
     }
 
     // The order controller would handle the creation of orders and updating the relevant salesInstance's order array. The salesInstance controller would then only be responsible for reading and managing salesInstance data, not order data. This separation of concerns makes the code easier to maintain and understand.
-
-    // function closeOrders will automaticaly close the salesInstance once all OPEN orders are closed
 
     // save the updated salesInstance
     const updatedSalesInstance = await SalesInstance.updateOne(

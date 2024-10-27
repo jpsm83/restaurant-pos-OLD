@@ -31,6 +31,10 @@ export const validatePaymentMethodArray = (paymentMethod: IPaymentMethod[]) => {
   //   },
   // ];
 
+  if (!Array.isArray(paymentMethod) || paymentMethod.length === 0) {
+    return "Payment method has to be an array!";
+  }
+
   for (let payment of paymentMethod) {
     if (
       !payment.paymentMethodType ||
@@ -77,5 +81,5 @@ export const validatePaymentMethodArray = (paymentMethod: IPaymentMethod[]) => {
     }
   }
 
-  return paymentMethod;
+  return true;
 };

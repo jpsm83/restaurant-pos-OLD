@@ -24,6 +24,7 @@ import { IPaymentMethod } from "@/app/lib/interface/IPaymentMethod";
 // imported models
 import DailySalesReport from "@/app/lib/models/dailySalesReport";
 import Customer from "@/app/lib/models/customer";
+import { validatePaymentMethodArray } from "@/app/api/orders/utils/validatePaymentMethodArray";
 
 // first create a empty salesInstance, then update it with the salesGroup.ordersIds
 // @desc    Create new salesInstances
@@ -65,10 +66,10 @@ export const POST = async (
   //    }
   //]
 
-  const { businessId, ordersArr, openedByCustomerId, paymentMethod } =
+  const { businessId, ordersArr, openedByCustomerId, paymentMethodArr } =
     (await req.json()) as Partial<ISalesInstance> & {
       ordersArr: IOrder[];
-      paymentMethod: IPaymentMethod;
+      paymentMethodArr: IPaymentMethod[];
     };
 
   // check required fields
@@ -77,12 +78,12 @@ export const POST = async (
     !openedByCustomerId ||
     !businessId ||
     !ordersArr ||
-    !paymentMethod
+    !paymentMethodArr
   ) {
     return new NextResponse(
       JSON.stringify({
         message:
-          "SelfOrderingLocationId, ordersArr, paymentMethod, openedByCustomerId and businessId are required!",
+          "SelfOrderingLocationId, ordersArr, paymentMethodArr, openedByCustomerId and businessId are required!",
       }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
@@ -114,6 +115,15 @@ export const POST = async (
       JSON.stringify({ message: ordersArrValidationResult }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
+  }
+
+  // Validate payment methods
+  const validPaymentMethods = validatePaymentMethodArray(paymentMethodArr);
+  if (validPaymentMethods !== true) {
+    return new NextResponse(JSON.stringify({ message: validPaymentMethods }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // connect before first call to DB
@@ -209,9 +219,11 @@ export const POST = async (
 
     // pay the order
     // function closeOrders will automaticaly close the salesInstance once all OPEN orders are closed
-    const closeOrdersResult = await closeOrders(createdOrdersIds, [
-      { ...paymentMethod },
-    ]);
+    const closeOrdersResult = await closeOrders(
+      createdOrdersIds,
+      paymentMethodArr,
+      session
+    );
 
     if (closeOrdersResult !== true) {
       await session.abortTransaction();
@@ -266,7 +278,7 @@ export const POST = async (
         $push: {
           selfOrderingSalesReport: {
             customerId: openedByCustomerId,
-            customerPaymentMethod: paymentMethod,
+            customerPaymentMethod: paymentMethodArr,
             totalSalesBeforeAdjustments,
             totalNetPaidAmount,
             totalCostOfGoodsSold,

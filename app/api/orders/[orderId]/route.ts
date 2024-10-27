@@ -2,7 +2,7 @@ import connectDb from "@/app/lib/utils/connectDb";
 import { NextResponse } from "next/server";
 
 // import interfaces
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 // import utils
 import { handleApiError } from "@/app/lib/utils/handleApiError";
@@ -96,16 +96,27 @@ export const DELETE = async (
   req: Request,
   context: { params: { orderId: Types.ObjectId } }
 ) => {
+    // connect before first call to DB
+    await connectDb();
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+  
   try {
     const orderId = context.params.orderId;
 
-    const result = await cancelOrders([orderId]);
+    // cancelOrder will update the dynamic count of the business goods, update the sales instance and order status and them delete the order
+    const cancelOrdersResult = await cancelOrders([orderId], session);
 
-    if (result !== "Cancel order and update dynamic count success") {
-      return new NextResponse(JSON.stringify({ message: result }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (cancelOrdersResult !== true) {
+      await session.abortTransaction();
+      return new NextResponse(
+        JSON.stringify({ message: cancelOrdersResult }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new NextResponse(

@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
-import mongoose, { Types } from "mongoose";
+import { Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
 import { handleApiError } from "@/app/lib/utils/handleApiError";
-import { updateDynamicCountSupplierGood } from "../inventories/utils/updateDynamicCountSupplierGood";
 import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 import { ordersArrValidation } from "./utils/validateOrdersArr";
 
 // imported interfaces
 import { IOrder } from "@/app/lib/interface/IOrder";
-import { ISalesInstance } from "@/app/lib/interface/ISalesInstance";
-import { IDailySalesReport } from "@/app/lib/interface/IDailySalesReport";
 
 // imported models
 import Order from "@/app/lib/models/order";
@@ -19,17 +16,9 @@ import SalesInstance from "@/app/lib/models/salesInstance";
 import Employee from "@/app/lib/models/employee";
 import BusinessGood from "@/app/lib/models/businessGood";
 import SalesPoint from "@/app/lib/models/salesPoint";
-import DailySalesReport from "@/app/lib/models/dailySalesReport";
 
 // importes test utils
-import { closeOrders } from "./utils/closeOrders";
-import { cancelOrders } from "./utils/cancelOrders";
-import { addDiscountToOrders } from "./utils/addDiscountToOrders";
-import { changeOrdersBillingStatus } from "./utils/changeOrdersBillingStatus";
-import { changeOrdersStatus } from "./utils/changeOrdersStatus";
-import { transferOrdersBetweenSalesInstances } from "./utils/transferOrdersBetweenSalesInstances";
 import Customer from "@/app/lib/models/customer";
-import { create } from "domain";
 import { createOrders } from "./utils/createOrders";
 
 // @desc    Get all orders
@@ -222,73 +211,3 @@ export const POST = async (req: Request) => {
     return handleApiError("Create order failed!", error);
   }
 };
-
-// export const POST = async (req: Request) => {
-//   try {
-//     // connect before first call to DB
-//     await connectDb();
-
-//     const fromSalesInstanceId = "670bf0ba6d2e71fb1856bb81";
-//     const guests = 4;
-//     const clientName = "testing";
-
-//     const toSalesInstanceId = "670ccbcac966c93a0bd46f16";
-//     const newSalesPointId = "6707a83888a5002362018ccc";
-
-//     const ordersArr = ["670a72fe455b93fc7f9ad7ad", "670a72fe455b93fc7f9ad7ae"];
-//     // const ordersArr = ["670a72fe455b93fc7f9ad777", "670a72fe455b93fc7f9ad777"];
-
-//     const paymentMethod = [
-//       {
-//         paymentMethodType: "Card",
-//         methodBranch: "Visa",
-//         methodSalesTotal: 20,
-//       },
-//       {
-//         paymentMethodType: "Card",
-//         methodBranch: "Mastercard",
-//         methodSalesTotal: 100,
-//       },
-//       {
-//         paymentMethodType: "Cash",
-//         methodBranch: "Cash",
-//         methodSalesTotal: 90,
-//       },
-//       {
-//         paymentMethodType: "Crypto",
-//         methodBranch: "Bitcoin",
-//         methodSalesTotal: 80,
-//       },
-//       {
-//         paymentMethodType: "Other",
-//         methodBranch: "Voucher",
-//         methodSalesTotal: 150,
-//       },
-//     ];
-
-//     // // @ts-ignore
-//     // const result = await addDiscountToOrders(ordersArr, 10, "10% Discount for all");
-
-//     // // @ts-ignore
-//     // const result = await cancelOrders(["670a72fe455b93fc7f9ad7ad"]);
-
-//     // // @ts-ignore
-//     // const result = await changeOrdersBillingStatus(ordersArr, "Invitation");
-
-//     // // @ts-ignore
-//     // const result = await changeOrdersStatus(ordersArr, "Done");
-
-//     // // @ts-ignore
-//     // const result = await closeOrders(ordersArr, paymentMethod);
-
-//     // // @ts-ignore
-//     // const result = await transferOrdersBetweenSalesInstances(ordersArr, fromSalesInstanceId, toSalesInstanceId, undefined, guests, clientName);
-
-//     return new NextResponse(JSON.stringify(result), {
-//       status: 200,
-//       headers: { "Content-Type": "application/json" },
-//     });
-//   } catch (error) {
-//     return handleApiError("Function failed!", error);
-//   }
-// };

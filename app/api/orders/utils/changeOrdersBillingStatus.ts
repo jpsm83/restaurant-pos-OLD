@@ -1,50 +1,50 @@
-import mongoose, { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 
 // imported utils
 import connectDb from "@/app/lib/utils/connectDb";
-import isObjectIdValid from "@/app/lib/utils/isObjectIdValid";
 
 // imported models
 import Order from "@/app/lib/models/order";
+
+// ********** IMPORTANT **********
+// This function will be call on the PATCH salesInstance route where you get all the orders
 
 // Void, Cancel and Invitation can be manually changed by managers
 // Paid is automatically changed by the system
 // Open is the default status
 // ******** NOT USED ANYWHERE YET ********
 export const changeOrdersBillingStatus = async (
-  orderIdsArr: Types.ObjectId[],
-  newBillingStatus: string
+  ordersIdsArr: Types.ObjectId[],
+  ordersNewBillingStatus: string,
+  session: ClientSession
 ) => {
-  // validate orderIdsArr
-  if (isObjectIdValid(orderIdsArr) !== true) {
-    return "OrderIdsArr not valid!";
-  }
-
   // validate required fields
-  if (!newBillingStatus) {
+  if (!ordersNewBillingStatus) {
+    await session.abortTransaction();
     return "New billing status is required!";
   }
 
-  const notAllowedBillingStatus = ["Open", "Paid", "Cancel"];
+  // here you not allowed to change the billing status to Paid or Cancel
+  // those status are automatically changed by the system
+
+  // billingStatus are Open, Paid, Void, Cancel and Invitation
+  const notAllowedBillingStatus = ["Paid", "Cancel"];
 
   // validate not all
-  if (notAllowedBillingStatus.includes(newBillingStatus)) {
-    return `Billing status cannot be manually changed to ${newBillingStatus}!`;
+  if (notAllowedBillingStatus.includes(ordersNewBillingStatus)) {
+    await session.abortTransaction();
+    return `Billing status cannot be manually changed to ${ordersNewBillingStatus}!`;
   }
 
-  // connect before first call to DB
-  await connectDb();
-
-  // Start a session to handle transactions
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
+    // connect before first call to DB
+    await connectDb();
+
     // Fetch all relevant orders at once using $in
     const orders = await Order.find({
-      _id: { $in: orderIdsArr },
+      _id: { $in: ordersIdsArr },
     })
-      .select("billingStatus")
+      .select("billingStatus orderGrossPrice")
       .lean()
       .session(session);
 
@@ -53,16 +53,23 @@ export const changeOrdersBillingStatus = async (
       return "Orders were not found!";
     }
 
-    // check if orders has the billing status "Open"
-    if (orders.some((order) => order.billingStatus !== "Open")) {
+    // check if orders has the billing status as open, invitation, void
+    const allowedToChange = ["Open", "Invitation", "Void"];
+    if (
+      orders.some((order) => !allowedToChange.includes(order.billingStatus))
+    ) {
       await session.abortTransaction();
-      return "Only open orders can have the billing status change manually!";
+      return "Only orders as open, invitation or void can have the billing status change manually!";
     }
 
     const bulkWriteOperations = orders.map((order) => ({
       updateOne: {
         filter: { _id: order._id },
-        update: { billingStatus: newBillingStatus, orderNetPrice: 0 },
+        update: {
+          billingStatus: ordersNewBillingStatus,
+          orderNetPrice:
+            ordersNewBillingStatus === "Open" ? order.orderGrossPrice : 0,
+        },
       },
     }));
 
@@ -76,7 +83,7 @@ export const changeOrdersBillingStatus = async (
     // Commit transaction
     await session.commitTransaction();
 
-    return "Change orders status successful!";
+    return true;
   } catch (error) {
     await session.abortTransaction();
     return "Change orders status failed! " + error;
